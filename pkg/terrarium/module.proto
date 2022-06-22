@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium";
+package terrarium.module;
+
+
+// 1 - Create an organisation in terrarium to obtain an api_key
+// 2 - Register API Key with Github Organisation
+// 3 - Create repo for new module from template
+// 4 - Edit and commit to master Upload module.yam
+//      -> Configure the module in terrarium
+// 5 - deliver your terraform code
+// 6 - Create tag: ew version of module being published
+//      -> New version
+//      -> Upload dependencies
+//      -> Upload audit trail information
+//      -> Upload documentation
+//      -> Upload source code archive
+//      -> End Version
+
+
+service Publisher {
+  rpc Configure(ModuleConfigurationRequest) returns (TransactionStatusResponse) {}
+
+  rpc BeginVersion(BeginVersionRequest) returns (BeginVersionResponse) {}
+  rpc RegisterModuleDependencies(RegisterModuleDependenciesRequest) returns (TransactionStatusResponse) {}
+  rpc RegisterContainerDependencies(RegisterContainerDependenciesRequest) returns (TransactionStatusResponse) {}
+  // Register Audit Trail
+  rpc UploadSourceZip (stream UploadSourceZipChunkRequest) returns (TransactionStatusResponse) {}
+  // Upload Documentation
+  rpc EndVersion(EndVersionRequest) returns (TransactionStatusResponse) {}
+}
+
+service Consumer {
+  rpc DownloadSourceZip(DownloadSourceZipRequest) returns (stream SourceZipChunkResponse) {}
+  rpc RetrieveContainerDependencies(RetrieveContainerDependenciesRequest) returns (stream ContainerDependenciesResponse) {}
+  rpc RetrieveModuleDependencies(RetrieveModuleDependenciesRequest) returns (stream ModuleDependenciesResponse) {}
+}
+
+message TransactionStatusResponse {
+  enum Status {
+    OK = 0;
+    UNKNOWN_ERROR = 1;
+    NOT_AUTHORIZED_ERROR = 2;
+  };
+  Status status = 1;
+  string statusMessage = 2;
+}
+
+message ModuleConfigurationRequest {
+  string api_key = 1;
+  string name = 2;
+  string description = 3;
+  string source_url= 4;
+  enum Maturity {
+    IDEA = 0;
+    PLANNING = 1;
+    DEVELOPING = 2;
+    ALPHA = 3;
+    BETA = 4;
+    STABLE = 5;
+    DEPRECATED = 6;
+    END_OF_LIFE = 7;
+  };
+  Maturity maturity = 5;
+  // Additional metadata TBD when adding capabilities
+}
+
+
+message BeginVersionRequest {
+  string api_key = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message BeginVersionResponse {
+  string session_key = 1;
+}
+
+message VersionedModule {
+  string name = 1;
+  string version = 2;
+}
+
+message RegisterModuleDependenciesRequest {
+  string session_key = 1;
+  repeated VersionedModule modules = 2;
+}
+
+message RegisterContainerDependenciesRequest {
+  string session_key = 1;
+  repeated string container_image_references = 2;
+}
+
+message UploadSourceZipChunkRequest {
+  string session_key = 1;
+  bytes zip_data_chunk = 2;
+}
+
+message EndVersionRequest {
+  string session_key = 1;
+  enum Action {
+    DISCARD = 0;
+    PUBLISH = 1;
+  };
+  optional Action action = 2;
+
+}
+
+message DownloadSourceZipRequest {
+  string api_key = 1;
+  VersionedModule module = 2;
+}
+
+message SourceZipChunkResponse {
+  bytes zip_data_chunk = 1;
+}
+
+message RetrieveModuleDependenciesRequest {
+  string api_key = 1;
+  VersionedModule module = 2;
+  bool include_recursive = 3;
+}
+
+message ModuleDependenciesResponse {
+  VersionedModule origin = 1;
+  repeated VersionedModule modules = 2;
+}
+
+message RetrieveContainerDependenciesRequest {
+  string api_key = 1;
+  VersionedModule module = 2;
+  bool include_recursive = 3;
+}
+
+message ContainerDependenciesResponse {
+  VersionedModule origin = 1;
+  repeated string container_image_references = 2;
+}
