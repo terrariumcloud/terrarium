@@ -1,0 +1,20 @@
+syntax = "proto3";
+import "pkg/terrarium/module.proto";
+option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/services";
+package terrarium.services.module;
+
+service Creator {
+  rpc SetupModule(SetupModuleRequest) returns (SetupModuleResponse);
+}
+
+message SetupModuleRequest {
+  string name = 1;
+  string description = 2;
+  string source_url= 3;
+  terrarium.module.Maturity maturity = 4;
+}
+
+message SetupModuleResponse {
+  terrarium.module.Status status = 1;
+  string status_message = 2;
+}

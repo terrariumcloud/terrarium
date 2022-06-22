@@ -37,31 +37,34 @@ service Consumer {
   rpc RetrieveModuleDependencies(RetrieveModuleDependenciesRequest) returns (stream ModuleDependenciesResponse) {}
 }
 
-message TransactionStatusResponse {
-  enum Status {
-    OK = 0;
-    UNKNOWN_ERROR = 1;
-    NOT_AUTHORIZED_ERROR = 2;
-  };
-  Status status = 1;
-  string statusMessage = 2;
+enum Status {
+  OK = 0;
+  UNKNOWN_ERROR = 1;
+  NOT_AUTHORIZED_ERROR = 2;
 }
+
+enum Maturity {
+  IDEA = 0;
+  PLANNING = 1;
+  DEVELOPING = 2;
+  ALPHA = 3;
+  BETA = 4;
+  STABLE = 5;
+  DEPRECATED = 6;
+  END_OF_LIFE = 7;
+}
+
+message TransactionStatusResponse {
+  Status status = 1;
+  string status_message = 2;
+}
+
 
 message ModuleConfigurationRequest {
   string api_key = 1;
   string name = 2;
   string description = 3;
   string source_url= 4;
-  enum Maturity {
-    IDEA = 0;
-    PLANNING = 1;
-    DEVELOPING = 2;
-    ALPHA = 3;
-    BETA = 4;
-    STABLE = 5;
-    DEPRECATED = 6;
-    END_OF_LIFE = 7;
-  };
   Maturity maturity = 5;
   // Additional metadata TBD when adding capabilities
 }
