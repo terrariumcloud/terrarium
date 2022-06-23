@@ -2,19 +2,22 @@ package main
 
 import (
 	"context"
+	"crypto/elliptic/internal/nistec"
 	"flag"
 	"fmt"
-	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net"
 	"terrarium-grpc-gateway/internal/services"
+
+	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
 )
 
 const (
 	moduleCreationServiceEndpoint          = "module_creation:3000"
+	moduleSessionManagerServiceEndpoint          = "module_session_manager:3001"
 	connectionToModuleCreationServiceError = "Internal server error, unable to connect to the module creation service"
 )
 
@@ -69,22 +72,63 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 	}, nil
 }
 
-func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
-	return nil
-}
-
 func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
 	// TODO add support for authentication
-	return &pb.BeginVersionResponse{
-		SessionKey: "1234",
-	}, nil
+	conn, err := grpc.Dial(moduleSessionManagerServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return nil, err
+	}
+	defer conn.Close()
+	client := services.NewSessionManagerClient(conn)
+
+	delegatedRequest := services.BeginVersionRequest{
+		Module: request.GetModule(),
+	}
+	if response, delegateError := client.BeginVersion(ctx, &delegatedRequest); delegateError != nil {
+		log.Printf("BeginVersion remote call failed: %v", delegateError)
+		return nil, err
+	} else {
+		return response, nil
+	}
 }
 
 func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVersionRequest) (*pb.TransactionStatusResponse, error) {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: "All is good",
-	}, nil
+	// TODO add support for authentication
+	conn, err := grpc.Dial(moduleSessionManagerServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return &pb.TransactionStatusResponse{
+			Status:        pb.Status_UNKNOWN_ERROR,
+			StatusMessage: connectionToModuleCreationServiceError,
+		}, nil
+	}
+	defer conn.Close()
+	client := services.NewSessionManagerClient(conn)
+
+	delegatedRequest := services.TerminateVersionRequest{
+		SessionKey: request.GetSessionKey(),
+	}
+	if request.GetAction() == pb.EndVersionRequest_DISCARD {
+		response, delegateError := client.AbortVersion(ctx, &delegatedRequest)
+		if delegateError != nil {
+			log.Printf("AbortVersion remote call failed: %v", delegateError)
+			return nil, delegateError
+		} else {
+			return response, nil
+		}
+	}
+	if response, delegateError := client.PublishVersion(ctx, &delegatedRequest); delegateError != nil {
+		log.Printf("PublishVersion remote call failed: %v", delegateError)
+		client.AbortVersion(ctx, &delegatedRequest)
+		return nil, err
+	} else {
+		return response, nil
+	}
+}
+
+func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
+	return nil
 }
 
 func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRequest, server pb.Consumer_DownloadSourceZipServer) error {
