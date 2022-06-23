@@ -59,20 +59,6 @@ func (s *TerrariumGrpcGateway) Configure(ctx context.Context, request *pb.Module
 	}
 }
 
-func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: "All is good",
-	}, nil
-}
-
-func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: "All is good",
-	}, nil
-}
-
 func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
 	// TODO add support for authentication
 	conn, err := grpc.Dial(moduleSessionManagerServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -192,6 +178,20 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 			return err
 		}
 	}
+}
+
+func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
+	return &pb.TransactionStatusResponse{
+		Status:        pb.Status_OK,
+		StatusMessage: "All is good",
+	}, nil
+}
+
+func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
+	return &pb.TransactionStatusResponse{
+		Status:        pb.Status_OK,
+		StatusMessage: "All is good",
+	}, nil
 }
 
 func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
