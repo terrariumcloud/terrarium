@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	moduleCreationServiceEndpoint          = "module_creation:3000"
-	moduleSessionManagerServiceEndpoint          = "module_session_manager:3001"
-	moduleStorageServiceEndpoint          = "module_storage:3002"
-	connectionToModuleCreationServiceError = "Internal server error, unable to connect to the module creation service"
+	moduleCreationServiceEndpoint           = "module_creation:3000"
+	moduleSessionManagerServiceEndpoint     = "module_session_manager:3001"
+	moduleStorageServiceEndpoint            = "module_storage:3002"
+	moduleDependencyResolverServiceEndpoint = "module_dependency_resolver:3003"
+	connectionToModuleCreationServiceError  = "Internal server error, unable to connect to the module creation service"
 )
 
 type TerrariumGrpcGateway struct {
@@ -181,25 +182,95 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 }
 
 func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: "All is good",
-	}, nil
+	conn, err := grpc.Dial(moduleDependencyResolverServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return &pb.TransactionStatusResponse{
+			Status:        pb.Status_UNKNOWN_ERROR,
+			StatusMessage: connectionToModuleCreationServiceError,
+		}, nil
+	}
+	defer conn.Close()
+	client := services.NewDependencyResolverClient(conn)
+	response, err := client.RegisterModuleDependencies(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: "All is good",
-	}, nil
+	conn, err := grpc.Dial(moduleDependencyResolverServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return &pb.TransactionStatusResponse{
+			Status:        pb.Status_UNKNOWN_ERROR,
+			StatusMessage: connectionToModuleCreationServiceError,
+		}, nil
+	}
+	defer conn.Close()
+	client := services.NewDependencyResolverClient(conn)
+	response, err := client.RegisterContainerDependencies(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
-	return nil
+	conn, err := grpc.Dial(moduleDependencyResolverServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return err
+	}
+	defer conn.Close()
+	client := services.NewDependencyResolverClient(conn)
+	dependencyStream, err := client.RetrieveContainerDependencies(context.TODO(), request)
+	if err != nil {
+		return err
+	}
+	for {
+		chunk, err := dependencyStream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		err = server.Send(chunk)
+		if err != nil {
+			dependencyStream.CloseSend()
+			return err
+		}
+	}
 }
 
 func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveModuleDependenciesRequest, server pb.Consumer_RetrieveModuleDependenciesServer) error {
-	return nil
+	conn, err := grpc.Dial(moduleDependencyResolverServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return err
+	}
+	defer conn.Close()
+	client := services.NewDependencyResolverClient(conn)
+	dependencyStream, err := client.RetrieveModuleDependencies(context.TODO(), request)
+	if err != nil {
+		return err
+	}
+	for {
+		chunk, err := dependencyStream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		err = server.Send(chunk)
+		if err != nil {
+			dependencyStream.CloseSend()
+			return err
+		}
+	}
 }
 
 func main() {
