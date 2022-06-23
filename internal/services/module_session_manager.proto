@@ -1,0 +1,18 @@
+syntax = "proto3";
+import "pkg/terrarium/module.proto";
+option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/services";
+package terrarium.services.module;
+
+service SessionManager {
+  rpc BeginVersion(BeginVersionRequest) returns (terrarium.module.BeginVersionResponse);
+  rpc AbortVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
+  rpc PublishVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
+}
+
+message BeginVersionRequest {
+  VersionedModule module = 1;
+}
+
+message TerminateVersionRequest {
+    string session_key = 1;
+}

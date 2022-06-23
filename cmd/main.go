@@ -55,12 +55,6 @@ func (s *TerrariumGrpcGateway) Configure(ctx context.Context, request *pb.Module
 	}
 }
 
-func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
-	return &pb.BeginVersionResponse{
-		SessionKey: "1234",
-	}, nil
-}
-
 func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
 	return &pb.TransactionStatusResponse{
 		Status:        pb.Status_OK,
@@ -77,6 +71,13 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 
 func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
 	return nil
+}
+
+func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
+	// TODO add support for authentication
+	return &pb.BeginVersionResponse{
+		SessionKey: "1234",
+	}, nil
 }
 
 func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVersionRequest) (*pb.TransactionStatusResponse, error) {

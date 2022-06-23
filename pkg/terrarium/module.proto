@@ -72,8 +72,7 @@ message ModuleConfigurationRequest {
 
 message BeginVersionRequest {
   string api_key = 1;
-  string name = 2;
-  string version = 3;
+  VersionedModule module = 2;
 }
 
 message BeginVersionResponse {
