@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"crypto/elliptic/internal/nistec"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"terrarium-grpc-gateway/internal/services"
@@ -18,6 +18,7 @@ import (
 const (
 	moduleCreationServiceEndpoint          = "module_creation:3000"
 	moduleSessionManagerServiceEndpoint          = "module_session_manager:3001"
+	moduleStorageServiceEndpoint          = "module_storage:3002"
 	connectionToModuleCreationServiceError = "Internal server error, unable to connect to the module creation service"
 )
 
@@ -128,11 +129,69 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 }
 
 func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
-	return nil
+	conn, err := grpc.Dial(moduleStorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return err
+	}
+	defer conn.Close()
+	client := services.NewStorageClient(conn)
+	uploadStream, err := client.UploadSourceZip(context.TODO())
+	if err != nil {
+		return err
+	}
+	for {
+		chunk, err := server.Recv()
+		if err == io.EOF {
+			uploadStream.CloseSend()
+			return server.SendAndClose(&pb.TransactionStatusResponse{
+				Status:        pb.Status_OK,
+				StatusMessage: "All is good",
+			})
+		}
+		if err != nil {
+			return err
+		}
+		err = uploadStream.Send(chunk)
+		if err != nil {
+			server.SendAndClose(&pb.TransactionStatusResponse{
+				Status:        pb.Status_UNKNOWN_ERROR,
+				StatusMessage: "Upload failed",
+			})
+			return err
+		}
+	}
 }
 
 func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRequest, server pb.Consumer_DownloadSourceZipServer) error {
-	return nil
+	conn, err := grpc.Dial(moduleStorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return err
+	}
+	defer conn.Close()
+	client := services.NewStorageClient(conn)
+	downloadStream, err := client.DownloadSourceZip(context.TODO(), &pb.DownloadSourceZipRequest{
+		ApiKey: request.GetApiKey(),
+		Module: request.GetModule(),
+	})
+	if err != nil {
+		return err
+	}
+	for {
+		chunk, err := downloadStream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		err = server.Send(chunk)
+		if err != nil {
+			downloadStream.CloseSend()
+			return err
+		}
+	}
 }
 
 func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
