@@ -10,7 +10,7 @@ service SessionManager {
 }
 
 message BeginVersionRequest {
-  VersionedModule module = 1;
+  terrarium.module.VersionedModule module = 1;
 }
 
 message TerminateVersionRequest {
