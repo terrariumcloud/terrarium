@@ -3,6 +3,7 @@ protoc --go_out=. --go_opt=module=github.com/terrariumcloud/terrarium-grpc-gatew
     pkg/terrarium/module.proto \
     internal/services/module_create.proto \
     internal/services/module_session_manager.proto \
-    internal/services/module_storage.proto
+    internal/services/module_storage.proto \
+    internal/services/module_dependency_resolver.proto
 
 
