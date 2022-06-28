@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"terrarium-grpc-gateway/internal/services"
-	"terrarium-grpc-gateway/pkg/terrarium"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 
 	"google.golang.org/grpc"
 )
