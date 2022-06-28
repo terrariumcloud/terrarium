@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 	"terrarium-grpc-gateway/internal/services"
-	"terrarium-grpc-gateway/pkg/terrarium"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 
 	"google.golang.org/grpc"
 )
@@ -15,10 +15,10 @@ type StorageService struct {
 	services.UnimplementedStorageServer
 }
 
-func (s *StorageService) UploadSourceZip (server *terrarium.UploadSourceZipChunkRequest) error {
+func (s *StorageService) UploadSourceZip (server services.Storage_UploadSourceZipServer) error {
 	return nil
 }
-func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server *services.Storage_DownloadSourceZipServer) error {
+func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server services.Storage_DownloadSourceZipServer) error {
 	return nil
 }
 
