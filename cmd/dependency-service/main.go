@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"terrarium-grpc-gateway/internal/services"
-	"terrarium-grpc-gateway/pkg/terrarium"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 
 	"google.golang.org/grpc"
 )
@@ -24,11 +24,11 @@ func (s *DependencyService) RegisterContainerDependencies(ctx context.Context, r
 	return nil, nil
 }
 
-func (s *DependencyService) RetrieveContainerDependencies(ctx context.Context, request *terrarium.RetrieveContainerDependenciesRequest) (stream *terrarium.ContainerDependenciesResponse) {
+func (s *DependencyService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server services.DependencyResolver_RetrieveContainerDependenciesServer) error {
 	return nil
 }
 
-func (s *DependencyService) RetrieveModuleDependencies(ctx context.Context, request *terrarium.RetrieveModuleDependenciesRequest) (stream *terrarium.ModuleDependenciesResponse) {
+func (s *DependencyService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server services.DependencyResolver_RetrieveModuleDependenciesServer) error {
 	return nil
 }
 
