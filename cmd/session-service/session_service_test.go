@@ -5,6 +5,7 @@ import (
 	"terrarium-grpc-gateway/internal/services"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
@@ -15,6 +16,7 @@ type fakeDynamoDB struct {
 	err                  error
 	numberOfPutItemCalls int
 	tableName            *string
+	impl                 func(fd *fakeDynamoDB, item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error)
 }
 
 func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
@@ -47,8 +49,8 @@ func TestBeginVersion(t *testing.T) {
 		if response == nil {
 			t.Errorf("Expected response, got nil.")
 		} else {
-			if response.GetSessionKey() != "123" {
-				t.Errorf("Expected response status %v, got %v", "123", response.GetSessionKey())
+			if response.GetSessionKey() == "" {
+				t.Errorf("Expected session key to not be an empty string, got empty string")
 			}
 		}
 
@@ -61,6 +63,39 @@ func TestBeginVersion(t *testing.T) {
 		} else {
 			if *fd.tableName != "terrarium-module-session" {
 				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-session", *fd.tableName)
+			}
+		}
+	})
+}
+
+func TestBeginVersionE2E(t *testing.T) {
+	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
+		sess := session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))
+
+		svc := dynamodb.New(sess)
+
+		sessionService := &SessionService{
+			db: svc,
+		}
+		request := services.BeginVersionRequest{
+			Module: &terrarium.VersionedModule{
+				Name:    "test",
+				Version: "v1.0.0",
+			},
+		}
+		response, err := sessionService.BeginVersion(context.TODO(), &request)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if response == nil {
+			t.Errorf("Expected response, got nil.")
+		} else {
+			if response.GetSessionKey() == "" {
+				t.Errorf("Expected session key to not be an empty string, got empty string")
 			}
 		}
 	})

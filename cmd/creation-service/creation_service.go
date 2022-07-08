@@ -5,11 +5,16 @@ import (
 	"terrarium-grpc-gateway/internal/services"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/google/uuid"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+)
+
+const (
+	tableName = "terrarium-module-stream"
 )
 
 type CreationService struct {
@@ -22,6 +27,7 @@ type ModuleStream struct {
 	Name        string      `json:"name" bson:"name" dynamodbav:"name"`
 	Description string      `json:"description" bson:"description" dynamodbav:"description"`
 	SourceUrl   string      `json:"source_url" bson:"source_url" dynamodbav:"source_url"`
+	Maturity    string      `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
@@ -32,39 +38,38 @@ func (s *CreationService) SetupModule(ctx context.Context, request *services.Set
 		Name:        request.GetName(),
 		Description: request.GetDescription(),
 		SourceUrl:   request.GetSourceUrl(),
+		Maturity:    request.GetMaturity().String(),
 		CreatedOn:   time.Now().UTC().String(),
 	}
 	av, err := dynamodbattribute.MarshalMap(ms)
 	if err != nil {
-		response := services.SetupModuleResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Something went wrong.",
-		}
-		return &response, nil
+		return Error("Failed to marshal module stream."), err
 	}
-
-	tableName := "terrarium-module-stream"
-	condition := "attribute_not_exists(SourceUrl)"
 
 	input := &dynamodb.PutItemInput{
 		Item:                av,
-		TableName:           &tableName,
-		ConditionExpression: &condition,
+		TableName:           aws.String(tableName),
+		ConditionExpression: aws.String("attribute_not_exists(source_url)"),
 	}
-
 	_, err = s.db.PutItem(input)
 
 	if err != nil {
-		response := services.SetupModuleResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Something went wrong.",
-		}
-		return &response, nil
+		return Error("Failed to setup module."), err
 	}
 
-	response := services.SetupModuleResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: "All is good",
+	return Ok("Module setup successfully."), nil
+}
+
+func Error(message string) *services.SetupModuleResponse {
+	return &services.SetupModuleResponse{
+		Status:        terrarium.Status_UNKNOWN_ERROR,
+		StatusMessage: message,
 	}
-	return &response, nil
+}
+
+func Ok(message string) *services.SetupModuleResponse {
+	return &services.SetupModuleResponse{
+		Status:        terrarium.Status_OK,
+		StatusMessage: message,
+	}
 }

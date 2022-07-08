@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
@@ -25,46 +27,254 @@ func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemO
 }
 
 func TestRegisterModuleDependencies(t *testing.T) {
-	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
+	t.Run("It creates record in module dependencies table", func(t *testing.T) {
+
 		fd := &fakeDynamoDB{}
 
 		dependencyService := &DependencyService{
 			db: fd,
 		}
 		modules := []*terrarium.VersionedModule{
-			&terrarium.VersionedModule{
+			{
 				Name:    "test",
 				Version: "v1.0.0",
+			},
+			{
+				Name:    "test2",
+				Version: "v1.1.0",
 			},
 		}
 		request := terrarium.RegisterModuleDependenciesRequest{
 			SessionKey: "123",
 			Modules:    modules,
 		}
-		_, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
+		response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		// if response == nil {
-		// 	t.Errorf("Expected response, got nil.")
-		// } else {
-		// 	if response.Status != terrarium.Status_OK {
-		// 		t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		// 	}
-		// }
+		if response == nil {
+			t.Errorf("Expected response, got nil.")
+		} else {
+			if response.Status != terrarium.Status_OK {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
+			}
+		}
 
-		// if fd.numberOfPutItemCalls != 1 {
-		// 	t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
-		// }
+		if fd.numberOfPutItemCalls != 1 {
+			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+		}
 
-		// if fd.tableName == nil {
-		// 	t.Errorf("Expected tableName, got nil.")
-		// } else {
-		// 	if *fd.tableName != "terrarium-module-stream" {
-		// 		t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
-		// 	}
-		// }
+		if fd.tableName == nil {
+			t.Errorf("Expected tableName, got nil.")
+		} else {
+			if *fd.tableName != "terrarium-module-dependencies" {
+				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-dependencies", *fd.tableName)
+			}
+		}
+
+	})
+}
+
+func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
+	t.Run("It returns an error", func(t *testing.T) {
+
+		fd := &fakeDynamoDB{
+			err: errors.New("test"),
+		}
+
+		dependencyService := &DependencyService{
+			db: fd,
+		}
+		modules := []*terrarium.VersionedModule{
+			{
+				Name:    "test",
+				Version: "v1.0.0",
+			},
+			{
+				Name:    "test2",
+				Version: "v1.1.0",
+			},
+		}
+		request := terrarium.RegisterModuleDependenciesRequest{
+			SessionKey: "123",
+			Modules:    modules,
+		}
+		response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
+
+		if err == nil {
+			t.Error("Expected error, got nil")
+		} else {
+			if response.Status != terrarium.Status_UNKNOWN_ERROR {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
+			}
+		}
+
+		if fd.numberOfPutItemCalls != 1 {
+			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+		}
+
+		if fd.tableName == nil {
+			t.Errorf("Expected tableName, got nil.")
+		} else {
+			if *fd.tableName != "terrarium-module-dependencies" {
+				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-dependencies", *fd.tableName)
+			}
+		}
+
+	})
+}
+
+func TestRegisterModuleDependenciesE2E(t *testing.T) {
+	t.Run("It creates record in module dependencies table", func(t *testing.T) {
+		sess := session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))
+
+		svc := dynamodb.New(sess)
+
+		dependencyService := &DependencyService{
+			db: svc,
+		}
+		modules := []*terrarium.VersionedModule{
+			{
+				Name:    "test",
+				Version: "v1.0.0",
+			},
+			{
+				Name:    "test2",
+				Version: "v1.1.0",
+			},
+		}
+		request := terrarium.RegisterModuleDependenciesRequest{
+			SessionKey: "123",
+			Modules:    modules,
+		}
+		response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if response == nil {
+			t.Errorf("Expected response, got nil.")
+		} else {
+			if response.Status != terrarium.Status_OK {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
+			}
+		}
+	})
+}
+
+func TestRegisterContainerDependencies(t *testing.T) {
+	t.Run("It creates record in container dependencies table", func(t *testing.T) {
+
+		fd := &fakeDynamoDB{}
+
+		dependencyService := &DependencyService{
+			db: fd,
+		}
+		request := terrarium.RegisterContainerDependenciesRequest{
+			SessionKey:               "123",
+			ContainerImageReferences: []string{"test", "test2"},
+		}
+		response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if response == nil {
+			t.Errorf("Expected response, got nil.")
+		} else {
+			if response.Status != terrarium.Status_OK {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
+			}
+		}
+
+		if fd.numberOfPutItemCalls != 1 {
+			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+		}
+
+		if fd.tableName == nil {
+			t.Errorf("Expected tableName, got nil.")
+		} else {
+			if *fd.tableName != "terrarium-container-dependencies" {
+				t.Errorf("Expected tableName to be %s, got %s", "terrarium-container-dependencies", *fd.tableName)
+			}
+		}
+
+	})
+}
+
+func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
+	t.Run("It returns an error", func(t *testing.T) {
+
+		fd := &fakeDynamoDB{
+			err: errors.New("test"),
+		}
+
+		dependencyService := &DependencyService{
+			db: fd,
+		}
+		request := terrarium.RegisterContainerDependenciesRequest{
+			SessionKey:               "123",
+			ContainerImageReferences: []string{"test", "test2"},
+		}
+		response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+
+		if err == nil {
+			t.Error("Expected error, got nil")
+		} else {
+			if response.Status != terrarium.Status_UNKNOWN_ERROR {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
+			}
+		}
+
+		if fd.numberOfPutItemCalls != 1 {
+			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+		}
+
+		if fd.tableName == nil {
+			t.Errorf("Expected tableName, got nil.")
+		} else {
+			if *fd.tableName != "terrarium-container-dependencies" {
+				t.Errorf("Expected tableName to be %s, got %s", "terrarium-container-dependencies", *fd.tableName)
+			}
+		}
+
+	})
+}
+
+func TestRegisterContainerDependenciesE2E(t *testing.T) {
+	t.Run("It creates record in container dependencies table", func(t *testing.T) {
+		sess := session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))
+
+		svc := dynamodb.New(sess)
+
+		dependencyService := &DependencyService{
+			db: svc,
+		}
+
+		request := terrarium.RegisterContainerDependenciesRequest{
+			SessionKey:               "123",
+			ContainerImageReferences: []string{"test", "test2"},
+		}
+		response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if response == nil {
+			t.Errorf("Expected response, got nil.")
+		} else {
+			if response.Status != terrarium.Status_OK {
+				t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
+			}
+		}
 	})
 }
