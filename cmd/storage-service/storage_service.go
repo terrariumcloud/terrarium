@@ -30,7 +30,14 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 	for {
 		chunk, err := server.Recv()
 
+		if chunk != nil {
+			if _, err := f.Write(chunk.GetZipDataChunk()); err != nil {
+				return err
+			}
+		}
+
 		if err == io.EOF {
+			f.Seek(0, 0)
 			input := &s3.PutObjectInput{
 				Bucket: aws.String(bucket),
 				Key:    aws.String(fmt.Sprintf("%s.zip", chunk.GetSessionKey())),
@@ -48,8 +55,6 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 
 			return nil
 		}
-
-		_, err = f.Write(chunk.ZipDataChunk)
 
 		if err != nil {
 			server.SendAndClose(Error("Something went wrong."))

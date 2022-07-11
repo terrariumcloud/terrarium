@@ -18,6 +18,7 @@ type fakeUploadServer struct {
 	services.Storage_UploadSourceZipServer
 	response *terrarium.TransactionStatusResponse
 	err error
+	numberOfRecvCalls int
 }
 
 func (fus *fakeUploadServer) SendAndClose(response *terrarium.TransactionStatusResponse) error {
@@ -26,6 +27,7 @@ func (fus *fakeUploadServer) SendAndClose(response *terrarium.TransactionStatusR
 }
 
 func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipChunkRequest, error) {
+	fus.numberOfRecvCalls++
 	f, err := os.ReadFile("main.go")
 	if err != nil {
 		return nil, err
@@ -36,7 +38,11 @@ func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipChunkRequest, err
 		ZipDataChunk: f,
 	}
 
-	return chunk, io.EOF
+	if fus.numberOfRecvCalls > 1 {
+		return chunk, io.EOF
+	} else {
+		return chunk, nil
+	}
 }
 
 type fakeS3Service struct {
