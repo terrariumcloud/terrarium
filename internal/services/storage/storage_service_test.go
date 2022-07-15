@@ -1,9 +1,9 @@
 package storage
 
 import (
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"io"
 	"os"
-	"terrarium-grpc-gateway/internal/services"
 
 	"testing"
 
