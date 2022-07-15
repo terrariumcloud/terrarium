@@ -1,9 +1,8 @@
-module terrarium-grpc-gateway
+module github.com/terrariumcloud/terrarium-grpc-gateway
 
 go 1.18
 
 require (
-	github.com/terrariumcloud/terrarium-grpc-gateway v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0
 )
@@ -27,5 +26,3 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220712132514-bdd2acd4974d // indirect
 )
-
-replace github.com/terrariumcloud/terrarium-grpc-gateway => ./

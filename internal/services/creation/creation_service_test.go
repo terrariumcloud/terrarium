@@ -3,7 +3,7 @@ package creation
 import (
 	"context"
 	"errors"
-	"terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
