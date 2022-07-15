@@ -2,9 +2,9 @@ package storage
 
 import (
 	"fmt"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"io"
 	"os"
-	"terrarium-grpc-gateway/internal/services"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"

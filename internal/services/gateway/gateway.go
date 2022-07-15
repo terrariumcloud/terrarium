@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	"terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 
 	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 	"google.golang.org/grpc/credentials/insecure"

@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"log"
 	"net"
-	"terrarium-grpc-gateway/internal/services"
 
-	"terrarium-grpc-gateway/internal/services/storage"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/storage"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"

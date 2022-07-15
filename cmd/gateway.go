@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"terrarium-grpc-gateway/internal/services/gateway"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/gateway"
 
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"

@@ -3,7 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
-	"terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"

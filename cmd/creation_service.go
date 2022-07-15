@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"terrarium-grpc-gateway/internal/services"
-	"terrarium-grpc-gateway/internal/services/creation"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/creation"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"

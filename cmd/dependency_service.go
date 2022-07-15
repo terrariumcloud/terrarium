@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"terrarium-grpc-gateway/internal/services"
-	"terrarium-grpc-gateway/internal/services/dependency"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/dependency"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"

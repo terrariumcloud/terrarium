@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"terrarium-grpc-gateway/internal/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"

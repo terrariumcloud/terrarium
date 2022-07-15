@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"log"
 	"net"
-	"terrarium-grpc-gateway/internal/services"
 
-	"terrarium-grpc-gateway/internal/services/session"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/session"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
