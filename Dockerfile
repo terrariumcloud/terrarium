@@ -8,11 +8,11 @@ FROM golang:1.18.3 as build
 ENV CGO_ENABLED=0 GOOS=linux GARCH=amd64
 WORKDIR /workspace
 COPY . /workspace
-RUN go build -o terrarium-grpc-gateway -mod vendor
+RUN go build -o terrarium -mod vendor
 RUN apt-get update && \
     apt-get install -y ca-certificates
 
 FROM scratch
-COPY --from=build /workspace/terrarium-grpc-gateway /
+COPY --from=build /workspace/terrarium /
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-ENTRYPOINT [ "/terrarium-grpc-gateway" ]
+ENTRYPOINT [ "/terrarium" ]

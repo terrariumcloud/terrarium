@@ -29,7 +29,7 @@ func runGateway(cmd *cobra.Command, args []string) {
 	log.Println("Welcome to Terrarium GRPC Gateway")
 
 	a := fmt.Sprintf("%s:%s", address, port)
-	listener, err := net.Listen("tcp", a)
+	listener, err := net.Listen("tcp4", a)
 	if err != nil {
 		log.Fatalf("Failed to start Terrarium GRPC Gateway: %s", err.Error())
 	}
