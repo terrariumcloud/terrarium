@@ -1,4 +1,4 @@
-package main
+package session
 
 import (
 	"context"
@@ -16,7 +16,6 @@ type fakeDynamoDB struct {
 	err                  error
 	numberOfPutItemCalls int
 	tableName            *string
-	impl                 func(fd *fakeDynamoDB, item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error)
 }
 
 func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
@@ -32,7 +31,7 @@ func TestBeginVersion(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
 		sessionService := &SessionService{
-			db: fd,
+			Db: fd,
 		}
 		request := services.BeginVersionRequest{
 			Module: &terrarium.VersionedModule{
@@ -61,8 +60,8 @@ func TestBeginVersion(t *testing.T) {
 		if fd.tableName == nil {
 			t.Errorf("Expected tableName, got nil.")
 		} else {
-			if *fd.tableName != "terrarium-module-session" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-session", *fd.tableName)
+			if *fd.tableName != DefaultSessionTableName {
+				t.Errorf("Expected tableName to be %s, got %s", DefaultSessionTableName, *fd.tableName)
 			}
 		}
 	})
@@ -77,7 +76,7 @@ func TestBeginVersionE2E(t *testing.T) {
 		svc := dynamodb.New(sess)
 
 		sessionService := &SessionService{
-			db: svc,
+			Db: svc,
 		}
 		request := services.BeginVersionRequest{
 			Module: &terrarium.VersionedModule{

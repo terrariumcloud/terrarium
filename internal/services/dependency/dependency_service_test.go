@@ -1,4 +1,4 @@
-package main
+package dependency
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func TestRegisterModuleDependencies(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
 		dependencyService := &DependencyService{
-			db: fd,
+			Db: fd,
 		}
 		modules := []*terrarium.VersionedModule{
 			{
@@ -69,8 +69,8 @@ func TestRegisterModuleDependencies(t *testing.T) {
 		if fd.tableName == nil {
 			t.Errorf("Expected tableName, got nil.")
 		} else {
-			if *fd.tableName != "terrarium-module-dependencies" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-dependencies", *fd.tableName)
+			if *fd.tableName != DefaultModuleDependenciesTableName {
+				t.Errorf("Expected tableName to be %s, got %s", DefaultModuleDependenciesTableName, *fd.tableName)
 			}
 		}
 
@@ -85,7 +85,7 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 		}
 
 		dependencyService := &DependencyService{
-			db: fd,
+			Db: fd,
 		}
 		modules := []*terrarium.VersionedModule{
 			{
@@ -118,8 +118,8 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 		if fd.tableName == nil {
 			t.Errorf("Expected tableName, got nil.")
 		} else {
-			if *fd.tableName != "terrarium-module-dependencies" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-dependencies", *fd.tableName)
+			if *fd.tableName != DefaultModuleDependenciesTableName {
+				t.Errorf("Expected tableName to be %s, got %s", DefaultModuleDependenciesTableName, *fd.tableName)
 			}
 		}
 
@@ -135,7 +135,7 @@ func TestRegisterModuleDependenciesE2E(t *testing.T) {
 		svc := dynamodb.New(sess)
 
 		dependencyService := &DependencyService{
-			db: svc,
+			Db: svc,
 		}
 		modules := []*terrarium.VersionedModule{
 			{
@@ -173,7 +173,7 @@ func TestRegisterContainerDependencies(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
 		dependencyService := &DependencyService{
-			db: fd,
+			Db: fd,
 		}
 		request := terrarium.RegisterContainerDependenciesRequest{
 			SessionKey:               "123",
@@ -200,8 +200,8 @@ func TestRegisterContainerDependencies(t *testing.T) {
 		if fd.tableName == nil {
 			t.Errorf("Expected tableName, got nil.")
 		} else {
-			if *fd.tableName != "terrarium-container-dependencies" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-container-dependencies", *fd.tableName)
+			if *fd.tableName != DefaultContainerDependenciesTableName {
+				t.Errorf("Expected tableName to be %s, got %s", DefaultContainerDependenciesTableName, *fd.tableName)
 			}
 		}
 
@@ -216,7 +216,7 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 		}
 
 		dependencyService := &DependencyService{
-			db: fd,
+			Db: fd,
 		}
 		request := terrarium.RegisterContainerDependenciesRequest{
 			SessionKey:               "123",
@@ -239,8 +239,8 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 		if fd.tableName == nil {
 			t.Errorf("Expected tableName, got nil.")
 		} else {
-			if *fd.tableName != "terrarium-container-dependencies" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-container-dependencies", *fd.tableName)
+			if *fd.tableName != DefaultContainerDependenciesTableName {
+				t.Errorf("Expected tableName to be %s, got %s", DefaultContainerDependenciesTableName, *fd.tableName)
 			}
 		}
 
@@ -256,7 +256,7 @@ func TestRegisterContainerDependenciesE2E(t *testing.T) {
 		svc := dynamodb.New(sess)
 
 		dependencyService := &DependencyService{
-			db: svc,
+			Db: svc,
 		}
 
 		request := terrarium.RegisterContainerDependenciesRequest{

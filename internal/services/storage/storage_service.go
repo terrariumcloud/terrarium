@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"fmt"
@@ -12,13 +12,15 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
+var BucketName string
+
 const (
-	bucket = "terrarium-dev"
+	DefaultBucketName = "terrarium-dev"
 )
 
 type StorageService struct {
 	services.UnimplementedStorageServer
-	s3 s3iface.S3API
+	S3 s3iface.S3API
 }
 
 func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZipServer) error {
@@ -39,11 +41,11 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 		if err == io.EOF {
 			f.Seek(0, 0)
 			input := &s3.PutObjectInput{
-				Bucket: aws.String(bucket),
+				Bucket: aws.String(BucketName),
 				Key:    aws.String(fmt.Sprintf("%s.zip", chunk.GetSessionKey())),
 				Body:   f,
 			}
-			_, err := s.s3.PutObject(input)
+			_, err := s.S3.PutObject(input)
 			if err != nil {
 				return err
 			}

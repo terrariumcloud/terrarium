@@ -1,7 +1,8 @@
-package main
+package session
 
 import (
 	"context"
+	"fmt"
 	"terrarium-grpc-gateway/internal/services"
 	"time"
 
@@ -13,9 +14,17 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
+var SessionTableName string
+var PublishedModulesTableName string
+
+const (
+	DefaultSessionTableName          = "terrarium-module-session"
+	DefaultPublishedModulesTableName = "terrarium-published-modules"
+)
+
 type SessionService struct {
 	services.UnimplementedSessionManagerServer
-	db dynamodbiface.DynamoDBAPI
+	Db dynamodbiface.DynamoDBAPI
 }
 
 type ModuleSession struct {
@@ -45,14 +54,12 @@ func (s *SessionService) BeginVersion(ctx context.Context, request *services.Beg
 		return nil, err
 	}
 
-	tableName := "terrarium-module-session"
-
 	input := &dynamodb.PutItemInput{
 		Item:      av,
-		TableName: aws.String(tableName),
+		TableName: aws.String(SessionTableName),
 	}
 
-	_, err = s.db.PutItem(input)
+	_, err = s.Db.PutItem(input)
 
 	if err != nil {
 		return nil, err
@@ -66,48 +73,30 @@ func (s *SessionService) BeginVersion(ctx context.Context, request *services.Beg
 }
 
 func (s *SessionService) AbortVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
-	// call abort on storage and dependency service with session key
-	err := s.removeSessionKey(request.GetSessionKey())
-	if err != nil {
-		return &terrarium.TransactionStatusResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Failed to remove session key.",
-		}, err
+	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
+		return Error("Failed to remove session key."), err
 	}
-
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: "Version aborted.",
-	}, nil
+	return Ok("Version aborted."), nil
 }
 
 func (s *SessionService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
-
-	tableName := "terrarium-module-session"
 	getInput := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(request.GetSessionKey()),
 			},
 		},
-		TableName: aws.String(tableName),
+		TableName: aws.String(SessionTableName),
 	}
-	output, err := s.db.GetItem(getInput)
+	output, err := s.Db.GetItem(getInput)
 	if output.Item == nil {
-		return &terrarium.TransactionStatusResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Could not find '" + request.GetSessionKey() + "'",
-		}, err
+		return Error(fmt.Sprintf("Could not find '%s'", request.GetSessionKey())), err
 	}
 
 	item := ModuleSession{}
 
-	err = dynamodbattribute.UnmarshalMap(output.Item, &item)
-	if err != nil {
-		return &terrarium.TransactionStatusResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Failed to unmarshal record.",
-		}, err
+	if err := dynamodbattribute.UnmarshalMap(output.Item, &item); err != nil {
+		return Error("Failed to unmarshal record."), err
 	}
 
 	pm := PublishedModule{
@@ -118,53 +107,54 @@ func (s *SessionService) PublishVersion(ctx context.Context, request *services.T
 	}
 	av, err := dynamodbattribute.MarshalMap(pm)
 	if err != nil {
-		return &terrarium.TransactionStatusResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Failed to marshal record.",
-		}, err
+		return Error("Failed to marshal record."), err
 	}
-
-	tableName = "terrarium-published-modules"
 
 	putInput := &dynamodb.PutItemInput{
 		Item:      av,
-		TableName: &tableName,
+		TableName: &PublishedModulesTableName,
 	}
 
-	_, err = s.db.PutItem(putInput)
+	_, err = s.Db.PutItem(putInput)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.removeSessionKey(request.GetSessionKey())
-	if err != nil {
-		return &terrarium.TransactionStatusResponse{
-			Status:        terrarium.Status_UNKNOWN_ERROR,
-			StatusMessage: "Failed to remove session key.",
-		}, err
+	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
+		return Error("Failed to remove session key."), err
 	}
 
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: "Version published",
-	}, nil
+	return Ok("Version published"), nil
 }
 
 func (s *SessionService) removeSessionKey(sessionKey string) error {
-	tableName := "terrarium-module-session"
 	input := &dynamodb.DeleteItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(sessionKey),
 			},
 		},
-		TableName: aws.String(tableName),
+		TableName: aws.String(SessionTableName),
 	}
-	_, err := s.db.DeleteItem(input)
+	_, err := s.Db.DeleteItem(input)
 
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func Ok(message string) *terrarium.TransactionStatusResponse {
+	return &terrarium.TransactionStatusResponse{
+		Status:        terrarium.Status_OK,
+		StatusMessage: message,
+	}
+}
+
+func Error(message string) *terrarium.TransactionStatusResponse {
+	return &terrarium.TransactionStatusResponse{
+		Status:        terrarium.Status_UNKNOWN_ERROR,
+		StatusMessage: message,
+	}
 }

@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"io"
@@ -16,8 +16,8 @@ import (
 
 type fakeUploadServer struct {
 	services.Storage_UploadSourceZipServer
-	response *terrarium.TransactionStatusResponse
-	err error
+	response          *terrarium.TransactionStatusResponse
+	err               error
 	numberOfRecvCalls int
 }
 
@@ -60,7 +60,7 @@ func (f *fakeS3Service) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput
 func TestUploadSourceZip(t *testing.T) {
 	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
 		storageService := &StorageService{
-			s3: &fakeS3Service{},
+			S3: &fakeS3Service{},
 		}
 		fus := &fakeUploadServer{}
 
@@ -79,7 +79,7 @@ func TestUploadSourceZipE2E(t *testing.T) {
 			SharedConfigState: session.SharedConfigEnable,
 		}))
 		storageService := &StorageService{
-			s3: s3.New(sess),
+			S3: s3.New(sess),
 		}
 		fus := &fakeUploadServer{}
 

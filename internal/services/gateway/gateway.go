@@ -1,12 +1,10 @@
-package main
+package gateway
 
 import (
 	"context"
-	"flag"
-	"fmt"
 	"io"
 	"log"
-	"net"
+
 	"terrarium-grpc-gateway/internal/services"
 
 	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
@@ -14,6 +12,15 @@ import (
 
 	"google.golang.org/grpc"
 )
+
+const (
+	CreationServiceDefaultEndpoint   = "creation_service:3001"
+	SessionServiceDefaultEndpoint    = "session_service:3001"
+	DependencyServiceDefaultEndpoint = "dependency_service:3001"
+	StorageServiceDefaultEndpoint    = "storage_service:3001"
+)
+
+var CreationServiceEndpoint string
 
 const (
 	moduleCreationServiceEndpoint           = "module_creation:3000"
@@ -271,21 +278,4 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveMo
 			return err
 		}
 	}
-}
-
-func main() {
-	fmt.Println("Welcome to Terrarium GRPC API Gateway")
-	flag.Parse()
-	lis, err := net.Listen("tcp", "0.0.0.0:9443")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	var opts []grpc.ServerOption
-
-	gatewayServer := &TerrariumGrpcGateway{}
-	// Need TLS
-	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterPublisherServer(grpcServer, gatewayServer)
-	pb.RegisterConsumerServer(grpcServer, gatewayServer)
-	grpcServer.Serve(lis)
 }

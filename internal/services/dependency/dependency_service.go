@@ -1,4 +1,4 @@
-package main
+package dependency
 
 import (
 	"context"
@@ -11,14 +11,17 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
+var ModuleDependenciesTableName string
+var ContainerDependenciesTableName string
+
 const (
-	moduleDependenciesTableName    = "terrarium-module-dependencies"
-	containerDependenciesTableName = "terrarium-container-dependencies"
+	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies"
+	DefaultContainerDependenciesTableName = "terrarium-container-dependencies"
 )
 
 type DependencyService struct {
 	services.UnimplementedDependencyResolverServer
-	db dynamodbiface.DynamoDBAPI
+	Db dynamodbiface.DynamoDBAPI
 }
 
 type Dependencies struct {
@@ -33,7 +36,7 @@ func (s *DependencyService) RegisterModuleDependencies(ctx context.Context, requ
 	}
 
 	input := &dynamodb.PutItemInput{
-		TableName: aws.String(moduleDependenciesTableName),
+		TableName: aws.String(ModuleDependenciesTableName),
 		Item: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(request.GetSessionKey()),
@@ -44,7 +47,7 @@ func (s *DependencyService) RegisterModuleDependencies(ctx context.Context, requ
 		},
 	}
 
-	_, err = s.db.PutItem(input)
+	_, err = s.Db.PutItem(input)
 	if err != nil {
 		return Error("Failed to register module dependencies."), err
 	}
@@ -59,7 +62,7 @@ func (s *DependencyService) RegisterContainerDependencies(ctx context.Context, r
 	}
 
 	input := &dynamodb.PutItemInput{
-		TableName: aws.String(containerDependenciesTableName),
+		TableName: aws.String(ContainerDependenciesTableName),
 		Item: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(request.GetSessionKey()),
@@ -70,7 +73,7 @@ func (s *DependencyService) RegisterContainerDependencies(ctx context.Context, r
 		},
 	}
 
-	_, err = s.db.PutItem(input)
+	_, err = s.Db.PutItem(input)
 
 	if err != nil {
 		return Error("Failed to register container dependencies."), err

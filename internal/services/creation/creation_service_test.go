@@ -1,4 +1,4 @@
-package main
+package creation
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func TestSetupModule(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
 		creationService := &CreationService{
-			db: fd,
+			Db: fd,
 		}
 		request := services.SetupModuleRequest{
 			Name:        "test",
@@ -75,7 +75,7 @@ func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
 		}
 
 		creationService := &CreationService{
-			db: fd,
+			Db: fd,
 		}
 		request := services.SetupModuleRequest{
 			Name:        "test",
@@ -116,7 +116,7 @@ func TestSetupModuleE2E(t *testing.T) {
 		svc := dynamodb.New(sess)
 
 		creationService := &CreationService{
-			db: svc,
+			Db: svc,
 		}
 		request := services.SetupModuleRequest{
 			Name:        "test",

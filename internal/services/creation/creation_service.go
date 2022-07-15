@@ -1,9 +1,10 @@
-package main
+package creation
 
 import (
 	"context"
-	"terrarium-grpc-gateway/internal/services"
 	"time"
+
+	"terrarium-grpc-gateway/internal/services"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -13,13 +14,15 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
+var TableName string
+
 const (
-	tableName = "terrarium-module-stream"
+	DefaultTableName = "terrarium-module-stream"
 )
 
 type CreationService struct {
 	services.UnimplementedCreatorServer
-	db dynamodbiface.DynamoDBAPI
+	Db dynamodbiface.DynamoDBAPI
 }
 
 type ModuleStream struct {
@@ -48,10 +51,10 @@ func (s *CreationService) SetupModule(ctx context.Context, request *services.Set
 
 	input := &dynamodb.PutItemInput{
 		Item:                av,
-		TableName:           aws.String(tableName),
+		TableName:           aws.String(TableName),
 		ConditionExpression: aws.String("attribute_not_exists(source_url)"),
 	}
-	_, err = s.db.PutItem(input)
+	_, err = s.Db.PutItem(input)
 
 	if err != nil {
 		return Error("Failed to setup module."), err
