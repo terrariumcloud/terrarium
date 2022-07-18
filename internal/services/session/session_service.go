@@ -14,13 +14,15 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
-var SessionTableName string
-var PublishedModulesTableName string
-
 const (
-	DefaultSessionTableName          = "terrarium-module-session"
-	DefaultPublishedModulesTableName = "terrarium-published-modules"
+	DefaultSessionTableName              = "terrarium-module-session"
+	DefaultPublishedModulesTableName     = "terrarium-published-modules"
+	DefaultSessionServiceDefaultEndpoint = "session_service:3001"
 )
+
+var SessionTableName string = DefaultSessionTableName
+var PublishedModulesTableName string = DefaultPublishedModulesTableName
+var SessionServiceEndpoint string = DefaultSessionServiceDefaultEndpoint
 
 type SessionService struct {
 	services.UnimplementedSessionManagerServer

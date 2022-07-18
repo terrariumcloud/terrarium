@@ -14,11 +14,13 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
-var TableName string
-
 const (
-	DefaultTableName = "terrarium-module-stream"
+	DefaultTableName                      = "terrarium-module-stream"
+	DefaultCreationServiceDefaultEndpoint = "creation_service:3001"
 )
+
+var TableName string = DefaultTableName
+var CreationServiceEndpoint string = DefaultCreationServiceDefaultEndpoint
 
 type CreationService struct {
 	services.UnimplementedCreatorServer

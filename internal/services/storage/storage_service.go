@@ -12,11 +12,13 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
-var BucketName string
-
 const (
-	DefaultBucketName = "terrarium-dev"
+	DefaultBucketName                    = "terrarium-dev"
+	DefaultStorageServiceDefaultEndpoint = "storage_service:3001"
 )
+
+var BucketName string = DefaultBucketName
+var StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
 
 type StorageService struct {
 	services.UnimplementedStorageServer

@@ -26,10 +26,7 @@ var creationServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(creationServiceCmd)
-	creationServiceCmd.PersistentFlags().StringVarP(&creation.TableName, "table", "", creation.DefaultTableName, "Table name")
-	creationServiceCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key")
-	creationServiceCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key")
-	creationServiceCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region")
+	creationServiceCmd.Flags().StringVarP(&creation.TableName, "table", "", creation.DefaultTableName, "Table name")
 }
 
 func runCreationService(cmd *cobra.Command, args []string) {

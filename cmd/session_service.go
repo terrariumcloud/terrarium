@@ -21,11 +21,8 @@ var sessionServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sessionServiceCmd)
-	sessionServiceCmd.PersistentFlags().StringVarP(&session.SessionTableName, "session-table", "", session.DefaultSessionTableName, "Session table name")
-	sessionServiceCmd.PersistentFlags().StringVarP(&session.PublishedModulesTableName, "published-table", "", session.DefaultPublishedModulesTableName, "Published Module table name")
-	sessionServiceCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key")
-	sessionServiceCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key")
-	sessionServiceCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region")
+	sessionServiceCmd.Flags().StringVarP(&session.SessionTableName, "session-table", "", session.DefaultSessionTableName, "Session table name")
+	sessionServiceCmd.Flags().StringVarP(&session.PublishedModulesTableName, "published-table", "", session.DefaultPublishedModulesTableName, "Published Module table name")
 }
 
 func runSessionService(cmd *cobra.Command, args []string) {

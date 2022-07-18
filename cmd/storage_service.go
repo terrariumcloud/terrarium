@@ -26,10 +26,7 @@ var storageServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(storageServiceCmd)
-	storageServiceCmd.PersistentFlags().StringVarP(&storage.BucketName, "bucket", "", storage.DefaultBucketName, "Bucket name")
-	storageServiceCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key")
-	storageServiceCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key")
-	storageServiceCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region")
+	storageServiceCmd.Flags().StringVarP(&storage.BucketName, "bucket", "", storage.DefaultBucketName, "Bucket name")
 }
 
 func runStorageService(cmd *cobra.Command, args []string) {

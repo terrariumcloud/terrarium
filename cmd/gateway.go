@@ -5,7 +5,11 @@ import (
 	"log"
 	"net"
 
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/creation"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/dependency"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/gateway"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/session"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/storage"
 
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
@@ -21,8 +25,10 @@ var gatewayCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gatewayCmd)
-	gatewayCmd.Flags().StringVarP(&gateway.CreationServiceEndpoint, "creation-service", "c", gateway.CreationServiceDefaultEndpoint, "GRPC Endpoint for Creation Service")
-	//TODO: setup other services
+	gatewayCmd.Flags().StringVarP(&creation.CreationServiceEndpoint, "creation-service", "", creation.DefaultCreationServiceDefaultEndpoint, "GRPC Endpoint for Creation Service")
+	gatewayCmd.Flags().StringVarP(&dependency.DependencyServiceEndpoint, "dependency-service", "", dependency.DefaultDependencyServiceDefaultEndpoint, "GRPC Endpoint for Dependency Service")
+	gatewayCmd.Flags().StringVarP(&session.SessionServiceEndpoint, "session-service", "", session.DefaultSessionServiceDefaultEndpoint, "GRPC Endpoint for Session Service")
+	gatewayCmd.Flags().StringVarP(&storage.StorageServiceEndpoint, "storage-service", "", storage.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 }
 
 func runGateway(cmd *cobra.Command, args []string) {

@@ -11,13 +11,15 @@ import (
 	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
 )
 
-var ModuleDependenciesTableName string
-var ContainerDependenciesTableName string
-
 const (
-	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies"
-	DefaultContainerDependenciesTableName = "terrarium-container-dependencies"
+	DefaultModuleDependenciesTableName      = "terrarium-module-dependencies"
+	DefaultContainerDependenciesTableName   = "terrarium-container-dependencies"
+	DefaultDependencyServiceDefaultEndpoint = "dependency_service:3001"
 )
+
+var ModuleDependenciesTableName string = DefaultModuleDependenciesTableName
+var ContainerDependenciesTableName string = DefaultContainerDependenciesTableName
+var DependencyServiceEndpoint string = DefaultDependencyServiceDefaultEndpoint
 
 type DependencyService struct {
 	services.UnimplementedDependencyResolverServer

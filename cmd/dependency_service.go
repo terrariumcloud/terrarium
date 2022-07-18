@@ -21,11 +21,8 @@ var dependencyServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(dependencyServiceCmd)
-	creationServiceCmd.PersistentFlags().StringVarP(&dependency.ModuleDependenciesTableName, "module-table", "", dependency.DefaultModuleDependenciesTableName, "Module dependencies table name")
-	creationServiceCmd.PersistentFlags().StringVarP(&dependency.ContainerDependenciesTableName, "container-table", "", dependency.DefaultContainerDependenciesTableName, "Container dependencies table name")
-	dependencyServiceCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key")
-	dependencyServiceCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key")
-	dependencyServiceCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region")
+	dependencyServiceCmd.Flags().StringVarP(&dependency.ModuleDependenciesTableName, "module-table", "", dependency.DefaultModuleDependenciesTableName, "Module dependencies table name")
+	dependencyServiceCmd.Flags().StringVarP(&dependency.ContainerDependenciesTableName, "container-table", "", dependency.DefaultContainerDependenciesTableName, "Container dependencies table name")
 }
 
 func runDependencyService(cmd *cobra.Command, args []string) {

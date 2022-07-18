@@ -28,7 +28,7 @@ func (fus *fakeUploadServer) SendAndClose(response *terrarium.TransactionStatusR
 
 func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipChunkRequest, error) {
 	fus.numberOfRecvCalls++
-	f, err := os.ReadFile("main.go")
+	f, err := os.ReadFile("storage_service.go")
 	if err != nil {
 		return nil, err
 	}
