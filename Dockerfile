@@ -8,6 +8,7 @@ FROM golang:1.18.3 as build
 ENV CGO_ENABLED=0 GOOS=linux GARCH=amd64
 WORKDIR /workspace
 COPY . /workspace
+RUN go mod vendor
 RUN go build -o terrarium -mod vendor
 RUN apt-get update && \
     apt-get install -y ca-certificates
