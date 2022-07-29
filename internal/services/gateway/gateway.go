@@ -81,20 +81,25 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 		SessionKey: request.GetSessionKey(),
 	}
 	if request.GetAction() == pb.EndVersionRequest_DISCARD {
-		response, delegateError := client.AbortVersion(ctx, &delegatedRequest)
-		if delegateError != nil {
+		if response, delegateError := client.AbortVersion(ctx, &delegatedRequest); delegateError != nil {
 			log.Printf("AbortVersion remote call failed: %v", delegateError)
 			return nil, delegateError
 		} else {
 			return response, nil
 		}
-	}
-	if response, delegateError := client.PublishVersion(ctx, &delegatedRequest); delegateError != nil {
-		log.Printf("PublishVersion remote call failed: %v", delegateError)
-		client.AbortVersion(ctx, &delegatedRequest)
-		return nil, err
+	} else if request.GetAction() == pb.EndVersionRequest_PUBLISH {
+		if response, delegateError := client.PublishVersion(ctx, &delegatedRequest); delegateError != nil {
+			log.Printf("PublishVersion remote call failed: %v", delegateError)
+			return nil, delegateError
+		} else {
+			if _, delegateError = client.AbortVersion(ctx, &delegatedRequest); delegateError != nil {
+				log.Print("Failed to clean up session after version published.")
+				return nil, delegateError
+			}
+			return response, nil
+		}
 	} else {
-		return response, nil
+		return Error("Unknown action requested."), nil
 	}
 }
 
