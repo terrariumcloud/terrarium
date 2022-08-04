@@ -1,0 +1,110 @@
+version: '3.8'
+services:
+  gateway:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-gateway
+    environment:
+     - AWS_ACCESS_KEY
+     - AWS_SECRET_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50001:3001
+    networks:
+      - terrarium
+    command:
+      - gateway
+      - "--aws-access-key"
+      - "$AWS_ACCESS_KEY"
+      - "--aws-secret-key"
+      - "$AWS_SECRET_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
+    depends_on:
+      - creator
+      - session
+      - dependency
+      - storage
+  creator:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-creator
+    environment:
+     - AWS_ACCESS_KEY
+     - AWS_SECRET_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50002:3001
+    networks:
+      - terrarium
+    command:
+      - creation-service
+      - "--aws-access-key"
+      - "$AWS_ACCESS_KEY"
+      - "--aws-secret-key"
+      - "$AWS_SECRET_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
+  session:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-session
+    environment:
+     - AWS_ACCESS_KEY
+     - AWS_SECRET_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50003:3001
+    networks:
+      - terrarium
+    command:
+      - session-service
+      - "--aws-access-key"
+      - "$AWS_ACCESS_KEY"
+      - "--aws-secret-key"
+      - "$AWS_SECRET_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
+  dependency:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-dependency
+    environment:
+     - AWS_ACCESS_KEY
+     - AWS_SECRET_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50004:3001
+    networks:
+      - terrarium
+    command:
+      - dependency-service
+      - "--aws-access-key"
+      - "$AWS_ACCESS_KEY"
+      - "--aws-secret-key"
+      - "$AWS_SECRET_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
+  storage:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-storage
+    environment:
+     - AWS_ACCESS_KEY
+     - AWS_SECRET_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50005:3001
+    networks:
+      - terrarium
+    command:
+      - storage-service
+      - "--aws-access-key"
+      - "$AWS_ACCESS_KEY"
+      - "--aws-secret-key"
+      - "$AWS_SECRET_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
+networks:
+  terrarium:
+    name: terrarium

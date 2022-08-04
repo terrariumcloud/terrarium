@@ -32,22 +32,23 @@ func init() {
 func runCreationService(cmd *cobra.Command, args []string) {
 	log.Println("Starting Terrarium GRPC Creation Service")
 
-	a := fmt.Sprintf("%s:%s", address, port)
-	listener, err := net.Listen("tcp", a)
+	endpoint := fmt.Sprintf("%s:%s", address, port)
+	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start Terrarium GRPC Creation Service: %s", err.Error())
 	}
 
 	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+
 	dynamodb := createDynamoDbClient()
 	creationServiceServer := &creation.CreationService{
 		Db: dynamodb,
 	}
 
-	grpcServer := grpc.NewServer(opts...)
 	services.RegisterCreatorServer(grpcServer, creationServiceServer)
 
-	log.Printf("Listening at %s", a)
+	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %s", err.Error())
 	}
