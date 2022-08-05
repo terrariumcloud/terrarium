@@ -1,29 +1,27 @@
-package creation
+package services
 
 import (
 	"context"
 	"time"
-
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/google/uuid"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 const (
-	DefaultTableName                      = "terrarium-module-stream"
-	DefaultCreationServiceDefaultEndpoint = "creation_service:3001"
+	DefaultRegistrarTableName                       = "terrarium-module-stream"
+	DefaultRegistrarServiceDefaultEndpoint = "registrar_service:3001"
 )
 
-var TableName string = DefaultTableName
-var CreationServiceEndpoint string = DefaultCreationServiceDefaultEndpoint
+var RegistrarTableName string = DefaultRegistrarTableName
+var RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
 
-type CreationService struct {
-	services.UnimplementedCreatorServer
+type RegistrarService struct {
+	UnimplementedRegistrarServer
 	Db dynamodbiface.DynamoDBAPI
 }
 
@@ -36,7 +34,7 @@ type ModuleStream struct {
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
-func (s *CreationService) SetupModule(ctx context.Context, request *services.SetupModuleRequest) (*services.SetupModuleResponse, error) {
+func (s *RegistrarService) SetupModule(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
 
 	ms := ModuleStream{
 		ID:          uuid.NewString(),
@@ -53,7 +51,7 @@ func (s *CreationService) SetupModule(ctx context.Context, request *services.Set
 
 	input := &dynamodb.PutItemInput{
 		Item:                av,
-		TableName:           aws.String(TableName),
+		TableName:           aws.String(RegistrarTableName),
 		ConditionExpression: aws.String("attribute_not_exists(source_url)"),
 	}
 	_, err = s.Db.PutItem(input)
@@ -63,18 +61,4 @@ func (s *CreationService) SetupModule(ctx context.Context, request *services.Set
 	}
 
 	return Ok("Module setup successfully."), nil
-}
-
-func Error(message string) *services.SetupModuleResponse {
-	return &services.SetupModuleResponse{
-		Status:        terrarium.Status_UNKNOWN_ERROR,
-		StatusMessage: message,
-	}
-}
-
-func Ok(message string) *services.SetupModuleResponse {
-	return &services.SetupModuleResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: message,
-	}
 }

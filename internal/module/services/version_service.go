@@ -1,9 +1,8 @@
-package session
+package services
 
 import (
 	"context"
 	"fmt"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,21 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/google/uuid"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 const (
-	DefaultSessionTableName              = "terrarium-module-session"
+	DefaultVersionTableName              = "terrarium-module-version"
 	DefaultPublishedModulesTableName     = "terrarium-published-modules"
-	DefaultSessionServiceDefaultEndpoint = "session_service:3001"
+	DefaultVersionServiceDefaultEndpoint = "version_service:3001"
 )
 
-var SessionTableName string = DefaultSessionTableName
+var SessionTableName string = DefaultVersionTableName
 var PublishedModulesTableName string = DefaultPublishedModulesTableName
-var SessionServiceEndpoint string = DefaultSessionServiceDefaultEndpoint
+var SessionServiceEndpoint string = DefaultVersionServiceDefaultEndpoint
 
-type SessionService struct {
-	services.UnimplementedSessionManagerServer
+type VersionService struct {
+	UnimplementedVersionManagerServer
 	Db dynamodbiface.DynamoDBAPI
 }
 
@@ -43,7 +42,7 @@ type PublishedModule struct {
 	PublishedOn string `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
 }
 
-func (s *SessionService) BeginVersion(ctx context.Context, request *services.BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
+func (s *VersionService) BeginVersion(ctx context.Context, request *BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
 
 	ms := ModuleSession{
 		ID:        uuid.NewString(),
@@ -74,14 +73,14 @@ func (s *SessionService) BeginVersion(ctx context.Context, request *services.Beg
 	return &response, nil
 }
 
-func (s *SessionService) AbortVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *VersionService) AbortVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
 		return Error("Failed to remove session key."), err
 	}
 	return Ok("Version aborted."), nil
 }
 
-func (s *SessionService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *VersionService) PublishVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	getInput := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"_id": {
@@ -130,7 +129,7 @@ func (s *SessionService) PublishVersion(ctx context.Context, request *services.T
 	return Ok("Version published"), nil
 }
 
-func (s *SessionService) removeSessionKey(sessionKey string) error {
+func (s *VersionService) removeSessionKey(sessionKey string) error {
 	input := &dynamodb.DeleteItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"_id": {
@@ -145,18 +144,4 @@ func (s *SessionService) removeSessionKey(sessionKey string) error {
 		return err
 	}
 	return nil
-}
-
-func Ok(message string) *terrarium.TransactionStatusResponse {
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: message,
-	}
-}
-
-func Error(message string) *terrarium.TransactionStatusResponse {
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_UNKNOWN_ERROR,
-		StatusMessage: message,
-	}
 }

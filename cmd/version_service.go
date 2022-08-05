@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	"log"
 	"net"
-
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/session"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -21,8 +19,8 @@ var sessionServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sessionServiceCmd)
-	sessionServiceCmd.Flags().StringVarP(&session.SessionTableName, "session-table", "", session.DefaultSessionTableName, "Session table name")
-	sessionServiceCmd.Flags().StringVarP(&session.PublishedModulesTableName, "published-table", "", session.DefaultPublishedModulesTableName, "Published Module table name")
+	sessionServiceCmd.Flags().StringVarP(&services.SessionTableName, "session-table", "", services.DefaultVersionTableName, "Session table name")
+	sessionServiceCmd.Flags().StringVarP(&services.PublishedModulesTableName, "published-table", "", services.DefaultPublishedModulesTableName, "Published Module table name")
 }
 
 func runSessionService(cmd *cobra.Command, args []string) {
@@ -38,11 +36,11 @@ func runSessionService(cmd *cobra.Command, args []string) {
 	grpcServer := grpc.NewServer(opts...)
 
 	dynamodb := createDynamoDbClient()
-	sessionServiceServer := &session.SessionService{
+	sessionServiceServer := &services.VersionService{
 		Db: dynamodb,
 	}
 
-	services.RegisterSessionManagerServer(grpcServer, sessionServiceServer)
+	services.RegisterVersionManagerServer(grpcServer, sessionServiceServer)
 
 	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {

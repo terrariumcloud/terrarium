@@ -1,15 +1,14 @@
-package storage
+package services
 
 import (
 	"fmt"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"io"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 const (
@@ -21,11 +20,11 @@ var BucketName string = DefaultBucketName
 var StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
 
 type StorageService struct {
-	services.UnimplementedStorageServer
+	UnimplementedStorageServer
 	S3 s3iface.S3API
 }
 
-func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZipServer) error {
+func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
 	f, err := os.CreateTemp("/tmp", "upload*.zip")
 	if err != nil {
 		return err
@@ -67,20 +66,34 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 	}
 }
 
-func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server services.Storage_DownloadSourceZipServer) error {
+func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {
+
+	sessionKey := "123"
+
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(BucketName),
+		Key:    aws.String(sessionKey),
+	}
+
+	output, err := s.S3.GetObject(input)
+	if err != nil {
+		return err
+	}
+
+	buf := make([]byte, *output.ContentLength)
+
+	n, err := output.Body.Read(buf)
+	if n > 0 && err == io.EOF {
+		response := &terrarium.SourceZipResponse{
+			ZipDataChunk: buf,
+		}
+
+		if err := server.Send(response); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	return nil
-}
-
-func Ok(message string) *terrarium.TransactionStatusResponse {
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_OK,
-		StatusMessage: message,
-	}
-}
-
-func Error(message string) *terrarium.TransactionStatusResponse {
-	return &terrarium.TransactionStatusResponse{
-		Status:        terrarium.Status_UNKNOWN_ERROR,
-		StatusMessage: message,
-	}
 }

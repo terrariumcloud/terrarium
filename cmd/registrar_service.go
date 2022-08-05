@@ -5,8 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/creation"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -17,36 +16,36 @@ import (
 	"google.golang.org/grpc"
 )
 
-var creationServiceCmd = &cobra.Command{
-	Use:   "creation-service",
-	Short: "Starts the Terrarium GRPC Creation Service",
-	Long:  `Runs the GRPC Creation Service server.`,
-	Run:   runCreationService,
+var registrarServiceCmd = &cobra.Command{
+	Use:   "registrar-service",
+	Short: "Starts the Terrarium GRPC Registrar Service",
+	Long:  `Runs the GRPC Registrar Service server.`,
+	Run:   runRegistrarService,
 }
 
 func init() {
-	rootCmd.AddCommand(creationServiceCmd)
-	creationServiceCmd.Flags().StringVarP(&creation.TableName, "table", "", creation.DefaultTableName, "Table name")
+	rootCmd.AddCommand(registrarServiceCmd)
+	registrarServiceCmd.Flags().StringVarP(&services.RegistrarTableName, "table", "", services.DefaultRegistrarTableName, "Table name")
 }
 
-func runCreationService(cmd *cobra.Command, args []string) {
-	log.Println("Starting Terrarium GRPC Creation Service")
+func runRegistrarService(cmd *cobra.Command, args []string) {
+	log.Println("Starting Terrarium GRPC Registrar Service")
 
 	endpoint := fmt.Sprintf("%s:%s", address, port)
 	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
-		log.Fatalf("Failed to start Terrarium GRPC Creation Service: %s", err.Error())
+		log.Fatalf("Failed to start Terrarium GRPC Registrar Service: %s", err.Error())
 	}
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
 	dynamodb := createDynamoDbClient()
-	creationServiceServer := &creation.CreationService{
+	registrarServiceServer := &services.RegistrarService{
 		Db: dynamodb,
 	}
 
-	services.RegisterCreatorServer(grpcServer, creationServiceServer)
+	services.RegisterRegistrarServer(grpcServer, registrarServiceServer)
 
 	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {

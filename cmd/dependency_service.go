@@ -5,8 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/dependency"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -21,8 +20,8 @@ var dependencyServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(dependencyServiceCmd)
-	dependencyServiceCmd.Flags().StringVarP(&dependency.ModuleDependenciesTableName, "module-table", "", dependency.DefaultModuleDependenciesTableName, "Module dependencies table name")
-	dependencyServiceCmd.Flags().StringVarP(&dependency.ContainerDependenciesTableName, "container-table", "", dependency.DefaultContainerDependenciesTableName, "Container dependencies table name")
+	dependencyServiceCmd.Flags().StringVarP(&services.ModuleDependenciesTableName, "module-table", "", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
+	dependencyServiceCmd.Flags().StringVarP(&services.ContainerDependenciesTableName, "container-table", "", services.DefaultContainerDependenciesTableName, "Container dependencies table name")
 }
 
 func runDependencyService(cmd *cobra.Command, args []string) {
@@ -38,7 +37,7 @@ func runDependencyService(cmd *cobra.Command, args []string) {
 	grpcServer := grpc.NewServer(opts...)
 
 	dynamodb := createDynamoDbClient()
-	dependencyServiceServer := &dependency.DependencyService{
+	dependencyServiceServer := &services.DependencyService{
 		Db: dynamodb,
 	}
 

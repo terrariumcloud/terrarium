@@ -1,40 +1,38 @@
-package creation
+package services
 
 import (
 	"context"
 	"errors"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
-type fakeDynamoDB struct {
-	dynamodbiface.DynamoDBAPI
-	err                  error
-	numberOfPutItemCalls int
-	tableName            *string
-}
+// type fakeDynamoDB struct {
+// 	dynamodbiface.DynamoDBAPI
+// 	err                  error
+// 	numberOfPutItemCalls int
+// 	tableName            *string
+// }
 
-func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
-	fd.tableName = item.TableName
-	output := new(dynamodb.PutItemOutput)
-	output.Attributes = make(map[string]*dynamodb.AttributeValue)
-	fd.numberOfPutItemCalls++
-	return output, fd.err
-}
+// func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
+// 	fd.tableName = item.TableName
+// 	output := new(dynamodb.PutItemOutput)
+// 	output.Attributes = make(map[string]*dynamodb.AttributeValue)
+// 	fd.numberOfPutItemCalls++
+// 	return output, fd.err
+// }
 
 func TestSetupModule(t *testing.T) {
 	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
-		creationService := &CreationService{
+		creationService := &RegistrarService{
 			Db: fd,
 		}
-		request := services.SetupModuleRequest{
+		request := RegisterModuleRequest{
 			Name:        "test",
 			Description: "test desc",
 			SourceUrl:   "http://test.com",
@@ -74,10 +72,10 @@ func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
 			err: errors.New("test"),
 		}
 
-		creationService := &CreationService{
+		creationService := &RegistrarService{
 			Db: fd,
 		}
-		request := services.SetupModuleRequest{
+		request := RegisterModuleRequest{
 			Name:        "test",
 			Description: "test desc",
 			SourceUrl:   "http://test.com",
@@ -107,7 +105,7 @@ func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
 	})
 }
 
-func TestSetupModuleE2E(t *testing.T) {
+func IgnoreTestSetupModuleE2E(t *testing.T) {
 	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
 		sess := session.Must(session.NewSessionWithOptions(session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -115,10 +113,10 @@ func TestSetupModuleE2E(t *testing.T) {
 
 		svc := dynamodb.New(sess)
 
-		creationService := &CreationService{
+		creationService := &RegistrarService{
 			Db: svc,
 		}
-		request := services.SetupModuleRequest{
+		request := RegisterModuleRequest{
 			Name:        "test",
 			Description: "test desc",
 			SourceUrl:   "http://test.com",

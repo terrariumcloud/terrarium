@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	"log"
 	"net"
-
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/storage"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -26,7 +24,7 @@ var storageServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(storageServiceCmd)
-	storageServiceCmd.Flags().StringVarP(&storage.BucketName, "bucket", "", storage.DefaultBucketName, "Bucket name")
+	storageServiceCmd.Flags().StringVarP(&services.BucketName, "bucket", "", services.DefaultBucketName, "Bucket name")
 }
 
 func runStorageService(cmd *cobra.Command, args []string) {
@@ -42,7 +40,7 @@ func runStorageService(cmd *cobra.Command, args []string) {
 	grpcServer := grpc.NewServer(opts...)
 
 	s3 := createS3Client()
-	storageServiceServer := &storage.StorageService{
+	storageServiceServer := &services.StorageService{
 		S3: s3,
 	}
 

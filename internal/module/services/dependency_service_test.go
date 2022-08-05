@@ -1,4 +1,4 @@
-package dependency
+package services
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 type fakeDynamoDB struct {
@@ -24,6 +24,13 @@ func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemO
 	output.Attributes = make(map[string]*dynamodb.AttributeValue)
 	fd.numberOfPutItemCalls++
 	return output, fd.err
+}
+
+type FakeDependencyService struct {
+	DependencyResolver_RetrieveContainerDependenciesServer
+	response          *terrarium.TransactionStatusResponse
+	err               error
+	numberOfRecvCalls int
 }
 
 func TestRegisterModuleDependencies(t *testing.T) {
@@ -126,7 +133,7 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 	})
 }
 
-func TestRegisterModuleDependenciesE2E(t *testing.T) {
+func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 	t.Run("It creates record in module dependencies table", func(t *testing.T) {
 		sess := session.Must(session.NewSessionWithOptions(session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -247,7 +254,7 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 	})
 }
 
-func TestRegisterContainerDependenciesE2E(t *testing.T) {
+func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
 	t.Run("It creates record in container dependencies table", func(t *testing.T) {
 		sess := session.Must(session.NewSessionWithOptions(session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -278,3 +285,34 @@ func TestRegisterContainerDependenciesE2E(t *testing.T) {
 		}
 	})
 }
+
+// func TestRetrieveContainerDependencies(t *testing.T) {
+// 	t.Run("It retrieves container dependencies details", func(t *testing.T) {
+
+// 		fd := &fakeDynamoDB{}
+
+// 		dependencyService := &DependencyService{
+// 			Db: fd,
+// 		}
+
+// 		request := &terrarium.RetrieveContainerDependenciesRequest{}
+// 		fds := &FakeDependencyService{}
+
+// 		if err := dependencyService.RetrieveContainerDependencies(request, fds); err != nil {
+// 			t.Errorf("Expected no error, got %v", err)
+// 		}
+
+// 		// if fd.numberOfPutItemCalls != 1 {
+// 		// 	t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+// 		// }
+
+// 		// if fd.tableName == nil {
+// 		// 	t.Errorf("Expected tableName, got nil.")
+// 		// } else {
+// 		// 	if *fd.tableName != DefaultModuleDependenciesTableName {
+// 		// 		t.Errorf("Expected tableName to be %s, got %s", DefaultModuleDependenciesTableName, *fd.tableName)
+// 		// 	}
+// 		// }
+
+// 	})
+// }

@@ -5,14 +5,10 @@ import (
 	"log"
 	"net"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/creation"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/dependency"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/gateway"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/session"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/storage"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 
 	"github.com/spf13/cobra"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
 
@@ -25,10 +21,10 @@ var gatewayCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gatewayCmd)
-	gatewayCmd.Flags().StringVarP(&creation.CreationServiceEndpoint, "creation-service", "", creation.DefaultCreationServiceDefaultEndpoint, "GRPC Endpoint for Creation Service")
-	gatewayCmd.Flags().StringVarP(&dependency.DependencyServiceEndpoint, "dependency-service", "", dependency.DefaultDependencyServiceDefaultEndpoint, "GRPC Endpoint for Dependency Service")
-	gatewayCmd.Flags().StringVarP(&session.SessionServiceEndpoint, "session-service", "", session.DefaultSessionServiceDefaultEndpoint, "GRPC Endpoint for Session Service")
-	gatewayCmd.Flags().StringVarP(&storage.StorageServiceEndpoint, "storage-service", "", storage.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
+	gatewayCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar-service", "", services.DefaultRegistrarServiceDefaultEndpoint, "GRPC Endpoint for Creation Service")
+	gatewayCmd.Flags().StringVarP(&services.DependencyServiceEndpoint, "dependency-service", "", services.DefaultDependencyServiceDefaultEndpoint, "GRPC Endpoint for Dependency Service")
+	gatewayCmd.Flags().StringVarP(&services.SessionServiceEndpoint, "version-service", "", services.DefaultVersionServiceDefaultEndpoint, "GRPC Endpoint for Session Service")
+	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage-service", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 }
 
 func runGateway(cmd *cobra.Command, args []string) {
@@ -43,7 +39,7 @@ func runGateway(cmd *cobra.Command, args []string) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	gatewayServer := &gateway.TerrariumGrpcGateway{}
+	gatewayServer := &services.TerrariumGrpcGateway{}
 
 	terrarium.RegisterPublisherServer(grpcServer, gatewayServer)
 	terrarium.RegisterConsumerServer(grpcServer, gatewayServer)

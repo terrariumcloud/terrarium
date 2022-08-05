@@ -1,17 +1,11 @@
-package gateway
+package services
 
 import (
 	"context"
 	"io"
 	"log"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/creation"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/dependency"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/session"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/services/storage"
-
-	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium"
+	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
@@ -22,22 +16,22 @@ type TerrariumGrpcGateway struct {
 	pb.UnimplementedConsumerServer
 }
 
-func (s *TerrariumGrpcGateway) Configure(ctx context.Context, request *pb.ModuleConfigurationRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(creation.CreationServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (s *TerrariumGrpcGateway) Configure(ctx context.Context, request *pb.RegisterModuleRequest) (*pb.TransactionStatusResponse, error) {
+	conn, err := grpc.Dial(RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return Error("Internal server error, unable to connect to the module creation service"), nil
 	}
 	defer conn.Close()
-	client := services.NewCreatorClient(conn)
+	client := NewRegistrarClient(conn)
 
-	delegatedRequest := services.SetupModuleRequest{
+	delegatedRequest := RegisterModuleRequest{
 		Name:        request.GetName(),
 		Description: request.GetDescription(),
 		SourceUrl:   request.GetSourceUrl(),
 		Maturity:    request.GetMaturity(),
 	}
-	if response, delegateError := client.SetupModule(ctx, &delegatedRequest); delegateError != nil {
+	if response, delegateError := client.Register(ctx, &delegatedRequest); delegateError != nil {
 		log.Printf("SetupModule remote call failed: %v", delegateError)
 		return Error("Failed to execute SetupModule"), nil
 	} else {
@@ -49,15 +43,15 @@ func (s *TerrariumGrpcGateway) Configure(ctx context.Context, request *pb.Module
 }
 
 func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
-	conn, err := grpc.Dial(session.SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return nil, err
 	}
 	defer conn.Close()
-	client := services.NewSessionManagerClient(conn)
+	client := NewVersionManagerClient(conn)
 
-	delegatedRequest := services.BeginVersionRequest{
+	delegatedRequest := BeginVersionRequest{
 		Module: request.GetModule(),
 	}
 	if response, delegateError := client.BeginVersion(ctx, &delegatedRequest); delegateError != nil {
@@ -69,15 +63,15 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.Beg
 }
 
 func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVersionRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(session.SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
-		return Error("Internal server error, unable to connect to the module session service"), nil
+		return Error("Internal server error, unable to connect to the module registrar service"), nil
 	}
 	defer conn.Close()
-	client := services.NewSessionManagerClient(conn)
+	client := NewVersionManagerClient(conn)
 
-	delegatedRequest := services.TerminateVersionRequest{
+	delegatedRequest := TerminateVersionRequest{
 		SessionKey: request.GetSessionKey(),
 	}
 	if request.GetAction() == pb.EndVersionRequest_DISCARD {
@@ -99,13 +93,13 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 }
 
 func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
-	conn, err := grpc.Dial(storage.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return err
 	}
 	defer conn.Close()
-	client := services.NewStorageClient(conn)
+	client := NewStorageClient(conn)
 	uploadStream, err := client.UploadSourceZip(context.TODO())
 	if err != nil {
 		return err
@@ -128,13 +122,13 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 }
 
 func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRequest, server pb.Consumer_DownloadSourceZipServer) error {
-	conn, err := grpc.Dial(storage.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return err
 	}
 	defer conn.Close()
-	client := services.NewStorageClient(conn)
+	client := NewStorageClient(conn)
 	downloadStream, err := client.DownloadSourceZip(context.TODO(), &pb.DownloadSourceZipRequest{
 		ApiKey: request.GetApiKey(),
 		Module: request.GetModule(),
@@ -159,13 +153,13 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 }
 
 func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(dependency.DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return Error("Internal server error, unable to connect to the module dependency service"), nil
 	}
 	defer conn.Close()
-	client := services.NewDependencyResolverClient(conn)
+	client := NewDependencyResolverClient(conn)
 	response, err := client.RegisterModuleDependencies(ctx, request)
 	if err != nil {
 		return nil, err
@@ -174,13 +168,13 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 }
 
 func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(dependency.DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return Error("Internal server error, unable to connect to the module dependency service"), nil
 	}
 	defer conn.Close()
-	client := services.NewDependencyResolverClient(conn)
+	client := NewDependencyResolverClient(conn)
 	response, err := client.RegisterContainerDependencies(ctx, request)
 	if err != nil {
 		return nil, err
@@ -189,13 +183,13 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 }
 
 func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
-	conn, err := grpc.Dial(dependency.DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return err
 	}
 	defer conn.Close()
-	client := services.NewDependencyResolverClient(conn)
+	client := NewDependencyResolverClient(conn)
 	dependencyStream, err := client.RetrieveContainerDependencies(context.TODO(), request)
 	if err != nil {
 		return err
@@ -217,13 +211,13 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.Retriev
 }
 
 func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveModuleDependenciesRequest, server pb.Consumer_RetrieveModuleDependenciesServer) error {
-	conn, err := grpc.Dial(dependency.DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return err
 	}
 	defer conn.Close()
-	client := services.NewDependencyResolverClient(conn)
+	client := NewDependencyResolverClient(conn)
 	dependencyStream, err := client.RetrieveModuleDependencies(context.TODO(), request)
 	if err != nil {
 		return err
@@ -241,19 +235,5 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveMo
 			dependencyStream.CloseSend()
 			return err
 		}
-	}
-}
-
-func Ok(message string) *pb.TransactionStatusResponse {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_OK,
-		StatusMessage: message,
-	}
-}
-
-func Error(message string) *pb.TransactionStatusResponse {
-	return &pb.TransactionStatusResponse{
-		Status:        pb.Status_UNKNOWN_ERROR,
-		StatusMessage: message,
 	}
 }
