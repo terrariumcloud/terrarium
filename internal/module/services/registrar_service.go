@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DefaultRegistrarTableName                       = "terrarium-module-stream"
+	DefaultRegistrarTableName              = "terrarium-module-stream"
 	DefaultRegistrarServiceDefaultEndpoint = "registrar_service:3001"
 )
 
