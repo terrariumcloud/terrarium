@@ -51,7 +51,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 				return err
 			}
 
-			err = server.SendAndClose(Ok("Uploaded successfully."))
+			err = server.SendAndClose(ZipUploaded)
 			if err != nil {
 				return err
 			}
@@ -60,7 +60,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 		}
 
 		if err != nil {
-			server.SendAndClose(Error("Something went wrong."))
+			server.SendAndClose(ZipUploadFailed)
 			return err
 		}
 	}

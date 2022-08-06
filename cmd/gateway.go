@@ -15,7 +15,7 @@ import (
 var gatewayCmd = &cobra.Command{
 	Use:   "gateway",
 	Short: "Starts the Terrarium GRPC Gateway",
-	Long:  `Runs the GRPC gateway server for accessing Terrarium services.`,
+	Long:  "Runs the GRPC gateway server for accessing Terrarium services.",
 	Run:   runGateway,
 }
 

@@ -34,7 +34,7 @@ type ModuleStream struct {
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
-func (s *RegistrarService) SetupModule(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *RegistrarService) Register(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
 
 	ms := ModuleStream{
 		ID:          uuid.NewString(),
@@ -46,7 +46,7 @@ func (s *RegistrarService) SetupModule(ctx context.Context, request *RegisterMod
 	}
 	av, err := dynamodbattribute.MarshalMap(ms)
 	if err != nil {
-		return Error("Failed to marshal module stream."), err
+		return MarshalModuleError, err
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -57,8 +57,8 @@ func (s *RegistrarService) SetupModule(ctx context.Context, request *RegisterMod
 	_, err = s.Db.PutItem(input)
 
 	if err != nil {
-		return Error("Failed to setup module."), err
+		return ModuleNotRegistered, err
 	}
 
-	return Ok("Module setup successfully."), nil
+	return ModuleRegistered, nil
 }

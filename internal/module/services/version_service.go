@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -75,9 +74,9 @@ func (s *VersionService) BeginVersion(ctx context.Context, request *BeginVersion
 
 func (s *VersionService) AbortVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
-		return Error("Failed to remove session key."), err
+		return SessionKeyNotRemoved, err
 	}
-	return Ok("Version aborted."), nil
+	return VersionAborted, nil
 }
 
 func (s *VersionService) PublishVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
@@ -91,13 +90,13 @@ func (s *VersionService) PublishVersion(ctx context.Context, request *TerminateV
 	}
 	output, err := s.Db.GetItem(getInput)
 	if output.Item == nil {
-		return Error(fmt.Sprintf("Could not find '%s'", request.GetSessionKey())), err
+		return NotFound, err
 	}
 
 	item := ModuleSession{}
 
 	if err := dynamodbattribute.UnmarshalMap(output.Item, &item); err != nil {
-		return Error("Failed to unmarshal record."), err
+		return FailedToUnmarshal, err
 	}
 
 	pm := PublishedModule{
@@ -108,7 +107,7 @@ func (s *VersionService) PublishVersion(ctx context.Context, request *TerminateV
 	}
 	av, err := dynamodbattribute.MarshalMap(pm)
 	if err != nil {
-		return Error("Failed to marshal record."), err
+		return FailedToMarshal, err
 	}
 
 	putInput := &dynamodb.PutItemInput{
@@ -123,10 +122,10 @@ func (s *VersionService) PublishVersion(ctx context.Context, request *TerminateV
 	}
 
 	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
-		return Error("Failed to remove session key."), err
+		return SessionKeyNotRemoved, err
 	}
 
-	return Ok("Version published"), nil
+	return VersionPublished, nil
 }
 
 func (s *VersionService) removeSessionKey(sessionKey string) error {

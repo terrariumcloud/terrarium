@@ -56,10 +56,10 @@ func (s *DependencyService) RegisterModuleDependencies(ctx context.Context, requ
 
 	_, err = s.Db.PutItem(input)
 	if err != nil {
-		return Error("Failed to register module dependencies."), err
+		return RegisterModuleDependenciesFailed, err
 	}
 
-	return Ok("Module dependencies successfully registered."), nil
+	return ModuleDependenciesRegistered, nil
 }
 
 func (s *DependencyService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
@@ -83,10 +83,10 @@ func (s *DependencyService) RegisterContainerDependencies(ctx context.Context, r
 	_, err = s.Db.PutItem(input)
 
 	if err != nil {
-		return Error("Failed to register container dependencies."), err
+		return RegisterContainerDependenciesFailed, err
 	}
 
-	return Ok("Container dependencies successfully registered."), nil
+	return ContainerDependenciesRegistered, nil
 }
 
 func (s *DependencyService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyResolver_RetrieveContainerDependenciesServer) error {

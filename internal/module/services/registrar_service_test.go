@@ -38,7 +38,7 @@ func TestSetupModule(t *testing.T) {
 			SourceUrl:   "http://test.com",
 			Maturity:    terrarium.Maturity_ALPHA,
 		}
-		response, err := creationService.SetupModule(context.TODO(), &request)
+		response, err := creationService.Register(context.TODO(), &request)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -81,7 +81,7 @@ func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
 			SourceUrl:   "http://test.com",
 			Maturity:    terrarium.Maturity_ALPHA,
 		}
-		response, err := creationService.SetupModule(context.TODO(), &request)
+		response, err := creationService.Register(context.TODO(), &request)
 
 		if err == nil {
 			t.Error("Expected error, got nil")
@@ -122,7 +122,7 @@ func IgnoreTestSetupModuleE2E(t *testing.T) {
 			SourceUrl:   "http://test.com",
 			Maturity:    terrarium.Maturity_ALPHA,
 		}
-		response, _ := creationService.SetupModule(context.TODO(), &request)
+		response, _ := creationService.Register(context.TODO(), &request)
 
 		if response != nil {
 			if response.Status == terrarium.Status_OK {
