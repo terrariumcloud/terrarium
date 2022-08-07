@@ -21,10 +21,10 @@ var gatewayCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gatewayCmd)
-	gatewayCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar-service", "", services.DefaultRegistrarServiceDefaultEndpoint, "GRPC Endpoint for Creation Service")
-	gatewayCmd.Flags().StringVarP(&services.DependencyServiceEndpoint, "dependency-service", "", services.DefaultDependencyServiceDefaultEndpoint, "GRPC Endpoint for Dependency Service")
-	gatewayCmd.Flags().StringVarP(&services.SessionServiceEndpoint, "version-service", "", services.DefaultVersionServiceDefaultEndpoint, "GRPC Endpoint for Session Service")
-	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage-service", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
+	gatewayCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar", "", services.DefaultRegistrarServiceDefaultEndpoint, "GRPC Endpoint for Registrar Service")
+	gatewayCmd.Flags().StringVarP(&services.DependencyServiceEndpoint, "dependency-resolver", "", services.DefaultDependencyServiceDefaultEndpoint, "GRPC Endpoint for Dependency Resolver Service")
+	gatewayCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 }
 
 func runGateway(cmd *cobra.Command, args []string) {

@@ -1,4 +1,4 @@
-package services
+package services_test
 
 import (
 	"context"
@@ -7,32 +7,18 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
-// type fakeDynamoDB struct {
-// 	dynamodbiface.DynamoDBAPI
-// 	err                  error
-// 	numberOfPutItemCalls int
-// 	tableName            *string
-// }
-
-// func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
-// 	fd.tableName = item.TableName
-// 	output := new(dynamodb.PutItemOutput)
-// 	output.Attributes = make(map[string]*dynamodb.AttributeValue)
-// 	fd.numberOfPutItemCalls++
-// 	return output, fd.err
-// }
-
-func TestSetupModule(t *testing.T) {
+func TestRegisterModule(t *testing.T) {
 	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
 		fd := &fakeDynamoDB{}
 
-		creationService := &RegistrarService{
+		creationService := &services.RegistrarService{
 			Db: fd,
 		}
-		request := RegisterModuleRequest{
+		request := services.RegisterModuleRequest{
 			Name:        "test",
 			Description: "test desc",
 			SourceUrl:   "http://test.com",
@@ -66,16 +52,16 @@ func TestSetupModule(t *testing.T) {
 	})
 }
 
-func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
+func TestRegisterModuleWhenPutItemReturnsError(t *testing.T) {
 	t.Run("It returns an error", func(t *testing.T) {
 		fd := &fakeDynamoDB{
 			err: errors.New("test"),
 		}
 
-		creationService := &RegistrarService{
+		creationService := &services.RegistrarService{
 			Db: fd,
 		}
-		request := RegisterModuleRequest{
+		request := services.RegisterModuleRequest{
 			Name:        "test",
 			Description: "test desc",
 			SourceUrl:   "http://test.com",
@@ -105,31 +91,31 @@ func TestSetupModuleWhenPutItemReturnsError(t *testing.T) {
 	})
 }
 
-func IgnoreTestSetupModuleE2E(t *testing.T) {
-	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
-		sess := session.Must(session.NewSessionWithOptions(session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-		}))
+func IgnoreTestRegisterModuleE2E(t *testing.T) {
+	t.Parallel()
 
-		svc := dynamodb.New(sess)
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 
-		creationService := &RegistrarService{
-			Db: svc,
-		}
-		request := RegisterModuleRequest{
-			Name:        "test",
-			Description: "test desc",
-			SourceUrl:   "http://test.com",
-			Maturity:    terrarium.Maturity_ALPHA,
-		}
-		response, _ := creationService.Register(context.TODO(), &request)
+	svc := dynamodb.New(sess)
 
-		if response != nil {
-			if response.Status == terrarium.Status_OK {
-				t.Log("Created.")
-			} else {
-				t.Error("Failed.")
-			}
+	creationService := &services.RegistrarService{
+		Db: svc,
+	}
+	request := services.RegisterModuleRequest{
+		Name:        "test",
+		Description: "test desc",
+		SourceUrl:   "http://test.com",
+		Maturity:    terrarium.Maturity_ALPHA,
+	}
+	response, _ := creationService.Register(context.TODO(), &request)
+
+	if response != nil {
+		if response.Status == terrarium.Status_OK {
+			t.Log("Created.")
+		} else {
+			t.Error("Failed.")
 		}
-	})
+	}
 }

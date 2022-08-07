@@ -43,7 +43,7 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.Registe
 }
 
 func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
-	conn, err := grpc.Dial(SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
 		return nil, err
@@ -63,7 +63,7 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.Beg
 }
 
 func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVersionRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(SessionServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
 		return FailedToConnectToVersionManager, nil // should return err?

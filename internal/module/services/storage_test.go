@@ -1,4 +1,4 @@
-package services
+package services_test
 
 import (
 	"io"
@@ -10,11 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/google/uuid"
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 type fakeUploadServer struct {
-	Storage_UploadSourceZipServer
+	services.Storage_UploadSourceZipServer
 	response          *terrarium.TransactionStatusResponse
 	err               error
 	numberOfRecvCalls int
@@ -57,36 +58,36 @@ func (f *fakeS3Service) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput
 }
 
 func TestUploadSourceZip(t *testing.T) {
-	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
-		storageService := &StorageService{
-			S3: &fakeS3Service{},
-		}
-		fus := &fakeUploadServer{}
+	t.Parallel()
 
-		err := storageService.UploadSourceZip(fus)
-		if err != nil {
-			t.Errorf("Unable to upload file, %v", err)
-		} else {
-			t.Log("Successfully uploaded file.\n")
-		}
-	})
+	storageService := &services.StorageService{
+		S3: &fakeS3Service{},
+	}
+	fus := &fakeUploadServer{}
+
+	err := storageService.UploadSourceZip(fus)
+	if err != nil {
+		t.Errorf("Unable to upload file, %v", err)
+	} else {
+		t.Log("Successfully uploaded file.\n")
+	}
 }
 
 func IgnoreTestUploadSourceZipE2E(t *testing.T) {
-	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
-		sess := session.Must(session.NewSessionWithOptions(session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-		}))
-		storageService := &StorageService{
-			S3: s3.New(sess),
-		}
-		fus := &fakeUploadServer{}
+	t.Parallel()
 
-		err := storageService.UploadSourceZip(fus)
-		if err != nil {
-			t.Errorf("Unable to upload file, %v", err)
-		} else {
-			t.Log("Successfully uploaded file.\n")
-		}
-	})
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+	storageService := &services.StorageService{
+		S3: s3.New(sess),
+	}
+	fus := &fakeUploadServer{}
+
+	err := storageService.UploadSourceZip(fus)
+	if err != nil {
+		t.Errorf("Unable to upload file, %v", err)
+	} else {
+		t.Log("Successfully uploaded file.\n")
+	}
 }

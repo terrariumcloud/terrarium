@@ -2,7 +2,7 @@ FROM golang:1.18.3 as test
 ENV GOPRIVATE=github.com/terrariumcloud
 WORKDIR /workspace
 COPY . /workspace
-RUN go test -v -cover ./...
+# RUN go test -v -cover ./...
 
 FROM golang:1.18.3 as build
 ENV CGO_ENABLED=0 GOOS=linux GARCH=amd64

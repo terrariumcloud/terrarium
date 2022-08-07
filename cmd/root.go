@@ -1,7 +1,13 @@
 package cmd
 
 import (
+	"log"
+	"net"
+
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -24,12 +30,46 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&address, "address", "a", defaultAddress, "IP Address")
 	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", defaultPort, "Port number")
-	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key (required)")
+	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "k", "", "AWS Access Key (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-access-key")
-	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key (required)")
+	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "s", "", "AWS Secret Key (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-secret-key")
-	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region (required)")
+	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "r", "", "AWS Region (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-region")
+}
+
+func startService(name string, endpoint string, service interface{}) {
+	log.Printf("Starting %s", name)
+
+	listener, err := net.Listen("tcp", endpoint)
+	if err != nil {
+		log.Fatalf("Failed to start: %s", err.Error())
+	}
+
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+
+	register(grpcServer, service)
+
+	log.Printf("Listening at %s", endpoint)
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatalf("Failed: %s", err.Error())
+	}
+}
+
+func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
+	switch svc := service.(type) {
+	case services.RegistrarServer:
+		services.RegisterRegistrarServer(grpcServer, service.(*services.RegistrarService))
+	case services.VersionManagerServer:
+		services.RegisterVersionManagerServer(grpcServer, service.(*services.VersionManagerService))
+	case services.DependencyResolverServer:
+		services.RegisterDependencyResolverServer(grpcServer, service.(*services.DependencyResolverService))
+	case services.StorageServer:
+		services.RegisterStorageServer(grpcServer, service.(*services.StorageService))
+	default:
+		log.Fatalf("Failed to register unknown service type: %v", svc)
+	}
 }
 
 func Execute() {

@@ -13,7 +13,7 @@ import (
 
 const (
 	DefaultBucketName                    = "terrarium-dev"
-	DefaultStorageServiceDefaultEndpoint = "storage_service:3001"
+	DefaultStorageServiceDefaultEndpoint = "storage:3001"
 )
 
 var BucketName string = DefaultBucketName

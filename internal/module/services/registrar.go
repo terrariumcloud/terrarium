@@ -4,17 +4,18 @@ import (
 	"context"
 	"time"
 
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/google/uuid"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
 
 const (
 	DefaultRegistrarTableName              = "terrarium-module-stream"
-	DefaultRegistrarServiceDefaultEndpoint = "registrar_service:3001"
+	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
 )
 
 var RegistrarTableName string = DefaultRegistrarTableName

@@ -21,9 +21,6 @@ var (
 	SessionKeyNotRemoved = Error("Failed to remove session key.")
 	VersionPublished     = Ok("Version published")
 	VersionAborted       = Ok("Version aborted.")
-	NotFound             = Error("Could not find item.")
-	FailedToMarshal      = Error("Failed to marshal record.")
-	FailedToUnmarshal    = Error("Failed to unmarshal record.")
 
 	// DependencyResolver service
 	RegisterModuleDependenciesFailed    = Error("Failed to register module dependencies.")
