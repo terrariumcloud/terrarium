@@ -16,7 +16,7 @@ var versionManagerCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionManagerCmd)
-	versionManagerCmd.Flags().StringVarP(&services.VersionsTableName, "table", "", services.DefaultVersionsTableName, "Module versions table name")
+	versionManagerCmd.Flags().StringVarP(&services.VersionsTableName, "table", "t", services.DefaultVersionsTableName, "Module versions table name")
 }
 
 func runVersionManager(cmd *cobra.Command, args []string) {

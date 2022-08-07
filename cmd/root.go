@@ -6,6 +6,7 @@ import (
 	"net"
 
 	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -43,7 +44,7 @@ func startService(name string, service interface{}) {
 	log.Printf("Starting %s", name)
 
 	endpoint := fmt.Sprintf("%s:%s", address, port)
-	listener, err := net.Listen("tcp", endpoint)
+	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %s", err.Error())
 	}
@@ -60,7 +61,7 @@ func startService(name string, service interface{}) {
 }
 
 func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
-	switch svc := service.(type) {
+	switch t := service.(type) {
 	case services.RegistrarServer:
 		services.RegisterRegistrarServer(grpcServer, service.(*services.RegistrarService))
 	case services.VersionManagerServer:
@@ -69,8 +70,15 @@ func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
 		services.RegisterDependencyResolverServer(grpcServer, service.(*services.DependencyResolverService))
 	case services.StorageServer:
 		services.RegisterStorageServer(grpcServer, service.(*services.StorageService))
+	case terrarium.PublisherServer:
+		terrarium.RegisterPublisherServer(grpcServer, service.(*services.TerrariumGrpcGateway))
+		terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
+		// TODO: fallthrough doesn't seem to work with type switching
+		// fallthrough
+	// case terrarium.ConsumerServer:
+	// 	terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
 	default:
-		log.Fatalf("Failed to register unknown service type: %v", svc)
+		log.Fatalf("Failed to register unknown service type: %v", t)
 	}
 }
 
