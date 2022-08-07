@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net"
 
@@ -38,9 +39,10 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-func startService(name string, endpoint string, service interface{}) {
+func startService(name string, service interface{}) {
 	log.Printf("Starting %s", name)
 
+	endpoint := fmt.Sprintf("%s:%s", address, port)
 	listener, err := net.Listen("tcp", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %s", err.Error())

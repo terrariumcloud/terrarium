@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 
@@ -22,11 +20,10 @@ func init() {
 }
 
 func runDependencyResolver(cmd *cobra.Command, args []string) {
-	endpoint := fmt.Sprintf("%s:%s", address, port)
 
 	dependencyServiceServer := &services.DependencyResolverService{
 		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
 	}
 
-	startService("Terrarium GRPC Dependency Resolver service", endpoint, dependencyServiceServer)
+	startService("Terrarium GRPC Dependency Resolver service", dependencyServiceServer)
 }
