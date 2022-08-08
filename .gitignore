@@ -1,6 +1,6 @@
 ### Go template
 # Binaries for programs and plugins
-./terrarium
+/terrarium
 *.exe
 *.exe~
 *.dll
@@ -16,4 +16,3 @@
 # Dependency directories (remove the comment below to include it)
 vendor/
 .idea
-
