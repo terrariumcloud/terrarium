@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DefaultRegistrarTableName              = "terrarium-module-stream"
+	DefaultRegistrarTableName              = "terrarium-module-stream" //TODO: rename to terrarium-modules
 	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
 )
 
@@ -26,7 +26,7 @@ type RegistrarService struct {
 	Db dynamodbiface.DynamoDBAPI
 }
 
-type ModuleStream struct {
+type ModuleStream struct { //TODO: rename to Module
 	ID          interface{} `json:"id" bson:"_id" dynamodbav:"_id"`
 	Name        string      `json:"name" bson:"name" dynamodbav:"name"`
 	Description string      `json:"description" bson:"description" dynamodbav:"description"`
@@ -35,8 +35,8 @@ type ModuleStream struct {
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
+// Register new Module in Terrarium
 func (s *RegistrarService) Register(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
-
 	ms := ModuleStream{
 		ID:          uuid.NewString(),
 		Name:        request.GetName(),
@@ -45,17 +45,18 @@ func (s *RegistrarService) Register(ctx context.Context, request *RegisterModule
 		Maturity:    request.GetMaturity().String(),
 		CreatedOn:   time.Now().UTC().String(),
 	}
+
 	av, err := dynamodbattribute.MarshalMap(ms)
+	
 	if err != nil {
 		return MarshalModuleError, err
 	}
 
-	input := &dynamodb.PutItemInput{
-		Item:                av,
-		TableName:           aws.String(RegistrarTableName),
-		ConditionExpression: aws.String("attribute_not_exists(source_url)"),
+	in := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(RegistrarTableName),
 	}
-	_, err = s.Db.PutItem(input)
+	_, err = s.Db.PutItem(in)
 
 	if err != nil {
 		return ModuleNotRegistered, err

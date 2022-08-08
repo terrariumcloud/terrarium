@@ -82,6 +82,7 @@ func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
 	}
 }
 
+// Execute root command
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }

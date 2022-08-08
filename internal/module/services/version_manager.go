@@ -34,46 +34,49 @@ type ModuleVersion struct {
 	PublishedOn string `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
 }
 
+// Creates new Module Version with Version Manager service
 func (s *VersionManagerService) BeginVersion(ctx context.Context, request *BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
-
-	ms := ModuleVersion{
+	mv := ModuleVersion{
 		ID:        uuid.NewString(),
 		Name:      request.GetModule().GetName(),
 		Version:   request.GetModule().GetVersion(),
 		CreatedOn: time.Now().UTC().String(),
 	}
-	av, err := dynamodbattribute.MarshalMap(ms)
+
+	av, err := dynamodbattribute.MarshalMap(mv)
+
 	if err != nil {
 		return nil, err
 	}
 
-	input := &dynamodb.PutItemInput{
+	in := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(VersionsTableName),
 	}
 
-	_, err = s.Db.PutItem(input)
-
-	if err != nil {
+	if _, err = s.Db.PutItem(in); err != nil {
 		return nil, err
 	}
 
-	response := terrarium.BeginVersionResponse{
-		SessionKey: ms.ID,
+	response := &terrarium.BeginVersionResponse{
+		SessionKey: mv.ID,
 	}
 
-	return &response, nil
+	return response, nil
 }
 
+// Removes Module Version with Version Manager service
 func (s *VersionManagerService) AbortVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
 		return SessionKeyNotRemoved, err
 	}
+
 	return VersionAborted, nil
 }
 
+// Updates Module Version to published with Verison Manager service
 func (s *VersionManagerService) PublishVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
-	input := &dynamodb.UpdateItemInput{
+	in := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":p": {
 				N: aws.String(time.Now().UTC().String()),
@@ -89,8 +92,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 		UpdateExpression: aws.String("set publised_on = :p"),
 	}
 
-	_, err := s.Db.UpdateItem(input)
-	if err != nil {
+	if _, err := s.Db.UpdateItem(in); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +100,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 }
 
 func (s *VersionManagerService) removeSessionKey(sessionKey string) error {
-	input := &dynamodb.DeleteItemInput{
+	in := &dynamodb.DeleteItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(sessionKey),
@@ -106,10 +108,10 @@ func (s *VersionManagerService) removeSessionKey(sessionKey string) error {
 		},
 		TableName: aws.String(VersionsTableName),
 	}
-	_, err := s.Db.DeleteItem(input)
 
-	if err != nil {
+	if _, err := s.Db.DeleteItem(in); err != nil {
 		return err
 	}
+
 	return nil
 }
