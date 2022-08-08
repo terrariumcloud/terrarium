@@ -12,83 +12,83 @@ import (
 )
 
 func TestRegisterModule(t *testing.T) {
-	t.Run("It creates entry in DynamoDB", func(t *testing.T) {
-		fd := &fakeDynamoDB{}
+	t.Parallel()
 
-		creationService := &services.RegistrarService{
-			Db: fd,
-		}
-		request := services.RegisterModuleRequest{
-			Name:        "test",
-			Description: "test desc",
-			SourceUrl:   "http://test.com",
-			Maturity:    terrarium.Maturity_ALPHA,
-		}
-		response, err := creationService.Register(context.TODO(), &request)
+	fd := &fakeDynamoDB{}
 
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
+	creationService := &services.RegistrarService{
+		Db: fd,
+	}
+	request := services.RegisterModuleRequest{
+		Name:        "test",
+		Description: "test desc",
+		SourceUrl:   "http://test.com",
+		Maturity:    terrarium.Maturity_ALPHA,
+	}
+	response, err := creationService.Register(context.TODO(), &request)
 
-		if response == nil {
-			t.Errorf("Expected response, got nil.")
-		} else {
-			if response.Status != terrarium.Status_OK {
-				t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-			}
-		}
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
 
-		if fd.numberOfPutItemCalls != 1 {
-			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if response == nil {
+		t.Errorf("Expected response, got nil.")
+	} else {
+		if response.Status != terrarium.Status_OK {
+			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
 		}
+	}
 
-		if fd.tableName == nil {
-			t.Errorf("Expected tableName, got nil.")
-		} else {
-			if *fd.tableName != "terrarium-module-stream" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
-			}
+	if fd.numberOfPutItemCalls != 1 {
+		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	}
+
+	if fd.tableName == nil {
+		t.Errorf("Expected tableName, got nil.")
+	} else {
+		if *fd.tableName != "terrarium-module-stream" {
+			t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
 		}
-	})
+	}
 }
 
 func TestRegisterModuleWhenPutItemReturnsError(t *testing.T) {
-	t.Run("It returns an error", func(t *testing.T) {
-		fd := &fakeDynamoDB{
-			err: errors.New("test"),
-		}
+	t.Parallel()
 
-		creationService := &services.RegistrarService{
-			Db: fd,
-		}
-		request := services.RegisterModuleRequest{
-			Name:        "test",
-			Description: "test desc",
-			SourceUrl:   "http://test.com",
-			Maturity:    terrarium.Maturity_ALPHA,
-		}
-		response, err := creationService.Register(context.TODO(), &request)
+	fd := &fakeDynamoDB{
+		err: errors.New("test"),
+	}
 
-		if err == nil {
-			t.Error("Expected error, got nil")
-		} else {
-			if response.Status != terrarium.Status_UNKNOWN_ERROR {
-				t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
-			}
-		}
+	creationService := &services.RegistrarService{
+		Db: fd,
+	}
+	request := services.RegisterModuleRequest{
+		Name:        "test",
+		Description: "test desc",
+		SourceUrl:   "http://test.com",
+		Maturity:    terrarium.Maturity_ALPHA,
+	}
+	response, err := creationService.Register(context.TODO(), &request)
 
-		if fd.numberOfPutItemCalls != 1 {
-			t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if err == nil {
+		t.Error("Expected error, got nil")
+	} else {
+		if response.Status != terrarium.Status_UNKNOWN_ERROR {
+			t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
 		}
+	}
 
-		if fd.tableName == nil {
-			t.Errorf("Expected tableName, got nil.")
-		} else {
-			if *fd.tableName != "terrarium-module-stream" {
-				t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
-			}
+	if fd.numberOfPutItemCalls != 1 {
+		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	}
+
+	if fd.tableName == nil {
+		t.Errorf("Expected tableName, got nil.")
+	} else {
+		if *fd.tableName != "terrarium-module-stream" {
+			t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
 		}
-	})
+	}
 }
 
 func IgnoreTestRegisterModuleE2E(t *testing.T) {

@@ -28,7 +28,7 @@ func (fus *fakeUploadServer) SendAndClose(response *terrarium.TransactionStatusR
 
 func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipRequest, error) {
 	fus.numberOfRecvCalls++
-	f, err := os.ReadFile("storage_service.go")
+	f, err := os.ReadFile("storage.go")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func TestUploadSourceZip(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to upload file, %v", err)
 	} else {
-		t.Log("Successfully uploaded file.\n")
+		t.Log("Successfully uploaded file.")
 	}
 }
 
@@ -88,6 +88,6 @@ func IgnoreTestUploadSourceZipE2E(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to upload file, %v", err)
 	} else {
-		t.Log("Successfully uploaded file.\n")
+		t.Log("Successfully uploaded file.")
 	}
 }
