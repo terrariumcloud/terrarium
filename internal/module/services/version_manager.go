@@ -67,7 +67,16 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *Begin
 
 // Removes Module Version with Version Manager service
 func (s *VersionManagerService) AbortVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
-	if err := s.removeSessionKey(request.GetSessionKey()); err != nil {
+	in := &dynamodb.DeleteItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"_id": {
+				S: aws.String(request.GetSessionKey()),
+			},
+		},
+		TableName: aws.String(VersionsTableName),
+	}
+
+	if _, err := s.Db.DeleteItem(in); err != nil {
 		return SessionKeyNotRemoved, err
 	}
 
@@ -97,21 +106,4 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 	}
 
 	return VersionPublished, nil
-}
-
-func (s *VersionManagerService) removeSessionKey(sessionKey string) error {
-	in := &dynamodb.DeleteItemInput{
-		Key: map[string]*dynamodb.AttributeValue{
-			"_id": {
-				S: aws.String(sessionKey),
-			},
-		},
-		TableName: aws.String(VersionsTableName),
-	}
-
-	if _, err := s.Db.DeleteItem(in); err != nil {
-		return err
-	}
-
-	return nil
 }

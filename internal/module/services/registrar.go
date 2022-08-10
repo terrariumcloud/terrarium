@@ -47,7 +47,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *RegisterModule
 	}
 
 	av, err := dynamodbattribute.MarshalMap(ms)
-	
+
 	if err != nil {
 		return MarshalModuleError, err
 	}
@@ -56,9 +56,8 @@ func (s *RegistrarService) Register(ctx context.Context, request *RegisterModule
 		Item:      av,
 		TableName: aws.String(RegistrarTableName),
 	}
-	_, err = s.Db.PutItem(in)
-
-	if err != nil {
+	
+	if _, err = s.Db.PutItem(in); err != nil {
 		return ModuleNotRegistered, err
 	}
 

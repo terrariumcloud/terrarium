@@ -34,26 +34,27 @@ type ContainerDependencies struct {
 	Images string      `json:"images" bson:"images" dynamodbav:"images"`
 }
 
+// Registers Module dependencies in Terrarium
 func (s *DependencyResolverService) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
-	d, err := json.Marshal(request.Modules)
+	dep, err := json.Marshal(request.Modules)
+
 	if err != nil {
 		return nil, err
 	}
 
-	input := &dynamodb.PutItemInput{
+	in := &dynamodb.PutItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Item: map[string]*dynamodb.AttributeValue{
 			"_id": {
 				S: aws.String(request.GetSessionKey()),
 			},
 			"modules": {
-				B: d,
+				B: dep,
 			},
 		},
 	}
 
-	_, err = s.Db.PutItem(input)
-	if err != nil {
+	if _, err = s.Db.PutItem(in); err != nil {
 		return RegisterModuleDependenciesFailed, err
 	}
 

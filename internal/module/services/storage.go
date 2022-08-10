@@ -137,7 +137,7 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 				return err
 			}
 		}
-		
+
 		return nil
 	} else if err != nil {
 		return err
