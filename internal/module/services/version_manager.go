@@ -101,7 +101,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 
 	in := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":p": {
+			":published_on": {
 				S: aws.String(time.Now().UTC().String()),
 			},
 		},
@@ -111,8 +111,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 			},
 		},
 		TableName:        aws.String(VersionsTableName),
-		ReturnValues:     aws.String("UPDATED_NEW"),
-		UpdateExpression: aws.String("set publised_on = :p"),
+		UpdateExpression: aws.String("set published_on = :published_on"),
 	}
 
 	if _, err := s.Db.UpdateItem(in); err != nil {
@@ -124,56 +123,72 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 	return VersionPublished, nil
 }
 
+// GetModuleVersoinSchema returns CreateTableInput
+// that can be used to create table if it does not exist
+// func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
+// 	return &dynamodb.CreateTableInput{
+// 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+// 			{
+// 				AttributeName: aws.String("_id"),
+// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+// 			},
+// 			{
+// 				AttributeName: aws.String("name"),
+// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+// 			},
+// 			{
+// 				AttributeName: aws.String("version"),
+// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+// 			},
+// 		},
+// 		KeySchema: []*dynamodb.KeySchemaElement{
+// 			{
+// 				AttributeName: aws.String("name"),
+// 				KeyType:       aws.String("HASH"),
+// 			},
+// 			{
+// 				AttributeName: aws.String("version"),
+// 				KeyType:       aws.String("RANGE"),
+// 			},
+// 		},
+// 		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+// 			{
+// 				IndexName: aws.String("VersionIdIndex"),
+// 				KeySchema: []*dynamodb.KeySchemaElement{
+// 					{
+// 						AttributeName: aws.String("_id"),
+// 						KeyType:       aws.String("HASH"),
+// 					},
+// 				},
+// 				Projection: &dynamodb.Projection{
+// 					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
+// 				},
+// 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+// 					ReadCapacityUnits:  aws.Int64(1),
+// 					WriteCapacityUnits: aws.Int64(1),
+// 				},
+// 			},
+// 		},
+// 		TableName:   aws.String(table),
+// 		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
+// 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+// 			ReadCapacityUnits:  aws.Int64(1),
+// 			WriteCapacityUnits: aws.Int64(1),
+// 		},
+// 	}
+// }
 func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("version_id"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
-			{
-				AttributeName: aws.String("name"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
-			{
-				AttributeName: aws.String("version"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
-			{
-				AttributeName: aws.String("create_on"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
-			{
-				AttributeName: aws.String("published_on"),
+				AttributeName: aws.String("_id"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("name"),
+				AttributeName: aws.String("_id"),
 				KeyType:       aws.String("HASH"),
-			},
-			{
-				AttributeName: aws.String("version"),
-				KeyType:       aws.String("RANGE"),
-			},
-		},
-		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
-			{
-				IndexName: aws.String("VersionIdIndex"),
-				KeySchema: []*dynamodb.KeySchemaElement{
-					{
-						AttributeName: aws.String("version_id"),
-						KeyType:       aws.String("HASH"),
-					},
-				},
-				Projection: &dynamodb.Projection{
-					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
-				},
-				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-					ReadCapacityUnits:  aws.Int64(1),
-					WriteCapacityUnits: aws.Int64(1),
-				},
 			},
 		},
 		TableName:   aws.String(table),

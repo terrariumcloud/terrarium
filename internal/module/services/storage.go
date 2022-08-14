@@ -35,19 +35,24 @@ type StorageService struct {
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
 	//TODO: send file hash as metadata and verify
 	zip := []byte{}
+	var sessionKey []string
+	var sha256 []string
+
 	if md, ok := metadata.FromIncomingContext(server.Context()); ok {
-		apiKey := md["api_key"]
-		log.Println(apiKey)
+		sessionKey = md.Get("session_key")
+		sha256 = md["sha256"]
+		log.Println(sessionKey)
 	}
 
 	for {
 		req, err := server.Recv()
 
 		if err == io.EOF {
+			log.Println(sha256)
 			log.Printf("Received file with lenght: %v", len(zip))
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),
-				Key:    aws.String(fmt.Sprintf("%s.zip", "123")),
+				Key:    aws.String(fmt.Sprintf("%s.zip", sessionKey)),
 				Body:   bytes.NewReader(zip),
 			}
 
@@ -67,49 +72,6 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 		zip = append(zip, req.ZipDataChunk...)
 	}
 }
-
-// func (s *StorageService) UploadSourceZip2(server Storage_UploadSourceZipServer) error {
-// 	f, err := os.CreateTemp("/tmp", "upload*.zip")
-
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	for {
-// 		chunk, err := server.Recv()
-// 		var sessionKey  string
-
-// 		if chunk != nil {
-// 			sessionKey = chunk.GetSessionKey()
-// 			if _, err := f.Write(chunk.GetZipDataChunk()); err != nil {
-// 				return err
-// 			}
-// 		}
-
-// 		if err == io.EOF {
-// 			f.Seek(0, 0)
-// 			in := &s3.PutObjectInput{
-// 				Bucket: aws.String(BucketName),
-// 				Key:    aws.String(fmt.Sprintf("%s.zip", sessionKey)),
-// 				Body:   f,
-// 			}
-// 			if _, err := s.S3.PutObject(in); err != nil {
-// 				return err
-// 			}
-
-// 			if err = server.SendAndClose(ZipUploaded); err != nil {
-// 				return err
-// 			}
-
-// 			return nil
-// 		}
-
-// 		if err != nil {
-// 			server.SendAndClose(ZipUploadFailed)
-// 			return err
-// 		}
-// 	}
-// }
 
 // Download Source Zip from storage
 func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {

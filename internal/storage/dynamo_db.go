@@ -35,5 +35,6 @@ func InitialiseDynamoDb(tableName string, schema *dynamodb.CreateTableInput, db 
 		}
 		return err
 	}
+	log.Printf("DynamoDB Table %s already exists.", tableName)
 	return nil
 }

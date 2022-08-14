@@ -119,7 +119,7 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 
 	ctx := server.Context()
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		apiKey := md["api_key"]
+		apiKey := md["session_key"]
 		log.Println(apiKey)
 	}
 

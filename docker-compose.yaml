@@ -5,8 +5,8 @@ services:
     image: terrarium:dev
     container_name: terrarium-gateway
     environment:
-     - AWS_ACCESS_KEY
-     - AWS_SECRET_KEY
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
     ports:
       - 50001:3001
@@ -15,9 +15,9 @@ services:
     command:
       - gateway
       - "--aws-access-key"
-      - "$AWS_ACCESS_KEY"
+      - "$AWS_ACCESS_KEY_ID"
       - "--aws-secret-key"
-      - "$AWS_SECRET_KEY"
+      - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
     depends_on:
@@ -30,8 +30,8 @@ services:
     image: terrarium:dev
     container_name: terrarium-registrar-service
     environment:
-     - AWS_ACCESS_KEY
-     - AWS_SECRET_KEY
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
     ports:
       - 50002:3001
@@ -40,9 +40,9 @@ services:
     command:
       - registrar
       - "--aws-access-key"
-      - "$AWS_ACCESS_KEY"
+      - "$AWS_ACCESS_KEY_ID"
       - "--aws-secret-key"
-      - "$AWS_SECRET_KEY"
+      - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
   version_manager:
@@ -50,8 +50,8 @@ services:
     image: terrarium:dev
     container_name: terrarium-version-service
     environment:
-     - AWS_ACCESS_KEY
-     - AWS_SECRET_KEY
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
     ports:
       - 50003:3001
@@ -60,9 +60,9 @@ services:
     command:
       - version-manager
       - "--aws-access-key"
-      - "$AWS_ACCESS_KEY"
+      - "$AWS_ACCESS_KEY_ID"
       - "--aws-secret-key"
-      - "$AWS_SECRET_KEY"
+      - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
   dependency_resolver:
@@ -70,8 +70,8 @@ services:
     image: terrarium:dev
     container_name: terrarium-dependency-service
     environment:
-     - AWS_ACCESS_KEY
-     - AWS_SECRET_KEY
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
     ports:
       - 50004:3001
@@ -80,9 +80,9 @@ services:
     command:
       - dependency-resolver
       - "--aws-access-key"
-      - "$AWS_ACCESS_KEY"
+      - "$AWS_ACCESS_KEY_ID"
       - "--aws-secret-key"
-      - "$AWS_SECRET_KEY"
+      - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
   storage:
@@ -90,8 +90,8 @@ services:
     image: terrarium:dev
     container_name: terrarium-storage-service
     environment:
-     - AWS_ACCESS_KEY
-     - AWS_SECRET_KEY
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
     ports:
       - 50005:3001
@@ -100,9 +100,9 @@ services:
     command:
       - storage
       - "--aws-access-key"
-      - "$AWS_ACCESS_KEY"
+      - "$AWS_ACCESS_KEY_ID"
       - "--aws-secret-key"
-      - "$AWS_SECRET_KEY"
+      - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
 networks:
