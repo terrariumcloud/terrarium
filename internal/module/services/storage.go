@@ -39,7 +39,6 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 		apiKey := md["api_key"]
 		log.Println(apiKey)
 	}
-	
 
 	for {
 		req, err := server.Recv()

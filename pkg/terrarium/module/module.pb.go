@@ -243,7 +243,7 @@ type RegisterModuleRequest struct {
 	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Description string   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	SourceUrl   string   `protobuf:"bytes,4,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	Maturity    Maturity `protobuf:"varint,5,opt,name=maturity,proto3,enum=terrarium.module.Maturity" json:"maturity,omitempty"` // Additional metadata TBD when adding capabilities
+	Maturity    Maturity `protobuf:"varint,5,opt,name=maturity,proto3,enum=terrarium.module.Maturity" json:"maturity,omitempty"`
 }
 
 func (x *RegisterModuleRequest) Reset() {

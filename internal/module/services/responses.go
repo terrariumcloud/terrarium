@@ -19,7 +19,7 @@ var (
 
 	// VersionManager service
 	SessionKeyNotRemoved = Error("Failed to remove session key.")
-	VersionPublished     = Ok("Version published")
+	VersionPublished     = Ok("Version published.")
 	VersionAborted       = Ok("Version aborted.")
 
 	// DependencyResolver service

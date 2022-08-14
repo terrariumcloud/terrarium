@@ -6,12 +6,5 @@ import "pb/terrarium/module/module.proto";
 option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services";
 
 service Registrar {
-  rpc Register(RegisterModuleRequest) returns (terrarium.module.TransactionStatusResponse);
-}
-
-message RegisterModuleRequest {
-  string name = 1;
-  string description = 2;
-  string source_url= 3;
-  terrarium.module.Maturity maturity = 4;
+  rpc Register(terrarium.module.RegisterModuleRequest) returns (terrarium.module.TransactionStatusResponse);
 }

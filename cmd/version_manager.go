@@ -22,7 +22,9 @@ func init() {
 func runVersionManager(cmd *cobra.Command, args []string) {
 
 	versionManagerServer := &services.VersionManagerService{
-		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:  services.VersionsTableName,
+		Schema: services.GetModuleVersionsSchema(services.VersionsTableName),
 	}
 
 	startService("Terrarium GRPC Version Manager service", versionManagerServer)

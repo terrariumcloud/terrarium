@@ -6,6 +6,7 @@ import (
 	"net"
 
 	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"github.com/spf13/cobra"
@@ -46,28 +47,34 @@ func startService(name string, service interface{}) {
 	endpoint := fmt.Sprintf("%s:%s", address, port)
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
-		log.Fatalf("Failed to start: %s", err.Error())
+		log.Fatalf("Failed to start: %v", err)
 	}
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	register(grpcServer, service)
+	if err := register(grpcServer, service); err != nil {
+		log.Fatalf("Failed to start: %v", err)
+	}
 
 	// storage.InitialiseDynamoDb(tableName, schema, db)
 
 	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("Failed: %s", err.Error())
+		log.Fatalf("Failed: %v", err)
 	}
 }
 
-func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
+func register(grpcServer grpc.ServiceRegistrar, service interface{}) error {
 	switch t := service.(type) {
 	case services.RegistrarServer:
 		services.RegisterRegistrarServer(grpcServer, service.(*services.RegistrarService))
 	case services.VersionManagerServer:
-		services.RegisterVersionManagerServer(grpcServer, service.(*services.VersionManagerService))
+		vms := service.(*services.VersionManagerService)
+		services.RegisterVersionManagerServer(grpcServer, vms)
+		if err := storage.InitialiseDynamoDb(vms.Table, vms.Schema, vms.Db); err != nil {
+			return err
+		}
 	case services.DependencyResolverServer:
 		services.RegisterDependencyResolverServer(grpcServer, service.(*services.DependencyResolverService))
 	case services.StorageServer:
@@ -80,8 +87,9 @@ func register(grpcServer grpc.ServiceRegistrar, service interface{}) {
 	// case terrarium.ConsumerServer:
 	// 	terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
 	default:
-		log.Fatalf("Failed to register unknown service type: %v", t)
+		return fmt.Errorf("failed to register unknown service type: %v", t)
 	}
+	return nil
 }
 
 // Execute root command

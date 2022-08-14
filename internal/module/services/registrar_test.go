@@ -19,7 +19,7 @@ func TestRegisterModule(t *testing.T) {
 	creationService := &services.RegistrarService{
 		Db: fd,
 	}
-	request := services.RegisterModuleRequest{
+	request := terrarium.RegisterModuleRequest{
 		Name:        "test",
 		Description: "test desc",
 		SourceUrl:   "http://test.com",
@@ -62,7 +62,7 @@ func TestRegisterModuleWhenPutItemReturnsError(t *testing.T) {
 	creationService := &services.RegistrarService{
 		Db: fd,
 	}
-	request := services.RegisterModuleRequest{
+	request := terrarium.RegisterModuleRequest{
 		Name:        "test",
 		Description: "test desc",
 		SourceUrl:   "http://test.com",
@@ -103,7 +103,7 @@ func IgnoreTestRegisterModuleE2E(t *testing.T) {
 	creationService := &services.RegistrarService{
 		Db: svc,
 	}
-	request := services.RegisterModuleRequest{
+	request := terrarium.RegisterModuleRequest{
 		Name:        "test",
 		Description: "test desc",
 		SourceUrl:   "http://test.com",

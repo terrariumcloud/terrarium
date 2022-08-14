@@ -39,7 +39,7 @@ func NewDependencyResolverClient(cc grpc.ClientConnInterface) DependencyResolver
 
 func (c *dependencyResolverClient) RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
 	out := new(module.TransactionStatusResponse)
-	err := c.cc.Invoke(ctx, "/terrarium.services.module.DependencyResolver/RegisterModuleDependencies", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/terrarium.module.services.DependencyResolver/RegisterModuleDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (c *dependencyResolverClient) RegisterModuleDependencies(ctx context.Contex
 
 func (c *dependencyResolverClient) RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
 	out := new(module.TransactionStatusResponse)
-	err := c.cc.Invoke(ctx, "/terrarium.services.module.DependencyResolver/RegisterContainerDependencies", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/terrarium.module.services.DependencyResolver/RegisterContainerDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *dependencyResolverClient) RegisterContainerDependencies(ctx context.Con
 }
 
 func (c *dependencyResolverClient) RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequest, opts ...grpc.CallOption) (DependencyResolver_RetrieveContainerDependenciesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &DependencyResolver_ServiceDesc.Streams[0], "/terrarium.services.module.DependencyResolver/RetrieveContainerDependencies", opts...)
+	stream, err := c.cc.NewStream(ctx, &DependencyResolver_ServiceDesc.Streams[0], "/terrarium.module.services.DependencyResolver/RetrieveContainerDependencies", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (x *dependencyResolverRetrieveContainerDependenciesClient) Recv() (*module.
 }
 
 func (c *dependencyResolverClient) RetrieveModuleDependencies(ctx context.Context, in *module.RetrieveModuleDependenciesRequest, opts ...grpc.CallOption) (DependencyResolver_RetrieveModuleDependenciesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &DependencyResolver_ServiceDesc.Streams[1], "/terrarium.services.module.DependencyResolver/RetrieveModuleDependencies", opts...)
+	stream, err := c.cc.NewStream(ctx, &DependencyResolver_ServiceDesc.Streams[1], "/terrarium.module.services.DependencyResolver/RetrieveModuleDependencies", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func _DependencyResolver_RegisterModuleDependencies_Handler(srv interface{}, ctx
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/terrarium.services.module.DependencyResolver/RegisterModuleDependencies",
+		FullMethod: "/terrarium.module.services.DependencyResolver/RegisterModuleDependencies",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DependencyResolverServer).RegisterModuleDependencies(ctx, req.(*module.RegisterModuleDependenciesRequest))
@@ -187,7 +187,7 @@ func _DependencyResolver_RegisterContainerDependencies_Handler(srv interface{}, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/terrarium.services.module.DependencyResolver/RegisterContainerDependencies",
+		FullMethod: "/terrarium.module.services.DependencyResolver/RegisterContainerDependencies",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DependencyResolverServer).RegisterContainerDependencies(ctx, req.(*module.RegisterContainerDependenciesRequest))
@@ -241,7 +241,7 @@ func (x *dependencyResolverRetrieveModuleDependenciesServer) Send(m *module.Modu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DependencyResolver_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "terrarium.services.module.DependencyResolver",
+	ServiceName: "terrarium.module.services.DependencyResolver",
 	HandlerType: (*DependencyResolverServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

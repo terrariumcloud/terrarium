@@ -37,7 +37,7 @@ type ModuleStream struct { //TODO: rename to Module
 }
 
 // Register new Module in Terrarium
-func (s *RegistrarService) Register(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
 	log.Println("Registering new module.")
 
 	ms := ModuleStream{

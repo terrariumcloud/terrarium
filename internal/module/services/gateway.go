@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type TerrariumGrpcGateway struct {
@@ -22,29 +23,19 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.Registe
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
-		return FailedToConnectToRegistrar, nil // should return err?
+		return nil, err
 	}
 
 	defer conn.Close()
 
 	client := NewRegistrarClient(conn)
 
-	delegatedRequest := RegisterModuleRequest{
-		Name:        request.GetName(),
-		Description: request.GetDescription(),
-		SourceUrl:   request.GetSourceUrl(),
-		Maturity:    request.GetMaturity(),
-	}
-
-	log.Println("Forwarding register module request to Registrar service.")
-	if response, delegateError := client.Register(ctx, &delegatedRequest); delegateError != nil {
+	log.Println("Register module => Registrar")
+	if res, delegateError := client.Register(ctx, request); delegateError != nil {
 		log.Printf("Register module failed: %v", delegateError)
-		return FailedToExecuteRegister, nil // should return delegateError?
+		return nil, delegateError
 	} else {
-		return &pb.TransactionStatusResponse{
-			Status:        response.GetStatus(),
-			StatusMessage: response.GetStatusMessage(),
-		}, nil
+		return res, nil
 	}
 }
 
@@ -66,7 +57,7 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.Beg
 		Module: request.GetModule(),
 	}
 
-	log.Println("Forwarding new version request to Version Manager.")
+	log.Println("Create new version => Version Manager")
 	if res, delegateError := client.BeginVersion(ctx, &delegatedRequest); delegateError != nil {
 		log.Printf("BeginVersion remote call failed: %v", delegateError)
 		return nil, delegateError
@@ -82,7 +73,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
-		return FailedToConnectToVersionManager, nil // should return err?
+		return nil, err
 	}
 
 	defer conn.Close()
@@ -94,6 +85,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 	}
 
 	if request.GetAction() == pb.EndVersionRequest_DISCARD {
+		log.Println("Abort version => Version Manager")
 		if res, delegateError := client.AbortVersion(ctx, &delegatedRequest); delegateError != nil {
 			log.Printf("AbortVersion remote call failed: %v", delegateError)
 			return nil, delegateError
@@ -101,16 +93,16 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 			return res, nil
 		}
 	} else if request.GetAction() == pb.EndVersionRequest_PUBLISH {
+		log.Println("Publish version => Version Manager")
 		if res, delegateError := client.PublishVersion(ctx, &delegatedRequest); delegateError != nil {
 			log.Printf("PublishVersion remote call failed: %v", delegateError)
-			client.AbortVersion(ctx, &delegatedRequest)
 			return nil, delegateError
 		} else {
 			return res, nil
 		}
 	} else {
 		log.Printf("Unknown Version manager action requested: %v", request.GetAction())
-		return UnknownVersionManagerAction, nil
+		return UnknownVersionManagerAction, nil //TODO: should return errorrs.New()?
 	}
 }
 
@@ -125,35 +117,46 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 
 	defer conn.Close()
 
+	ctx := server.Context()
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		apiKey := md["api_key"]
+		log.Println(apiKey)
+	}
+
 	client := NewStorageClient(conn)
 
-	uploadStream, err := client.UploadSourceZip(context.TODO())
-	if err != nil {
-		return err
+	log.Println("Upload source zip => Storage")
+	uploadStream, upErr := client.UploadSourceZip(ctx) //TODO: doesn't send context for some reason
+	if upErr != nil {
+		return upErr
 	}
 
 	for {
-		chunk, err := server.Recv()
+		req, err := server.Recv()
 
 		if err == io.EOF {
-			uploadStream.CloseSend()
-			return server.SendAndClose(ArchiveUploaded)
+			res, upErr := uploadStream.CloseAndRecv()
+			if upErr != nil {
+				return upErr
+			}
+			return server.SendAndClose(res)
 		}
 
 		if err != nil {
 			return err
 		}
 
-		err = uploadStream.Send(chunk)
+		upErr = uploadStream.Send(req)
 
-		if err == io.EOF {
-			uploadStream.CloseSend()
+		if upErr == io.EOF {
+			if upErr := uploadStream.CloseSend(); upErr != nil {
+				return upErr
+			}
 			return server.SendAndClose(ArchiveUploaded)
 		}
-
-		if err != nil {
+		if upErr != nil {
 			server.SendAndClose(ArchiveUploadFailed)
-			return err
+			return upErr
 		}
 	}
 }
@@ -171,7 +174,7 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 
 	client := NewStorageClient(conn)
 
-	downloadStream, err := client.DownloadSourceZip(context.TODO(), &pb.DownloadSourceZipRequest{
+	downloadStream, err := client.DownloadSourceZip(server.Context(), &pb.DownloadSourceZipRequest{
 		ApiKey: request.GetApiKey(),
 		Module: request.GetModule(),
 	})
@@ -206,13 +209,14 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
-		return FailedToConnectToDependencyResolver, nil // should return also err?
+		return nil, err
 	}
 
 	defer conn.Close()
 
 	client := NewDependencyResolverClient(conn)
 
+	log.Println("Register module dependencies => Dependency resolver")
 	if res, err := client.RegisterModuleDependencies(ctx, request); err != nil {
 		return nil, err
 	} else {
@@ -226,13 +230,14 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
-		return FailedToConnectToDependencyResolver, nil // should return also err?
+		return nil, err
 	}
 
 	defer conn.Close()
 
 	client := NewDependencyResolverClient(conn)
 
+	log.Println("Register container dependencies => Dependency resolver")
 	if res, err := client.RegisterContainerDependencies(ctx, request); err != nil {
 		return nil, err
 	} else {
@@ -253,7 +258,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.Retriev
 
 	client := NewDependencyResolverClient(conn)
 
-	dependencyStream, err := client.RetrieveContainerDependencies(context.TODO(), request)
+	dependencyStream, err := client.RetrieveContainerDependencies(server.Context(), request)
 
 	if err != nil {
 		return err
@@ -292,7 +297,7 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveMo
 
 	client := NewDependencyResolverClient(conn)
 
-	dependencyStream, err := client.RetrieveModuleDependencies(context.TODO(), request)
+	dependencyStream, err := client.RetrieveModuleDependencies(server.Context(), request)
 
 	if err != nil {
 		return err

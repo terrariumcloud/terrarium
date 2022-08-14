@@ -64,7 +64,6 @@ message RegisterModuleRequest {
   string description = 3;
   string source_url= 4;
   Maturity maturity = 5;
-  // Additional metadata TBD when adding capabilities
 }
 
 message BeginVersionRequest {

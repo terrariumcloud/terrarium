@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegistrarClient interface {
-	Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
+	Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
 }
 
 type registrarClient struct {
@@ -34,9 +34,9 @@ func NewRegistrarClient(cc grpc.ClientConnInterface) RegistrarClient {
 	return &registrarClient{cc}
 }
 
-func (c *registrarClient) Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
+func (c *registrarClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
 	out := new(module.TransactionStatusResponse)
-	err := c.cc.Invoke(ctx, "/terrarium.services.module.Registrar/Register", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/terrarium.module.services.Registrar/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (c *registrarClient) Register(ctx context.Context, in *RegisterModuleReques
 // All implementations must embed UnimplementedRegistrarServer
 // for forward compatibility
 type RegistrarServer interface {
-	Register(context.Context, *RegisterModuleRequest) (*module.TransactionStatusResponse, error)
+	Register(context.Context, *module.RegisterModuleRequest) (*module.TransactionStatusResponse, error)
 	mustEmbedUnimplementedRegistrarServer()
 }
 
@@ -55,7 +55,7 @@ type RegistrarServer interface {
 type UnimplementedRegistrarServer struct {
 }
 
-func (UnimplementedRegistrarServer) Register(context.Context, *RegisterModuleRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedRegistrarServer) Register(context.Context, *module.RegisterModuleRequest) (*module.TransactionStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedRegistrarServer) mustEmbedUnimplementedRegistrarServer() {}
@@ -72,7 +72,7 @@ func RegisterRegistrarServer(s grpc.ServiceRegistrar, srv RegistrarServer) {
 }
 
 func _Registrar_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterModuleRequest)
+	in := new(module.RegisterModuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -81,10 +81,10 @@ func _Registrar_Register_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/terrarium.services.module.Registrar/Register",
+		FullMethod: "/terrarium.module.services.Registrar/Register",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistrarServer).Register(ctx, req.(*RegisterModuleRequest))
+		return srv.(RegistrarServer).Register(ctx, req.(*module.RegisterModuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -93,7 +93,7 @@ func _Registrar_Register_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Registrar_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "terrarium.services.module.Registrar",
+	ServiceName: "terrarium.module.services.Registrar",
 	HandlerType: (*RegistrarServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
