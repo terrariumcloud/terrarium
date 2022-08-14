@@ -33,14 +33,11 @@ type StorageService struct {
 
 // Upload Source Zip to storage
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
-	//TODO: send file hash as metadata and verify
 	zip := []byte{}
-	var sessionKey []string
-	var sha256 []string
+	var sessionKey string
 
 	if md, ok := metadata.FromIncomingContext(server.Context()); ok {
-		sessionKey = md.Get("session_key")
-		sha256 = md["sha256"]
+		sessionKey = md.Get("session_key")[0]
 		log.Println(sessionKey)
 	}
 
@@ -48,7 +45,6 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 		req, err := server.Recv()
 
 		if err == io.EOF {
-			log.Println(sha256)
 			log.Printf("Received file with lenght: %v", len(zip))
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),

@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
+	// "google.golang.org/grpc/metadata"
 )
 
 type TerrariumGrpcGateway struct {
@@ -118,15 +118,13 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 	defer conn.Close()
 
 	ctx := server.Context()
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		apiKey := md["session_key"]
-		log.Println(apiKey)
-	}
+	// md, _ := metadata.FromIncomingContext(ctx)
 
 	client := NewStorageClient(conn)
 
 	log.Println("Upload source zip => Storage")
-	uploadStream, upErr := client.UploadSourceZip(ctx) //TODO: doesn't send context for some reason
+	// ctx = metadata.NewOutgoingContext(ctx, md)
+	uploadStream, upErr := client.UploadSourceZip(ctx)
 	if upErr != nil {
 		return upErr
 	}
