@@ -54,6 +54,8 @@ func startService(name string, service interface{}) {
 
 	register(grpcServer, service)
 
+	// storage.InitialiseDynamoDb(tableName, schema, db)
+
 	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %s", err.Error())

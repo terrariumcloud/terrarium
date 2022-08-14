@@ -36,8 +36,9 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.Registe
 		Maturity:    request.GetMaturity(),
 	}
 
+	log.Println("Forwarding register module request to Registrar service.")
 	if response, delegateError := client.Register(ctx, &delegatedRequest); delegateError != nil {
-		log.Printf("Register module remote call failed: %v", delegateError)
+		log.Printf("Register module failed: %v", delegateError)
 		return FailedToExecuteRegister, nil // should return delegateError?
 	} else {
 		return &pb.TransactionStatusResponse{
@@ -65,6 +66,7 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.Beg
 		Module: request.GetModule(),
 	}
 
+	log.Println("Forwarding new version request to Version Manager.")
 	if res, delegateError := client.BeginVersion(ctx, &delegatedRequest); delegateError != nil {
 		log.Printf("BeginVersion remote call failed: %v", delegateError)
 		return nil, delegateError
@@ -143,6 +145,11 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 		}
 
 		err = uploadStream.Send(chunk)
+
+		if err == io.EOF {
+			uploadStream.CloseSend()
+			return server.SendAndClose(ArchiveUploaded)
+		}
 
 		if err != nil {
 			server.SendAndClose(ArchiveUploadFailed)

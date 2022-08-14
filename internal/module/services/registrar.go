@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 	"time"
 
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
@@ -37,6 +38,8 @@ type ModuleStream struct { //TODO: rename to Module
 
 // Register new Module in Terrarium
 func (s *RegistrarService) Register(ctx context.Context, request *RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
+	log.Println("Registering new module.")
+
 	ms := ModuleStream{
 		ID:          uuid.NewString(),
 		Name:        request.GetName(),
@@ -49,6 +52,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *RegisterModule
 	av, err := dynamodbattribute.MarshalMap(ms)
 
 	if err != nil {
+		log.Printf("Failed to marshal: %s", err.Error())
 		return MarshalModuleError, err
 	}
 
@@ -56,10 +60,12 @@ func (s *RegistrarService) Register(ctx context.Context, request *RegisterModule
 		Item:      av,
 		TableName: aws.String(RegistrarTableName),
 	}
-	
+
 	if _, err = s.Db.PutItem(in); err != nil {
+		log.Printf("Failed to put item: %s", err.Error())
 		return ModuleNotRegistered, err
 	}
 
+	log.Println("New module registered.")
 	return ModuleRegistered, nil
 }

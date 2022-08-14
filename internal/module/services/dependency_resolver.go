@@ -3,20 +3,25 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
 const (
 	DefaultModuleDependenciesTableName      = "terrarium-module-dependencies"
+	DefaultContainerDependenciesTableName   = "terrarium-container-dependencies" //TODO: remove?
 	DefaultDependencyServiceDefaultEndpoint = "dependency_resolver:3001"
 )
 
 var ModuleDependenciesTableName string = DefaultModuleDependenciesTableName
+var ContainerDependenciesTableName string = DefaultContainerDependenciesTableName //TODO: remove?
 var DependencyServiceEndpoint string = DefaultDependencyServiceDefaultEndpoint
 
 type DependencyResolverService struct {
@@ -62,83 +67,94 @@ func (s *DependencyResolverService) RegisterModuleDependencies(ctx context.Conte
 }
 
 func (s *DependencyResolverService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
-	// img, err := json.Marshal(request.ContainerImageReferences)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	img, err := json.Marshal(request.ContainerImageReferences)
+	if err != nil {
+		return nil, err
+	}
 
-	// input := &dynamodb.PutItemInput{
-	// 	TableName: aws.String(ContainerDependenciesTableName),
-	// 	Item: map[string]*dynamodb.AttributeValue{
-	// 		"_id": {
-	// 			S: aws.String(request.GetSessionKey()),
-	// 		},
-	// 		"images": {
-	// 			B: img,
-	// 		},
-	// 	},
-	// }
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(ContainerDependenciesTableName),
+		Item: map[string]*dynamodb.AttributeValue{
+			"_id": {
+				S: aws.String(request.GetSessionKey()),
+			},
+			"images": {
+				B: img,
+			},
+		},
+	}
 
-	// _, err = s.Db.PutItem(input)
+	_, err = s.Db.PutItem(input)
 
-	// if err != nil {
-	// 	return RegisterContainerDependenciesFailed, err
-	// }
+	if err != nil {
+		return RegisterContainerDependenciesFailed, err
+	}
 
 	return ContainerDependenciesRegistered, nil
 }
 
 func (s *DependencyResolverService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyResolver_RetrieveContainerDependenciesServer) error {
-	// getInput := &dynamodb.GetItemInput{
-	// 	Key: map[string]*dynamodb.AttributeValue{
-	// 		"_id": {
-	// 			S: aws.String(request.GetApiKey()),
-	// 		},
-	// 	},
-	// 	TableName: aws.String(ContainerDependenciesTableName),
-	// }
-	// output, err := s.Db.GetItem(getInput)
-	// if output.Item == nil {
-	// 	return err
-	// }
 
-	// item := ContainerDependencies{}
+	filter := expression.Name("Name").Equal(expression.Value(request.Module.Name))
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		return err
+	}
 
-	// if err := dynamodbattribute.UnmarshalMap(output.Item, &item); err != nil {
-	// 	return err
-	// }
+	sin := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		TableName:                 aws.String(VersionsTableName),
+	}
 
-	// getInput = &dynamodb.GetItemInput{
-	// 	Key: map[string]*dynamodb.AttributeValue{
-	// 		"_id": {
-	// 			S: aws.String(request.GetApiKey()),
-	// 		},
-	// 	},
-	// 	TableName: aws.String(VersionsTableName),
-	// }
-	// output, err = s.Db.GetItem(getInput)
-	// if output.Item == nil {
-	// 	return err
-	// }
+	sout, err := s.Db.Scan(sin)
 
-	// item2 := &ModuleSession{}
+	if sout.Items == nil {
+		return err
+	}
 
-	// if err := dynamodbattribute.UnmarshalMap(output.Item, &item2); err != nil {
-	// 	return err
-	// }
-	// origin := &terrarium.VersionedModule{
-	// 	Name:    item2.Name,
-	// 	Version: item2.Version,
-	// }
+	moduleVersion := ModuleVersion{}
 
-	// dependencies := &terrarium.ContainerDependenciesResponse{
-	// 	Origin:                   origin,
-	// 	ContainerImageReferences: []string{item.Images},
-	// }
+	if *sout.Count > 1 {
+		return errors.New("unexpected number of results returned")
+	}
 
-	// if err = server.Send(dependencies); err != nil {
-	// 	return err
-	// }
+	for _, i := range sout.Items {
+		if err := dynamodbattribute.UnmarshalMap(i, &moduleVersion); err != nil {
+			return err
+		}
+	}
+
+	in := &dynamodb.GetItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"_id": {
+				S: aws.String(moduleVersion.Version),
+			},
+		},
+		TableName: aws.String(ContainerDependenciesTableName),
+	}
+
+	out, err := s.Db.GetItem(in)
+
+	if out.Item == nil {
+		return err
+	}
+
+	dep := ContainerDependencies{}
+
+	if err := dynamodbattribute.UnmarshalMap(out.Item, &dep); err != nil {
+		return err
+	}
+
+	res := &terrarium.ContainerDependenciesResponse{
+		Origin:                   request.Module,
+		ContainerImageReferences: []string{dep.Images},
+	}
+
+	if err = server.Send(res); err != nil {
+		return err
+	}
 
 	return nil
 }
