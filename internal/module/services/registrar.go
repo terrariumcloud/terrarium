@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DefaultRegistrarTableName              = "terrarium-module-stream" //TODO: rename to terrarium-modules
+	DefaultRegistrarTableName              = "terrarium-modules"
 	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
 )
 
@@ -24,10 +24,12 @@ var RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
 
 type RegistrarService struct {
 	UnimplementedRegistrarServer
-	Db dynamodbiface.DynamoDBAPI
+	Db     dynamodbiface.DynamoDBAPI
+	Table  string
+	Schema *dynamodb.CreateTableInput
 }
 
-type ModuleStream struct { //TODO: rename to Module
+type Module struct {
 	ID          interface{} `json:"id" bson:"_id" dynamodbav:"_id"`
 	Name        string      `json:"name" bson:"name" dynamodbav:"name"`
 	Description string      `json:"description" bson:"description" dynamodbav:"description"`
@@ -40,7 +42,7 @@ type ModuleStream struct { //TODO: rename to Module
 func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
 	log.Println("Registering new module.")
 
-	ms := ModuleStream{
+	ms := Module{
 		ID:          uuid.NewString(),
 		Name:        request.GetName(),
 		Description: request.GetDescription(),
@@ -68,4 +70,28 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 
 	log.Println("New module registered.")
 	return ModuleRegistered, nil
+}
+
+// GetModulesSchema returns CreateTableInput
+func GetModulesSchema(table string) *dynamodb.CreateTableInput {
+	return &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("_id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("_id"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		TableName:   aws.String(table),
+		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(1),
+			WriteCapacityUnits: aws.Int64(1),
+		},
+	}
 }

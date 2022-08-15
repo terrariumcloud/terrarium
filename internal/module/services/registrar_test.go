@@ -46,8 +46,8 @@ func TestRegisterModule(t *testing.T) {
 	if fd.tableName == nil {
 		t.Errorf("Expected tableName, got nil.")
 	} else {
-		if *fd.tableName != "terrarium-module-stream" {
-			t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
+		if *fd.tableName != services.RegistrarTableName {
+			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, *fd.tableName)
 		}
 	}
 }
@@ -85,8 +85,8 @@ func TestRegisterModuleWhenPutItemReturnsError(t *testing.T) {
 	if fd.tableName == nil {
 		t.Errorf("Expected tableName, got nil.")
 	} else {
-		if *fd.tableName != "terrarium-module-stream" {
-			t.Errorf("Expected tableName to be %s, got %s", "terrarium-module-stream", *fd.tableName)
+		if *fd.tableName != services.RegistrarTableName {
+			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, *fd.tableName)
 		}
 	}
 }

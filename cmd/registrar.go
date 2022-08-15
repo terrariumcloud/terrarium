@@ -22,7 +22,9 @@ func init() {
 func runRegistrarService(cmd *cobra.Command, args []string) {
 
 	registrarServiceServer := &services.RegistrarService{
-		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:  services.RegistrarTableName,
+		Schema: services.GetModulesSchema(services.RegistrarTableName),
 	}
 
 	startService("Terrarium GRPC Registrar service", registrarServiceServer)

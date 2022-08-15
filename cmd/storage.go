@@ -22,7 +22,9 @@ func init() {
 func runStorageService(cmd *cobra.Command, args []string) {
 
 	storageServiceServer := &services.StorageService{
-		S3: storage.NewS3Client(awsAccessKey, awsSecretKey, awsRegion),
+		S3:         storage.NewS3Client(awsAccessKey, awsSecretKey, awsRegion),
+		BucketName: services.BucketName,
+		Region:     awsRegion,
 	}
 
 	startService("Terrarium GRPC Storage service", storageServiceServer)

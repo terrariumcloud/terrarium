@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-
 	"google.golang.org/grpc/metadata"
 )
 
@@ -28,7 +27,9 @@ var ChunkSize = DefaultChunkSize
 
 type StorageService struct {
 	UnimplementedStorageServer
-	S3 s3iface.S3API
+	S3         s3iface.S3API
+	BucketName string
+	Region     string
 }
 
 // Upload Source Zip to storage
@@ -38,14 +39,13 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 
 	if md, ok := metadata.FromIncomingContext(server.Context()); ok {
 		sessionKey = md.Get("session_key")[0]
-		log.Println(sessionKey)
 	}
 
 	for {
 		req, err := server.Recv()
 
 		if err == io.EOF {
-			log.Printf("Received file with lenght: %v", len(zip))
+			log.Printf("Received file with total lenght: %v", len(zip))
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),
 				Key:    aws.String(fmt.Sprintf("%s.zip", sessionKey)),
@@ -57,6 +57,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 				return err
 			}
 
+			log.Println("Source zip uploaded successfully.")
 			return server.SendAndClose(ZipUploaded)
 		}
 

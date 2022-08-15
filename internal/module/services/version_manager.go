@@ -123,7 +123,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 	return VersionPublished, nil
 }
 
-// GetModuleVersoinSchema returns CreateTableInput
+// GetModuleVersoinsSchema returns CreateTableInput
 // that can be used to create table if it does not exist
 // func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 // 	return &dynamodb.CreateTableInput{

@@ -68,17 +68,25 @@ func startService(name string, service interface{}) {
 func register(grpcServer grpc.ServiceRegistrar, service interface{}) error {
 	switch t := service.(type) {
 	case services.RegistrarServer:
-		services.RegisterRegistrarServer(grpcServer, service.(*services.RegistrarService))
+		r := service.(*services.RegistrarService)
+		services.RegisterRegistrarServer(grpcServer, r)
+		if err := storage.InitializeDynamoDb(r.Table, r.Schema, r.Db); err != nil {
+			return err
+		}
 	case services.VersionManagerServer:
 		vms := service.(*services.VersionManagerService)
 		services.RegisterVersionManagerServer(grpcServer, vms)
-		if err := storage.InitialiseDynamoDb(vms.Table, vms.Schema, vms.Db); err != nil {
+		if err := storage.InitializeDynamoDb(vms.Table, vms.Schema, vms.Db); err != nil {
 			return err
 		}
 	case services.DependencyResolverServer:
 		services.RegisterDependencyResolverServer(grpcServer, service.(*services.DependencyResolverService))
 	case services.StorageServer:
-		services.RegisterStorageServer(grpcServer, service.(*services.StorageService))
+		s := service.(*services.StorageService)
+		services.RegisterStorageServer(grpcServer, s)
+		if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
+			return err
+		}
 	case terrarium.PublisherServer:
 		terrarium.RegisterPublisherServer(grpcServer, service.(*services.TerrariumGrpcGateway))
 		terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))

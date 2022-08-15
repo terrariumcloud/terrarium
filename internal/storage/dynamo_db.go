@@ -18,12 +18,11 @@ func NewDynamoDbClient(key string, secret string, region string) dynamodbiface.D
 	return dynamodb.New(sess)
 }
 
-// InitialiseDynamoDb - checks if table exists, in case it doesn't it creates it
-func InitialiseDynamoDb(tableName string, schema *dynamodb.CreateTableInput, db dynamodbiface.DynamoDBAPI) error {
-	_, err := db.DescribeTable(&dynamodb.DescribeTableInput{
+// InitializeDynamoDb - checks if table exists, in case it doesn't it creates it
+func InitializeDynamoDb(tableName string, schema *dynamodb.CreateTableInput, db dynamodbiface.DynamoDBAPI) error {
+	if _, err := db.DescribeTable(&dynamodb.DescribeTableInput{
 		TableName: aws.String(tableName),
-	})
-	if err != nil {
+	}); err != nil {
 		var notFoundErr *dynamodb.ResourceNotFoundException
 		if errors.As(err, &notFoundErr) {
 			log.Printf("Creating DynamoDB Table: %s", tableName)
@@ -31,6 +30,7 @@ func InitialiseDynamoDb(tableName string, schema *dynamodb.CreateTableInput, db 
 			if err != nil {
 				return err
 			}
+			log.Println("Table created.")
 			return nil
 		}
 		return err
