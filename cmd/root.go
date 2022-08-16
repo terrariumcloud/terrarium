@@ -57,8 +57,6 @@ func startService(name string, service interface{}) {
 		log.Fatalf("Failed to start: %v", err)
 	}
 
-	// storage.InitialiseDynamoDb(tableName, schema, db)
-
 	log.Printf("Listening at %s", endpoint)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %v", err)
@@ -90,10 +88,6 @@ func register(grpcServer grpc.ServiceRegistrar, service interface{}) error {
 	case terrarium.PublisherServer:
 		terrarium.RegisterPublisherServer(grpcServer, service.(*services.TerrariumGrpcGateway))
 		terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
-		// TODO: fallthrough doesn't seem to work with type switching
-		// fallthrough
-	// case terrarium.ConsumerServer:
-	// 	terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
 	default:
 		return fmt.Errorf("failed to register unknown service type: %v", t)
 	}

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultBucketName                    = "terrarium-dev" //TODO: rename to terrarium or terrarium-modules?
+	DefaultBucketName                    = "terrarium-modules"
 	DefaultStorageServiceDefaultEndpoint = "storage:3001"
 	DefaultChunkSize                     = 64 * 1024 // 64 KB
 )

@@ -16,12 +16,12 @@ import (
 
 const (
 	DefaultModuleDependenciesTableName      = "terrarium-module-dependencies"
-	DefaultContainerDependenciesTableName   = "terrarium-container-dependencies" //TODO: remove?
+	DefaultContainerDependenciesTableName   = "terrarium-container-dependencies"
 	DefaultDependencyServiceDefaultEndpoint = "dependency_resolver:3001"
 )
 
 var ModuleDependenciesTableName string = DefaultModuleDependenciesTableName
-var ContainerDependenciesTableName string = DefaultContainerDependenciesTableName //TODO: remove?
+var ContainerDependenciesTableName string = DefaultContainerDependenciesTableName
 var DependencyServiceEndpoint string = DefaultDependencyServiceDefaultEndpoint
 
 type DependencyResolverService struct {

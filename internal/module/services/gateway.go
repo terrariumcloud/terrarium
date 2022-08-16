@@ -40,7 +40,6 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.Registe
 }
 
 // Begin (Create) Version with Version Manager service
-// TODO: rename to NewVersion?
 func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
 	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -102,7 +101,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 		}
 	} else {
 		log.Printf("Unknown Version manager action requested: %v", request.GetAction())
-		return UnknownVersionManagerAction, nil //TODO: should return errorrs.New()?
+		return UnknownVersionManagerAction, nil
 	}
 }
 
