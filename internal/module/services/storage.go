@@ -91,12 +91,12 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 	buf := make([]byte, *out.ContentLength)
 
 	n, err := out.Body.Read(buf)
-
-	if n == int(*out.ContentLength) {
+        outContentLength := int(*out.ContentLength)
+	if n == outContentLength {
 		res := &terrarium.SourceZipResponse{}
-		for i := 0; i < int(*out.ContentLength); i += ChunkSize {
-			if i+ChunkSize > int(*out.ContentLength) {
-				res.ZipDataChunk = buf[i:int(*out.ContentLength)]
+		for i := 0; i < outContentLength; i += ChunkSize {
+			if i+ChunkSize > outContentLength {
+				res.ZipDataChunk = buf[i:outContentLength]
 			} else {
 				res.ZipDataChunk = buf[i : i+ChunkSize]
 			}
