@@ -7,21 +7,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dependencyResolverCmd = &cobra.Command{
-	Use:   "dependency-resolver",
+var dependencyManagerCmd = &cobra.Command{
+	Use:   "dependency-manager",
 	Short: "Starts the Terrarium GRPC Dependency Resolver service",
 	Long:  "Runs the Terrarium GRPC Dependency Resolver server.",
 	Run:   runDependencyResolver,
 }
 
 func init() {
-	rootCmd.AddCommand(dependencyResolverCmd)
-	dependencyResolverCmd.Flags().StringVarP(&services.ModuleDependenciesTableName, "table", "t", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
+	rootCmd.AddCommand(dependencyManagerCmd)
+	dependencyManagerCmd.Flags().StringVarP(&services.ModuleDependenciesTableName, "table", "t", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
 }
 
 func runDependencyResolver(cmd *cobra.Command, args []string) {
 
-	dependencyServiceServer := &services.DependencyResolverService{
+	dependencyServiceServer := &services.DependencyManagerService{
 		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
 	}
 

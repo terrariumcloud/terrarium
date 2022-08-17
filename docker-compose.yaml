@@ -14,17 +14,12 @@ services:
       - terrarium
     command:
       - gateway
-      - "--aws-access-key"
+      - "--aws-access-key-id"
       - "$AWS_ACCESS_KEY_ID"
-      - "--aws-secret-key"
+      - "--aws_secret_access_key"
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
-    depends_on:
-      - registrar
-      - version_manager
-      - dependency_resolver
-      - storage
   registrar:
     build: .
     image: terrarium:dev
@@ -39,9 +34,9 @@ services:
       - terrarium
     command:
       - registrar
-      - "--aws-access-key"
+      - "--aws-access-key-id"
       - "$AWS_ACCESS_KEY_ID"
-      - "--aws-secret-key"
+      - "--aws_secret_access_key"
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
@@ -59,13 +54,13 @@ services:
       - terrarium
     command:
       - version-manager
-      - "--aws-access-key"
+      - "--aws-access-key-id"
       - "$AWS_ACCESS_KEY_ID"
-      - "--aws-secret-key"
+      - "--aws_secret_access_key"
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
-  dependency_resolver:
+  dependency_manager:
     build: .
     image: terrarium:dev
     container_name: terrarium-dependency-service
@@ -78,10 +73,10 @@ services:
     networks:
       - terrarium
     command:
-      - dependency-resolver
-      - "--aws-access-key"
+      - dependency-manager
+      - "--aws-access-key-id"
       - "$AWS_ACCESS_KEY_ID"
-      - "--aws-secret-key"
+      - "--aws_secret_access_key"
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
@@ -99,9 +94,9 @@ services:
       - terrarium
     command:
       - storage
-      - "--aws-access-key"
+      - "--aws-access-key-id"
       - "$AWS_ACCESS_KEY_ID"
-      - "--aws-secret-key"
+      - "--aws_secret_access_key"
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"

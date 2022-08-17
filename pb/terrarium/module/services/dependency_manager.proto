@@ -5,7 +5,7 @@ import "pb/terrarium/module/module.proto";
 
 option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services";
 
-service DependencyResolver {
+service DependencyManager {
   rpc RegisterModuleDependencies(terrarium.module.RegisterModuleDependenciesRequest) returns (terrarium.module.TransactionStatusResponse) {}
   rpc RegisterContainerDependencies(terrarium.module.RegisterContainerDependenciesRequest) returns (terrarium.module.TransactionStatusResponse) {}
   rpc RetrieveContainerDependencies(terrarium.module.RetrieveContainerDependenciesRequest) returns (stream terrarium.module.ContainerDependenciesResponse) {}

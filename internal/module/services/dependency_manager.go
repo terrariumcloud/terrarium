@@ -15,17 +15,17 @@ import (
 )
 
 const (
-	DefaultModuleDependenciesTableName      = "terrarium-module-dependencies"
-	DefaultContainerDependenciesTableName   = "terrarium-container-dependencies"
-	DefaultDependencyServiceDefaultEndpoint = "dependency_resolver:3001"
+	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies"
+	DefaultContainerDependenciesTableName = "terrarium-container-dependencies"
+	DefaultDependencyManagerEndpoint      = "dependency_manager:3001"
 )
 
 var ModuleDependenciesTableName string = DefaultModuleDependenciesTableName
 var ContainerDependenciesTableName string = DefaultContainerDependenciesTableName
-var DependencyServiceEndpoint string = DefaultDependencyServiceDefaultEndpoint
+var DependencyManagerEndpoint string = DefaultDependencyManagerEndpoint
 
-type DependencyResolverService struct {
-	UnimplementedDependencyResolverServer
+type DependencyManagerService struct {
+	UnimplementedDependencyManagerServer
 	Db dynamodbiface.DynamoDBAPI
 }
 
@@ -40,7 +40,7 @@ type ContainerDependencies struct {
 }
 
 // Registers Module dependencies in Terrarium
-func (s *DependencyResolverService) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	dep, err := json.Marshal(request.Modules)
 
 	if err != nil {
@@ -66,7 +66,7 @@ func (s *DependencyResolverService) RegisterModuleDependencies(ctx context.Conte
 	return ModuleDependenciesRegistered, nil
 }
 
-func (s *DependencyResolverService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	img, err := json.Marshal(request.ContainerImageReferences)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *DependencyResolverService) RegisterContainerDependencies(ctx context.Co
 	return ContainerDependenciesRegistered, nil
 }
 
-func (s *DependencyResolverService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyResolver_RetrieveContainerDependenciesServer) error {
+func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
 
 	filter := expression.Name("Name").Equal(expression.Value(request.Module.Name))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
@@ -159,6 +159,6 @@ func (s *DependencyResolverService) RetrieveContainerDependencies(request *terra
 	return nil
 }
 
-func (s *DependencyResolverService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyResolver_RetrieveModuleDependenciesServer) error {
+func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
 	return nil
 }

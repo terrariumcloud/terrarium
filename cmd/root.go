@@ -33,10 +33,10 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&address, "address", "a", defaultAddress, "IP Address")
 	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", defaultPort, "Port number")
-	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "k", "", "AWS Access Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-access-key")
-	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "s", "", "AWS Secret Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-secret-key")
+	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "k", "", "AWS Access Key (required)")
+	rootCmd.MarkPersistentFlagRequired("aws-access-key-id")
+	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws_secret_access_key", "s", "", "AWS Secret Key (required)")
+	rootCmd.MarkPersistentFlagRequired("aws_secret_access_key")
 	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "r", "", "AWS Region (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
@@ -77,8 +77,8 @@ func register(grpcServer grpc.ServiceRegistrar, service interface{}) error {
 		if err := storage.InitializeDynamoDb(vms.Table, vms.Schema, vms.Db); err != nil {
 			return err
 		}
-	case services.DependencyResolverServer:
-		services.RegisterDependencyResolverServer(grpcServer, service.(*services.DependencyResolverService))
+	case services.DependencyManagerServer:
+		services.RegisterDependencyManagerServer(grpcServer, service.(*services.DependencyManagerService))
 	case services.StorageServer:
 		s := service.(*services.StorageService)
 		services.RegisterStorageServer(grpcServer, s)

@@ -32,7 +32,7 @@ func TestRegisterModuleDependencies(t *testing.T) {
 
 	fd := &fakeDynamoDB{}
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
 	modules := []*terrarium.VersionedModule{
@@ -83,7 +83,7 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 		err: errors.New("test"),
 	}
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
 	modules := []*terrarium.VersionedModule{
@@ -132,7 +132,7 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 
 	svc := dynamodb.New(sess)
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: svc,
 	}
 	modules := []*terrarium.VersionedModule{
@@ -169,7 +169,7 @@ func TestRegisterContainerDependencies(t *testing.T) {
 
 	fd := &fakeDynamoDB{}
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
@@ -210,7 +210,7 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 		err: errors.New("test"),
 	}
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
@@ -249,7 +249,7 @@ func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
 
 	svc := dynamodb.New(sess)
 
-	dependencyService := &services.DependencyResolverService{
+	dependencyService := &services.DependencyManagerService{
 		Db: svc,
 	}
 

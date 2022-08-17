@@ -203,7 +203,7 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 
 // Register Module dependencies with Dependency Resolver service
 func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
@@ -212,9 +212,9 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 
 	defer conn.Close()
 
-	client := NewDependencyResolverClient(conn)
+	client := NewDependencyManagerClient(conn)
 
-	log.Println("Register module dependencies => Dependency resolver")
+	log.Println("Register module dependencies => Dependency Manager")
 	if res, err := client.RegisterModuleDependencies(ctx, request); err != nil {
 		return nil, err
 	} else {
@@ -224,7 +224,7 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 
 // Register Container dependencies with Dependency Resolver service
 func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
-	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
@@ -233,9 +233,9 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 
 	defer conn.Close()
 
-	client := NewDependencyResolverClient(conn)
+	client := NewDependencyManagerClient(conn)
 
-	log.Println("Register container dependencies => Dependency resolver")
+	log.Println("Register container dependencies => Dependency Manager")
 	if res, err := client.RegisterContainerDependencies(ctx, request); err != nil {
 		return nil, err
 	} else {
@@ -245,7 +245,7 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 
 // Retrieve Container dependencies from Dependency Resolver service
 func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
-	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
@@ -254,7 +254,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.Retriev
 
 	defer conn.Close()
 
-	client := NewDependencyResolverClient(conn)
+	client := NewDependencyManagerClient(conn)
 
 	dependencyStream, err := client.RetrieveContainerDependencies(server.Context(), request)
 
@@ -284,7 +284,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.Retriev
 
 // Retrieve Module dependences from Dependency Resolver service
 func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveModuleDependenciesRequest, server pb.Consumer_RetrieveModuleDependenciesServer) error {
-	conn, err := grpc.Dial(DependencyServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Printf("Failed to connect: %v", err)
@@ -293,7 +293,7 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveMo
 
 	defer conn.Close()
 
-	client := NewDependencyResolverClient(conn)
+	client := NewDependencyManagerClient(conn)
 
 	dependencyStream, err := client.RetrieveModuleDependencies(server.Context(), request)
 
