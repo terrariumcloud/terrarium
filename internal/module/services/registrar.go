@@ -5,7 +5,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	grpc "google.golang.org/grpc"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -36,6 +38,15 @@ type Module struct {
 	SourceUrl   string      `json:"source_url" bson:"source_url" dynamodbav:"source_url"`
 	Maturity    string      `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+}
+
+func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	RegisterRegistrarServer(grpcServer, s)
+	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
+		return err
+	}
+	return nil
+
 }
 
 // Register new Module in Terrarium

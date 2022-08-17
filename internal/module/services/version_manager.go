@@ -5,7 +5,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	grpc "google.golang.org/grpc"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -35,6 +37,14 @@ type ModuleVersion struct {
 	Version     string `json:"version" bson:"version" dynamodbav:"version"`
 	CreatedOn   string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 	PublishedOn string `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+}
+
+func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	RegisterVersionManagerServer(grpcServer, s)
+	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Creates new Module Version with Version Manager service

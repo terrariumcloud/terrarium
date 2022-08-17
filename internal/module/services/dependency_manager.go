@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	grpc "google.golang.org/grpc"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -37,6 +38,12 @@ type ModuleDependencies struct {
 type ContainerDependencies struct {
 	ID     interface{} `json:"id" bson:"_id" dynamodbav:"_id"`
 	Images string      `json:"images" bson:"images" dynamodbav:"images"`
+}
+
+func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	RegisterDependencyManagerServer(grpcServer, s)
+	//TODO: add db check
+	return nil
 }
 
 // Registers Module dependencies in Terrarium

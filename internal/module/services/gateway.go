@@ -6,6 +6,7 @@ import (
 	"log"
 
 	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,6 +16,12 @@ import (
 type TerrariumGrpcGateway struct {
 	pb.UnimplementedPublisherServer
 	pb.UnimplementedConsumerServer
+}
+
+func (s *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	terrarium.RegisterPublisherServer(grpcServer, s)
+	terrarium.RegisterConsumerServer(grpcServer, s)
+	return nil
 }
 
 // Register new module with Registrar service
@@ -123,7 +130,7 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 
 	log.Println("Upload source zip => Storage")
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	uploadStream, upErr := client.UploadSourceZip(ctx)
+	upstream, upErr := client.UploadSourceZip(ctx)
 
 	if upErr != nil {
 		return upErr
@@ -133,7 +140,7 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 		req, err := server.Recv()
 
 		if err == io.EOF {
-			res, upErr := uploadStream.CloseAndRecv()
+			res, upErr := upstream.CloseAndRecv()
 			if upErr != nil {
 				return upErr
 			}
@@ -144,10 +151,10 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 			return err
 		}
 
-		upErr = uploadStream.Send(req)
+		upErr = upstream.Send(req)
 
 		if upErr == io.EOF {
-			if upErr := uploadStream.CloseSend(); upErr != nil {
+			if upErr := upstream.CloseSend(); upErr != nil {
 				return upErr
 			}
 			return server.SendAndClose(ArchiveUploaded)

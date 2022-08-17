@@ -7,11 +7,13 @@ import (
 	"io"
 	"log"
 
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -30,6 +32,14 @@ type StorageService struct {
 	S3         s3iface.S3API
 	BucketName string
 	Region     string
+}
+
+func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	RegisterStorageServer(grpcServer, s)
+	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Upload Source Zip to storage
@@ -91,7 +101,7 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 	buf := make([]byte, *out.ContentLength)
 
 	n, err := out.Body.Read(buf)
-        outContentLength := int(*out.ContentLength)
+	outContentLength := int(*out.ContentLength)
 	if n == outContentLength {
 		res := &terrarium.SourceZipResponse{}
 		for i := 0; i < outContentLength; i += ChunkSize {

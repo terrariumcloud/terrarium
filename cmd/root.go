@@ -1,25 +1,20 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"net"
 
 	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
 
 const (
-	defaultAddress = "0.0.0.0"
-	defaultPort    = "3001"
+	defaultEndpoint = "0.0.0.0:3001"
 )
 
-var address string = defaultAddress
-var port string = defaultPort
+var endpoint string = defaultEndpoint
 var awsAccessKey string
 var awsSecretKey string
 var awsRegion string
@@ -31,8 +26,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&address, "address", "a", defaultAddress, "IP Address")
-	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", defaultPort, "Port number")
+	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", defaultEndpoint, "Endpoint")
 	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "k", "", "AWS Access Key (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-access-key-id")
 	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws_secret_access_key", "s", "", "AWS Secret Key (required)")
@@ -41,10 +35,9 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-func startService(name string, service interface{}) {
+func startService(name string, service services.Service) {
 	log.Printf("Starting %s", name)
 
-	endpoint := fmt.Sprintf("%s:%s", address, port)
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %v", err)
@@ -53,7 +46,7 @@ func startService(name string, service interface{}) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	if err := register(grpcServer, service); err != nil {
+	if err := service.RegisterWithServer(grpcServer); err != nil {
 		log.Fatalf("Failed to start: %v", err)
 	}
 
@@ -61,37 +54,6 @@ func startService(name string, service interface{}) {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %v", err)
 	}
-}
-
-func register(grpcServer grpc.ServiceRegistrar, service interface{}) error {
-	switch t := service.(type) {
-	case services.RegistrarServer:
-		r := service.(*services.RegistrarService)
-		services.RegisterRegistrarServer(grpcServer, r)
-		if err := storage.InitializeDynamoDb(r.Table, r.Schema, r.Db); err != nil {
-			return err
-		}
-	case services.VersionManagerServer:
-		vms := service.(*services.VersionManagerService)
-		services.RegisterVersionManagerServer(grpcServer, vms)
-		if err := storage.InitializeDynamoDb(vms.Table, vms.Schema, vms.Db); err != nil {
-			return err
-		}
-	case services.DependencyManagerServer:
-		services.RegisterDependencyManagerServer(grpcServer, service.(*services.DependencyManagerService))
-	case services.StorageServer:
-		s := service.(*services.StorageService)
-		services.RegisterStorageServer(grpcServer, s)
-		if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
-			return err
-		}
-	case terrarium.PublisherServer:
-		terrarium.RegisterPublisherServer(grpcServer, service.(*services.TerrariumGrpcGateway))
-		terrarium.RegisterConsumerServer(grpcServer, service.(*services.TerrariumGrpcGateway))
-	default:
-		return fmt.Errorf("failed to register unknown service type: %v", t)
-	}
-	return nil
 }
 
 // Execute root command
