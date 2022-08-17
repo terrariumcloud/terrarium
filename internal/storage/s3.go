@@ -36,9 +36,8 @@ func InitializeS3Bucket(bucketName, region string, svc s3iface.S3API) error {
 			log.Println("Bucket created.")
 			return nil
 		}
-	} else {
-		log.Printf("S3 bucket %s already exists.", bucketName)
-		return nil
 	}
+	log.Printf("S3 bucket %s already exists.", bucketName)
+	return nil
 
 }
