@@ -61,7 +61,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 				S: aws.String(request.GetSessionKey()),
 			},
 			"modules": {
-				B: dep,
+				S: aws.String(string(dep)),
 			},
 		},
 	}
@@ -86,7 +86,7 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 				S: aws.String(request.GetSessionKey()),
 			},
 			"images": {
-				B: img,
+				S: aws.String(string(img)),
 			},
 		},
 	}
