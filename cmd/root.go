@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"log"
+	"net"
+
+	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 const (
-	defaultAddress = "0.0.0.0"
-	defaultPort    = "3001"
+	defaultEndpoint = "0.0.0.0:3001"
 )
 
-var address string = defaultAddress
-var port string = defaultPort
+var endpoint string = defaultEndpoint
 var awsAccessKey string
 var awsSecretKey string
 var awsRegion string
@@ -22,16 +26,37 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&address, "address", "a", defaultAddress, "IP Address")
-	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", defaultPort, "Port number")
-	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key", "", "", "AWS Access Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-access-key")
-	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-key", "", "", "AWS Secret Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-secret-key")
-	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "AWS Region (required)")
+	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", defaultEndpoint, "Endpoint")
+	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "k", "", "AWS Access Key (required)")
+	rootCmd.MarkPersistentFlagRequired("aws-access-key-id")
+	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws_secret_access_key", "s", "", "AWS Secret Key (required)")
+	rootCmd.MarkPersistentFlagRequired("aws_secret_access_key")
+	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "r", "", "AWS Region (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
+func startService(name string, service services.Service) {
+	log.Printf("Starting %s", name)
+
+	listener, err := net.Listen("tcp4", endpoint)
+	if err != nil {
+		log.Fatalf("Failed to start: %v", err)
+	}
+
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+
+	if err := service.RegisterWithServer(grpcServer); err != nil {
+		log.Fatalf("Failed to start: %v", err)
+	}
+
+	log.Printf("Listening at %s", endpoint)
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatalf("Failed: %v", err)
+	}
+}
+
+// Execute root command
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }

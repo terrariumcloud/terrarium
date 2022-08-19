@@ -1,6 +1,5 @@
-### Go template
 # Binaries for programs and plugins
-terrarium
+/terrarium
 *.exe
 *.exe~
 *.dll
@@ -17,3 +16,6 @@ terrarium
 vendor/
 .idea
 
+# Misc
+.env
+.vscode/
