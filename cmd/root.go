@@ -29,8 +29,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", defaultEndpoint, "Endpoint")
 	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "k", "", "AWS Access Key (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-access-key-id")
-	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws_secret_access_key", "s", "", "AWS Secret Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws_secret_access_key")
+	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-access-key", "s", "", "AWS Secret Key (required)")
+	rootCmd.MarkPersistentFlagRequired("aws-secret-access-key")
 	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "r", "", "AWS Region (required)")
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
