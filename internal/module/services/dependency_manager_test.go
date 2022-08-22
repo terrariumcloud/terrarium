@@ -35,7 +35,7 @@ func TestRegisterModuleDependencies(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
-	modules := []*terrarium.VersionedModule{
+	dep := []*terrarium.VersionedModule{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -46,8 +46,8 @@ func TestRegisterModuleDependencies(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: dep,
 	}
 	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
@@ -86,7 +86,7 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
-	modules := []*terrarium.VersionedModule{
+	dep := []*terrarium.VersionedModule{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -97,8 +97,8 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: dep,
 	}
 	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
@@ -135,7 +135,7 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: svc,
 	}
-	modules := []*terrarium.VersionedModule{
+	dep := []*terrarium.VersionedModule{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -146,8 +146,8 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: dep,
 	}
 	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
@@ -173,8 +173,8 @@ func TestRegisterContainerDependencies(t *testing.T) {
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: []string{"test", "test2"},
 	}
 	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
 
@@ -214,8 +214,8 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: []string{"test", "test2"},
 	}
 	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
 
@@ -254,8 +254,8 @@ func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
 	}
 
 	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Dependencies: []string{"test", "test2"},
 	}
 	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
 

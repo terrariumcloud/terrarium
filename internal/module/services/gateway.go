@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 
-	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
@@ -14,8 +13,8 @@ import (
 )
 
 type TerrariumGrpcGateway struct {
-	pb.UnimplementedPublisherServer
-	pb.UnimplementedConsumerServer
+	terrarium.UnimplementedPublisherServer
+	terrarium.UnimplementedConsumerServer
 }
 
 func (s *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
@@ -25,7 +24,7 @@ func (s *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistr
 }
 
 // Register new module with Registrar service
-func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.RegisterModuleRequest) (*pb.TransactionStatusResponse, error) {
+func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
 	conn, err := grpc.Dial(RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -47,7 +46,7 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *pb.Registe
 }
 
 // Begin (Create) Version with Version Manager service
-func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.BeginVersionRequest) (*pb.BeginVersionResponse, error) {
+func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
 	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -74,7 +73,7 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *pb.Beg
 
 // End Version with Version Manger service
 // This can mean either abort (remove) or publish Version
-func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVersionRequest) (*pb.TransactionStatusResponse, error) {
+func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -87,10 +86,10 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 	client := NewVersionManagerClient(conn)
 
 	delegatedRequest := TerminateVersionRequest{
-		SessionKey: request.GetSessionKey(),
+		Module: request.GetModule(),
 	}
 
-	if request.GetAction() == pb.EndVersionRequest_DISCARD {
+	if request.GetAction() == terrarium.EndVersionRequest_DISCARD {
 		log.Println("Abort version => Version Manager")
 		if res, delegateError := client.AbortVersion(ctx, &delegatedRequest); delegateError != nil {
 			log.Printf("AbortVersion remote call failed: %v", delegateError)
@@ -98,7 +97,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 		} else {
 			return res, nil
 		}
-	} else if request.GetAction() == pb.EndVersionRequest_PUBLISH {
+	} else if request.GetAction() == terrarium.EndVersionRequest_PUBLISH {
 		log.Println("Publish version => Version Manager")
 		if res, delegateError := client.PublishVersion(ctx, &delegatedRequest); delegateError != nil {
 			log.Printf("PublishVersion remote call failed: %v", delegateError)
@@ -113,7 +112,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *pb.EndVe
 }
 
 // Upload source zip to Storage service
-func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZipServer) error {
+func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
 	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -167,7 +166,7 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server pb.Publisher_UploadSourceZ
 }
 
 // Download source zip from Storage service
-func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRequest, server pb.Consumer_DownloadSourceZipServer) error {
+func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
 	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -179,7 +178,7 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 
 	client := NewStorageClient(conn)
 
-	downloadStream, err := client.DownloadSourceZip(server.Context(), &pb.DownloadSourceZipRequest{
+	downloadStream, err := client.DownloadSourceZip(server.Context(), &terrarium.DownloadSourceZipRequest{
 		ApiKey: request.GetApiKey(),
 		Module: request.GetModule(),
 	})
@@ -209,7 +208,7 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *pb.DownloadSourceZipRe
 }
 
 // Register Module dependencies with Dependency Resolver service
-func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *pb.RegisterModuleDependenciesRequest) (*pb.TransactionStatusResponse, error) {
+func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -230,7 +229,7 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 }
 
 // Register Container dependencies with Dependency Resolver service
-func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *pb.RegisterContainerDependenciesRequest) (*pb.TransactionStatusResponse, error) {
+func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -251,7 +250,7 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 }
 
 // Retrieve Container dependencies from Dependency Resolver service
-func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.RetrieveContainerDependenciesRequest, server pb.Consumer_RetrieveContainerDependenciesServer) error {
+func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -290,7 +289,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *pb.Retriev
 }
 
 // Retrieve Module dependences from Dependency Resolver service
-func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *pb.RetrieveModuleDependenciesRequest, server pb.Consumer_RetrieveModuleDependenciesServer) error {
+func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer) error {
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {

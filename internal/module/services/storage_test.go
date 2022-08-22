@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/google/uuid"
 	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
 )
@@ -34,7 +33,7 @@ func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipRequest, error) {
 	}
 
 	chunk := &terrarium.UploadSourceZipRequest{
-		SessionKey:   uuid.NewString(),
+		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
 		ZipDataChunk: f,
 	}
 

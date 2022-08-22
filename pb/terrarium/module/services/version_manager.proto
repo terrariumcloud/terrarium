@@ -16,5 +16,5 @@ message BeginVersionRequest {
 }
 
 message TerminateVersionRequest {
-    string session_key = 1;
+    terrarium.module.VersionedModule module = 1;
 }

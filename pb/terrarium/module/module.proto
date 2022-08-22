@@ -81,22 +81,22 @@ message VersionedModule {
 }
 
 message RegisterModuleDependenciesRequest {
-  string session_key = 1;
-  repeated VersionedModule modules = 2;
+  VersionedModule module = 1;
+  repeated VersionedModule dependencies = 2;
 }
 
 message RegisterContainerDependenciesRequest {
-  string session_key = 1;
-  repeated string container_image_references = 2;
+  VersionedModule module = 1;
+  repeated string dependencies = 2;
 }
 
 message UploadSourceZipRequest {
-  string session_key = 1;
+  VersionedModule module = 1;
   bytes zip_data_chunk = 2;
 }
 
 message EndVersionRequest {
-  string session_key = 1;
+  VersionedModule module = 1;
   enum Action {
     DISCARD = 0;
     PUBLISH = 1;
@@ -120,8 +120,8 @@ message RetrieveModuleDependenciesRequest {
 }
 
 message ModuleDependenciesResponse {
-  VersionedModule origin = 1;
-  repeated VersionedModule modules = 2;
+  VersionedModule module = 1;
+  repeated VersionedModule dependencies = 2;
 }
 
 message RetrieveContainerDependenciesRequest {
@@ -131,6 +131,6 @@ message RetrieveContainerDependenciesRequest {
 }
 
 message ContainerDependenciesResponse {
-  VersionedModule origin = 1;
-  repeated string container_image_references = 2;
+  VersionedModule module = 1;
+  repeated string dependencies = 2;
 }

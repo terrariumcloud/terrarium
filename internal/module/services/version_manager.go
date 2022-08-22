@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/google/uuid"
 )
 
 const (
@@ -32,7 +31,6 @@ type VersionManagerService struct {
 }
 
 type ModuleVersion struct {
-	ID          string `json:"id" bson:"_id" dynamodbav:"_id"`
 	Name        string `json:"name" bson:"name" dynamodbav:"name"`
 	Version     string `json:"version" bson:"version" dynamodbav:"version"`
 	CreatedOn   string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
@@ -52,7 +50,6 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *Begin
 	log.Println("Creating new version.")
 
 	mv := ModuleVersion{
-		ID:        uuid.NewString(),
 		Name:      request.GetModule().GetName(),
 		Version:   request.GetModule().GetVersion(),
 		CreatedOn: time.Now().UTC().String(),
@@ -76,7 +73,7 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *Begin
 	}
 
 	response := &terrarium.BeginVersionResponse{
-		SessionKey: mv.ID,
+		SessionKey: "123",
 	}
 
 	log.Println("New version created.")
@@ -89,8 +86,11 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *Termi
 
 	in := &dynamodb.DeleteItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
-			"_id": {
-				S: aws.String(request.GetSessionKey()),
+			"name": {
+				S: aws.String(request.Module.GetName()),
+			},
+			"version": {
+				S: aws.String(request.Module.GetVersion()),
 			},
 		},
 		TableName: aws.String(VersionsTableName),
@@ -116,8 +116,11 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 			},
 		},
 		Key: map[string]*dynamodb.AttributeValue{
-			"_id": {
-				S: aws.String(request.GetSessionKey()),
+			"name": {
+				S: aws.String(request.Module.GetName()),
+			},
+			"version": {
+				S: aws.String(request.Module.GetVersion()),
 			},
 		},
 		TableName:        aws.String(VersionsTableName),
@@ -135,69 +138,25 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 
 // GetModuleVersoinsSchema returns CreateTableInput
 // that can be used to create table if it does not exist
-// func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
-// 	return &dynamodb.CreateTableInput{
-// 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-// 			{
-// 				AttributeName: aws.String("_id"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 			{
-// 				AttributeName: aws.String("name"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 			{
-// 				AttributeName: aws.String("version"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 		},
-// 		KeySchema: []*dynamodb.KeySchemaElement{
-// 			{
-// 				AttributeName: aws.String("name"),
-// 				KeyType:       aws.String("HASH"),
-// 			},
-// 			{
-// 				AttributeName: aws.String("version"),
-// 				KeyType:       aws.String("RANGE"),
-// 			},
-// 		},
-// 		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
-// 			{
-// 				IndexName: aws.String("VersionIdIndex"),
-// 				KeySchema: []*dynamodb.KeySchemaElement{
-// 					{
-// 						AttributeName: aws.String("_id"),
-// 						KeyType:       aws.String("HASH"),
-// 					},
-// 				},
-// 				Projection: &dynamodb.Projection{
-// 					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
-// 				},
-// 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-// 					ReadCapacityUnits:  aws.Int64(1),
-// 					WriteCapacityUnits: aws.Int64(1),
-// 				},
-// 			},
-// 		},
-// 		TableName:   aws.String(table),
-// 		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
-// 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-// 			ReadCapacityUnits:  aws.Int64(1),
-// 			WriteCapacityUnits: aws.Int64(1),
-// 		},
-// 	}
-// }
 func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("_id"),
+				AttributeName: aws.String("name"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("version"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("_id"),
+				AttributeName: aws.String("name"),
+				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("version"),
 				KeyType:       aws.String("HASH"),
 			},
 		},
