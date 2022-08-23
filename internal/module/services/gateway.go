@@ -178,10 +178,8 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSour
 
 	client := NewStorageClient(conn)
 
-	downloadStream, err := client.DownloadSourceZip(server.Context(), &terrarium.DownloadSourceZipRequest{
-		ApiKey: request.GetApiKey(),
-		Module: request.GetModule(),
-	})
+	log.Println("Download source zip => Storage")
+	downloadStream, err := client.DownloadSourceZip(server.Context(), request)
 
 	if err != nil {
 		return err

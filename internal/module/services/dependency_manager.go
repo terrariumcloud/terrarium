@@ -78,6 +78,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	img, err := json.Marshal(request.Dependencies)
+
 	if err != nil {
 		return nil, err
 	}
@@ -110,35 +111,33 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 }
 
 func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
-
-	projEx := expression.NamesList(expression.Name("images"))
-	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
-	if err != nil {
-		log.Printf("Couldn't build expressions %v\n", err)
-	}
-
-	output, err := s.Db.GetItem(&dynamodb.GetItemInput{
+	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(request.Module.Name)},
 			"version": {S: aws.String(request.Module.Version)},
 		},
-		ProjectionExpression: expr.Projection(),
-	})
+	}
 
-	if output.Item == nil {
+	out, err := s.Db.GetItem(in)
+
+	if err != nil {
 		return err
 	}
 
-	dependencies := []string{}
+	if out.Item == nil {
+		return err
+	}
 
-	if err := dynamodbattribute.UnmarshalMap(output.Item, &dependencies); err != nil {
+	dependencies := ModuleDependencies{}
+
+	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
 		return err
 	}
 
 	res := &terrarium.ContainerDependenciesResponse{
 		Module:       request.Module,
-		Dependencies: dependencies,
+		Dependencies: dependencies.Images,
 	}
 
 	if err := server.Send(res); err != nil {
@@ -208,7 +207,7 @@ func GetModuleDependenciesSchema(table string) *dynamodb.CreateTableInput {
 			},
 			{
 				AttributeName: aws.String("version"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       aws.String("RANGE"),
 			},
 		},
 		TableName:   aws.String(table),

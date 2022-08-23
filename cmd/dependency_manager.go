@@ -22,7 +22,9 @@ func init() {
 func runDependencyResolver(cmd *cobra.Command, args []string) {
 
 	dependencyServiceServer := &services.DependencyManagerService{
-		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:  services.ModuleDependenciesTableName,
+		Schema: services.GetModuleDependenciesSchema(services.ModuleDependenciesTableName),
 	}
 
 	startService("Terrarium GRPC Dependency Resolver service", dependencyServiceServer)
