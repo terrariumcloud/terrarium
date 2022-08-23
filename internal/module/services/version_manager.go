@@ -157,7 +157,7 @@ func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 			},
 			{
 				AttributeName: aws.String("version"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       aws.String("RANGE"),
 			},
 		},
 		TableName:   aws.String(table),
