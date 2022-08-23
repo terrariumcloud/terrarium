@@ -27,6 +27,15 @@ func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemO
 	return output, fd.err
 }
 
+func (fd *fakeDynamoDB) UpdateItem(item *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
+	fd.tableName = item.TableName
+	output := new(dynamodb.UpdateItemOutput)
+	output.Attributes = make(map[string]*dynamodb.AttributeValue)
+	fd.numberOfPutItemCalls++
+	return output, fd.err
+
+}
+
 func TestRegisterModuleDependencies(t *testing.T) {
 	t.Parallel()
 
