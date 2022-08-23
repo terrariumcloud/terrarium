@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"log"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
 const (
@@ -108,59 +111,30 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 
 func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
 
-	// filter := expression.Name("Name").Equal(expression.Value(request.Module.Name))
-	// expr, err := expression.NewBuilder().WithFilter(filter).Build()
-	// if err != nil {
-	// 	return err
-	// }
+	projEx := expression.NamesList(expression.Name("images"))
+	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
+	if err != nil {
+		log.Printf("Couldn't build expressions %v\n", err)
+	}
 
-	// sin := &dynamodb.ScanInput{
-	// 	ExpressionAttributeNames:  expr.Names(),
-	// 	ExpressionAttributeValues: expr.Values(),
-	// 	FilterExpression:          expr.Filter(),
-	// 	TableName:                 aws.String(VersionsTableName),
-	// }
+	output, err := s.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(ModuleDependenciesTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(request.Module.Name)},
+			"version": {S: aws.String(request.Module.Version)},
+		},
+		ProjectionExpression: expr.Projection(),
+	})
 
-	// sout, err := s.Db.Scan(sin)
-
-	// if sout.Items == nil {
-	// 	return err
-	// }
-
-	// moduleVersion := ModuleVersion{}
-
-	// if *sout.Count > 1 {
-	// 	return errors.New("unexpected number of results returned")
-	// }
-
-	// for _, i := range sout.Items {
-	// 	if err := dynamodbattribute.UnmarshalMap(i, &moduleVersion); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// in := &dynamodb.GetItemInput{
-	// 	Key: map[string]*dynamodb.AttributeValue{
-	// 		"_id": {
-	// 			S: aws.String(moduleVersion.Version),
-	// 		},
-	// 	},
-	// 	TableName: aws.String(ContainerDependenciesTableName),
-	// }
-
-	// out, err := s.Db.GetItem(in)
-
-	// if out.Item == nil {
-	// 	return err
-	// }
-
-	// dep := ContainerDependencies{}
-
-	// if err := dynamodbattribute.UnmarshalMap(out.Item, &dep); err != nil {
-	// 	return err
-	// }
+	if output.Item == nil {
+		return err
+	}
 
 	dependencies := []string{}
+
+	if err := dynamodbattribute.UnmarshalMap(output.Item, &dependencies); err != nil {
+		return err
+	}
 
 	res := &terrarium.ContainerDependenciesResponse{
 		Module:       request.Module,
@@ -176,7 +150,30 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 
 func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
 
+	projEx := expression.NamesList(expression.Name("modules"))
+	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
+	if err != nil {
+		log.Printf("Couldn't build expressions %v\n", err)
+	}
+
+	output, err := s.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(ModuleDependenciesTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(request.Module.Name)},
+			"version": {S: aws.String(request.Module.Version)},
+		},
+		ProjectionExpression: expr.Projection(),
+	})
+
+	if output.Item == nil {
+		return err
+	}
+
 	dependencies := []*terrarium.VersionedModule{}
+
+	if err := dynamodbattribute.UnmarshalMap(output.Item, &dependencies); err != nil {
+		return err
+	}
 
 	res := &terrarium.ModuleDependenciesResponse{
 		Module:       request.Module,
