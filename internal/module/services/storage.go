@@ -83,12 +83,11 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 // Download Source Zip from storage
 func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {
 	log.Println("Downloading source zip.")
-	//TODO: fetch session key based on request data
-	sessionKey := "123"
+	filename := fmt.Sprintf("%s_%s.zip", request.GetModule().Name, request.Module.GetVersion())
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
-		Key:    aws.String(sessionKey),
+		Key:    aws.String(filename),
 	}
 
 	out, err := s.S3.GetObject(in)
@@ -98,17 +97,18 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 		return err
 	}
 
-	buf := make([]byte, *out.ContentLength)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(out.Body)
+	bb := buf.Bytes()
 
-	n, err := out.Body.Read(buf)
 	outContentLength := int(*out.ContentLength)
-	if n == outContentLength {
+	if len(bb) == outContentLength {
 		res := &terrarium.SourceZipResponse{}
 		for i := 0; i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
-				res.ZipDataChunk = buf[i:outContentLength]
+				res.ZipDataChunk = bb[i:outContentLength]
 			} else {
-				res.ZipDataChunk = buf[i : i+ChunkSize]
+				res.ZipDataChunk = bb[i : i+ChunkSize]
 			}
 
 			if err := server.Send(res); err != nil {
