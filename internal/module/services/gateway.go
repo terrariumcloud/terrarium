@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
 type TerrariumGrpcGateway struct {
@@ -17,6 +16,7 @@ type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedConsumerServer
 }
 
+// Registers TerrariumGrpcGateway with grpc server
 func (s *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	terrarium.RegisterPublisherServer(grpcServer, s)
 	terrarium.RegisterConsumerServer(grpcServer, s)
@@ -85,6 +85,7 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrariu
 
 	client := NewVersionManagerClient(conn)
 
+	//TODO: remove delegated messages
 	delegatedRequest := TerminateVersionRequest{
 		Module: request.GetModule(),
 	}
@@ -122,14 +123,10 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_Upload
 
 	defer conn.Close()
 
-	ctx := server.Context()
-	md, _ := metadata.FromIncomingContext(ctx)
-
 	client := NewStorageClient(conn)
 
 	log.Println("Upload source zip => Storage")
-	ctx = metadata.NewOutgoingContext(ctx, md)
-	upstream, upErr := client.UploadSourceZip(ctx)
+	upstream, upErr := client.UploadSourceZip(server.Context())
 
 	if upErr != nil {
 		return upErr
@@ -260,6 +257,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.
 
 	client := NewDependencyManagerClient(conn)
 
+	log.Println("Retrieve container dependencies => Dependency Manager")
 	dependencyStream, err := client.RetrieveContainerDependencies(server.Context(), request)
 
 	if err != nil {
@@ -299,6 +297,7 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Ret
 
 	client := NewDependencyManagerClient(conn)
 
+	log.Println("Retrieve module dependencies => Dependency Manager")
 	dependencyStream, err := client.RetrieveModuleDependencies(server.Context(), request)
 
 	if err != nil {
