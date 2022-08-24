@@ -36,11 +36,14 @@ type ModuleDependencies struct {
 	Images  []string                     `json:"images" bson:"images" dynamodbav:"images"`
 }
 
+// Registers DependencyManagerService with grpc server
 func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	RegisterDependencyManagerServer(grpcServer, s)
+
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		return err
 	}
+	
 	return nil
 }
 
@@ -74,6 +77,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 	return ModuleDependenciesRegistered, nil
 }
 
+// Registers Container dependencies in Terrarium
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.TransactionStatusResponse, error) {
 	img, err := json.Marshal(request.Dependencies)
 
@@ -108,6 +112,7 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 	return ContainerDependenciesRegistered, nil
 }
 
+// Retrieve Container dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
@@ -129,6 +134,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 
 	dependencies := ModuleDependencies{}
 
+	//TODO: fix bug with unmarshaling images
 	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
 		return err
 	}
@@ -145,6 +151,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 	return nil
 }
 
+// Retrieve Module dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
@@ -208,6 +215,7 @@ func GetModuleDependenciesSchema(table string) *dynamodb.CreateTableInput {
 		},
 		TableName:   aws.String(table),
 		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
+		//TODO: replace with On-demand
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(1),
 			WriteCapacityUnits: aws.Int64(1),
