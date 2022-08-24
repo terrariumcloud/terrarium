@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	grpc "google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -34,31 +33,31 @@ type StorageService struct {
 	Region     string
 }
 
+// Registers StorageService with grpc server
 func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	RegisterStorageServer(grpcServer, s)
+
 	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // Upload Source Zip to storage
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
 	zip := []byte{}
-	var sessionKey string
-
-	if md, ok := metadata.FromIncomingContext(server.Context()); ok {
-		sessionKey = md.Get("session_key")[0]
-	}
 
 	for {
 		req, err := server.Recv()
 
 		if err == io.EOF {
 			log.Printf("Received file with total lenght: %v", len(zip))
+			filename := fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
+			
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),
-				Key:    aws.String(fmt.Sprintf("%s.zip", sessionKey)),
+				Key:    aws.String(filename),
 				Body:   bytes.NewReader(zip),
 			}
 
