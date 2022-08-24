@@ -72,6 +72,7 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *Begin
 		return nil, err
 	}
 
+	//TODO: remove session key
 	response := &terrarium.BeginVersionResponse{
 		SessionKey: "123",
 	}

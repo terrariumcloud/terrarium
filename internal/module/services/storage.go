@@ -47,14 +47,18 @@ func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 // Upload Source Zip to storage
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
 	zip := []byte{}
+	var filename string
 
 	for {
 		req, err := server.Recv()
 
+		if filename == "" && req != nil  {
+			filename = fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
+		}
+		
 		if err == io.EOF {
 			log.Printf("Received file with total lenght: %v", len(zip))
-			filename := fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
-			
+
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),
 				Key:    aws.String(filename),
