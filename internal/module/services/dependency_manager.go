@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
@@ -13,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
 const (
@@ -32,10 +30,10 @@ type DependencyManagerService struct {
 }
 
 type ModuleDependencies struct {
-	Name    string                      `json:"name" bson:"name" dynamodbav:"name"`
-	Version string                      `json:"version" bson:"version" dynamodbav:"version"`
-	Modules []terrarium.VersionedModule `json:"modules" bson:"modules" dynamodbav:"modules"`
-	Images  []string                    `json:"images" bson:"images" dynamodbav:"images"`
+	Name    string                       `json:"name" bson:"name" dynamodbav:"name"`
+	Version string                       `json:"version" bson:"version" dynamodbav:"version"`
+	Modules []*terrarium.VersionedModule `json:"modules" bson:"modules" dynamodbav:"modules"`
+	Images  []string                     `json:"images" bson:"images" dynamodbav:"images"`
 }
 
 func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
@@ -148,35 +146,33 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 }
 
 func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
-
-	projEx := expression.NamesList(expression.Name("modules"))
-	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
-	if err != nil {
-		log.Printf("Couldn't build expressions %v\n", err)
-	}
-
-	output, err := s.Db.GetItem(&dynamodb.GetItemInput{
+	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(request.Module.Name)},
 			"version": {S: aws.String(request.Module.Version)},
 		},
-		ProjectionExpression: expr.Projection(),
-	})
+	}
 
-	if output.Item == nil {
+	out, err := s.Db.GetItem(in)
+
+	if err != nil {
 		return err
 	}
 
-	dependencies := []*terrarium.VersionedModule{}
+	if out.Item == nil {
+		return err
+	}
 
-	if err := dynamodbattribute.UnmarshalMap(output.Item, &dependencies); err != nil {
+	dependencies := ModuleDependencies{}
+
+	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
 		return err
 	}
 
 	res := &terrarium.ModuleDependenciesResponse{
 		Module:       request.Module,
-		Dependencies: dependencies,
+		Dependencies: dependencies.Modules,
 	}
 
 	if err := server.Send(res); err != nil {
