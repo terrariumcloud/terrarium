@@ -15,12 +15,12 @@ import (
 
 type fakeUploadServer struct {
 	services.Storage_UploadSourceZipServer
-	response          *terrarium.TransactionStatusResponse
+	response          *terrarium.Response
 	err               error
 	numberOfRecvCalls int
 }
 
-func (fus *fakeUploadServer) SendAndClose(response *terrarium.TransactionStatusResponse) error {
+func (fus *fakeUploadServer) SendAndClose(response *terrarium.Response) error {
 	fus.response = response
 	return fus.err
 }
@@ -33,7 +33,7 @@ func (fus *fakeUploadServer) Recv() (*terrarium.UploadSourceZipRequest, error) {
 	}
 
 	chunk := &terrarium.UploadSourceZipRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		ZipDataChunk: f,
 	}
 

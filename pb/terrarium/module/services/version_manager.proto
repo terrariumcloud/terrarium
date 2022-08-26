@@ -6,15 +6,11 @@ import "pb/terrarium/module/module.proto";
 option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services";
 
 service VersionManager {
-  rpc BeginVersion(BeginVersionRequest) returns (terrarium.module.BeginVersionResponse);
-  rpc AbortVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
-  rpc PublishVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
-}
-
-message BeginVersionRequest {
-  terrarium.module.VersionedModule module = 1;
+  rpc BeginVersion(terrarium.module.BeginVersionRequest) returns (terrarium.module.Response);
+  rpc AbortVersion(TerminateVersionRequest) returns (terrarium.module.Response);
+  rpc PublishVersion(TerminateVersionRequest) returns (terrarium.module.Response);
 }
 
 message TerminateVersionRequest {
-    terrarium.module.VersionedModule module = 1;
+    terrarium.module.Module module = 1;
 }

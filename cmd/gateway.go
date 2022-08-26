@@ -16,7 +16,7 @@ var gatewayCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(gatewayCmd)
 	gatewayCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar", "", services.DefaultRegistrarServiceDefaultEndpoint, "GRPC Endpoint for Registrar Service")
-	gatewayCmd.Flags().StringVarP(&services.DependencyManagerEndpoint, "dependency-manager", "", services.DefaultDependencyManagerEndpoint, "GRPC Endpoint for Dependency Resolver Service")
+	gatewayCmd.Flags().StringVarP(&services.DependencyManagerEndpoint, "dependency-manager", "", services.DefaultDependencyManagerEndpoint, "GRPC Endpoint for Dependency Manager Service")
 	gatewayCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 }

@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegistrarClient interface {
-	Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
+	Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error)
 }
 
 type registrarClient struct {
@@ -34,8 +34,8 @@ func NewRegistrarClient(cc grpc.ClientConnInterface) RegistrarClient {
 	return &registrarClient{cc}
 }
 
-func (c *registrarClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
-	out := new(module.TransactionStatusResponse)
+func (c *registrarClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.Registrar/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (c *registrarClient) Register(ctx context.Context, in *module.RegisterModul
 // All implementations must embed UnimplementedRegistrarServer
 // for forward compatibility
 type RegistrarServer interface {
-	Register(context.Context, *module.RegisterModuleRequest) (*module.TransactionStatusResponse, error)
+	Register(context.Context, *module.RegisterModuleRequest) (*module.Response, error)
 	mustEmbedUnimplementedRegistrarServer()
 }
 
@@ -55,7 +55,7 @@ type RegistrarServer interface {
 type UnimplementedRegistrarServer struct {
 }
 
-func (UnimplementedRegistrarServer) Register(context.Context, *module.RegisterModuleRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedRegistrarServer) Register(context.Context, *module.RegisterModuleRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedRegistrarServer) mustEmbedUnimplementedRegistrarServer() {}

@@ -18,8 +18,8 @@ func TestBeginVersion(t *testing.T) {
 	versionService := &services.VersionManagerService{
 		Db: fd,
 	}
-	request := services.BeginVersionRequest{
-		Module: &terrarium.VersionedModule{
+	request := terrarium.BeginVersionRequest{
+		Module: &terrarium.Module{
 			Name:    "test",
 			Version: "v1.0.0",
 		},
@@ -32,10 +32,6 @@ func TestBeginVersion(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.GetSessionKey() == "" {
-			t.Errorf("Expected session key to not be an empty string, got empty string")
-		}
 	}
 
 	if fd.numberOfPutItemCalls != 1 {
@@ -63,8 +59,8 @@ func IgnoreTestBeginVersionE2E(t *testing.T) {
 	versionService := &services.VersionManagerService{
 		Db: svc,
 	}
-	request := services.BeginVersionRequest{
-		Module: &terrarium.VersionedModule{
+	request := terrarium.BeginVersionRequest{
+		Module: &terrarium.Module{
 			Name:    "test",
 			Version: "v1.0.0",
 		},
@@ -77,9 +73,5 @@ func IgnoreTestBeginVersionE2E(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.GetSessionKey() == "" {
-			t.Errorf("Expected session key to not be an empty string, got empty string")
-		}
 	}
 }

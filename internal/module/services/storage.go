@@ -13,7 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -22,9 +24,18 @@ const (
 	DefaultChunkSize                     = 64 * 1024 // 64 KB
 )
 
-var BucketName string = DefaultBucketName
-var StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
-var ChunkSize = DefaultChunkSize
+var (
+	BucketName             string = DefaultBucketName
+	StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
+	ChunkSize                     = DefaultChunkSize
+
+	SourceZipUploaded = &terrarium.Response{Message: "Source zip uploaded successfully."}
+
+	UploadSourceZipError   = status.Error(codes.Unknown, "Failed to upload source zip.")
+	RecieveSourceZipError  = status.Error(codes.Unknown, "Failed to recieve source zip.")
+	DownloadSourceZipError = status.Error(codes.Unknown, "Failed to download source zip.")
+	SendSourceZipError     = status.Error(codes.Unknown, "Failed to send source zip.")
+)
 
 type StorageService struct {
 	UnimplementedStorageServer
@@ -38,6 +49,7 @@ func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	RegisterStorageServer(grpcServer, s)
 
 	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -46,16 +58,17 @@ func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 // Upload Source Zip to storage
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
+	log.Println("Uploading source zip.")
 	zip := []byte{}
 	var filename string
 
 	for {
 		req, err := server.Recv()
 
-		if filename == "" && req != nil  {
+		if filename == "" && req != nil {
 			filename = fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
 		}
-		
+
 		if err == io.EOF {
 			log.Printf("Received file with total lenght: %v", len(zip))
 
@@ -67,15 +80,16 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 
 			if _, err := s.S3.PutObject(in); err != nil {
 				log.Println(err)
-				return err
+				return UploadSourceZipError
 			}
 
 			log.Println("Source zip uploaded successfully.")
-			return server.SendAndClose(ZipUploaded)
+			return server.SendAndClose(SourceZipUploaded)
 		}
 
 		if err != nil {
-			return err
+			log.Println(err)
+			return RecieveSourceZipError
 		}
 
 		log.Printf("Recieved %v bytes", len(req.ZipDataChunk))
@@ -96,8 +110,8 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 	out, err := s.S3.GetObject(in)
 
 	if err != nil {
-		log.Printf("Failed to get object: %s", err.Error())
-		return err
+		log.Println(err)
+		return DownloadSourceZipError
 	}
 
 	buf := new(bytes.Buffer)
@@ -115,14 +129,15 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 			}
 
 			if err := server.Send(res); err != nil {
-				log.Printf("Failed to send: %s", err.Error())
-				return err
+				log.Println(err)
+				return SendSourceZipError
 			}
 		}
 
+		log.Println("Source zip downloaded.")
 		return nil
 	} else if err != nil {
-		log.Printf("Failed to read content: %s", err.Error())
+		log.Println(err)
 		return err
 	} else {
 		return errors.New("unexpected content lenght")

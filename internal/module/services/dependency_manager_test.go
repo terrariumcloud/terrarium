@@ -44,7 +44,7 @@ func TestRegisterModuleDependencies(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
-	dep := []*terrarium.VersionedModule{
+	dep := []*terrarium.Module{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -55,7 +55,7 @@ func TestRegisterModuleDependencies(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: dep,
 	}
 	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
@@ -66,10 +66,6 @@ func TestRegisterModuleDependencies(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
 	}
 
 	if fd.numberOfPutItemCalls != 1 {
@@ -95,7 +91,7 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: fd,
 	}
-	dep := []*terrarium.VersionedModule{
+	dep := []*terrarium.Module{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -106,17 +102,13 @@ func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: dep,
 	}
-	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
+	_, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
 	if err == nil {
 		t.Error("Expected error, got nil")
-	} else {
-		if response.Status != terrarium.Status_UNKNOWN_ERROR {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
-		}
 	}
 
 	if fd.numberOfPutItemCalls != 1 {
@@ -144,7 +136,7 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 	dependencyService := &services.DependencyManagerService{
 		Db: svc,
 	}
-	dep := []*terrarium.VersionedModule{
+	dep := []*terrarium.Module{
 		{
 			Name:    "test",
 			Version: "v1.0.0",
@@ -155,7 +147,7 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 		},
 	}
 	request := terrarium.RegisterModuleDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: dep,
 	}
 	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
@@ -166,10 +158,6 @@ func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
 	}
 }
 
@@ -182,7 +170,7 @@ func TestRegisterContainerDependencies(t *testing.T) {
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: []string{"test", "test2"},
 	}
 	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
@@ -193,10 +181,6 @@ func TestRegisterContainerDependencies(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
 	}
 
 	if fd.numberOfPutItemCalls != 1 {
@@ -223,17 +207,13 @@ func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
 		Db: fd,
 	}
 	request := terrarium.RegisterContainerDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: []string{"test", "test2"},
 	}
-	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+	_, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
 
 	if err == nil {
 		t.Error("Expected error, got nil")
-	} else {
-		if response.Status != terrarium.Status_UNKNOWN_ERROR {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
-		}
 	}
 
 	if fd.numberOfPutItemCalls != 1 {
@@ -263,7 +243,7 @@ func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
 	}
 
 	request := terrarium.RegisterContainerDependenciesRequest{
-		Module:       &terrarium.VersionedModule{Name: "test", Version: "v1"},
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
 		Dependencies: []string{"test", "test2"},
 	}
 	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
@@ -274,10 +254,6 @@ func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
 
 	if response == nil {
 		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
 	}
 }
 
