@@ -31,10 +31,11 @@ var (
 
 	SourceZipUploaded = &terrarium.Response{Message: "Source zip uploaded successfully."}
 
-	UploadSourceZipError   = status.Error(codes.Unknown, "Failed to upload source zip.")
-	RecieveSourceZipError  = status.Error(codes.Unknown, "Failed to recieve source zip.")
-	DownloadSourceZipError = status.Error(codes.Unknown, "Failed to download source zip.")
-	SendSourceZipError     = status.Error(codes.Unknown, "Failed to send source zip.")
+	BucketInitializationError = status.Error(codes.Unknown, "Failed to initialize bucket for storage.")
+	UploadSourceZipError      = status.Error(codes.Unknown, "Failed to upload source zip.")
+	RecieveSourceZipError     = status.Error(codes.Unknown, "Failed to recieve source zip.")
+	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
+	SendSourceZipError        = status.Error(codes.Unknown, "Failed to send source zip.")
 )
 
 type StorageService struct {
@@ -50,7 +51,7 @@ func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
 		log.Println(err)
-		return err
+		return BucketInitializationError
 	}
 
 	return nil

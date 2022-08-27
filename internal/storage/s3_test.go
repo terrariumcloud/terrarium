@@ -4,35 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 )
-
-type fakeS3 struct {
-	s3iface.S3API
-	headBucketInvocations   int
-	headBucketOut           *s3.HeadBucketOutput
-	headBucketError         error
-	bucketName              string
-	createBucketInvocations int
-	createBucketOut         *s3.CreateBucketOutput
-	createBucketError       error
-	region                  string
-}
-
-func (fs3 *fakeS3) HeadBucket(in *s3.HeadBucketInput) (*s3.HeadBucketOutput, error) {
-	fs3.headBucketInvocations++
-	fs3.bucketName = *in.Bucket
-	return fs3.headBucketOut, fs3.headBucketError
-}
-
-func (fs3 *fakeS3) CreateBucket(in *s3.CreateBucketInput) (*s3.CreateBucketOutput, error) {
-	fs3.createBucketInvocations++
-	fs3.bucketName = *in.Bucket
-	fs3.region = *in.CreateBucketConfiguration.LocationConstraint
-	return fs3.createBucketOut, fs3.createBucketError
-}
 
 // This test checks if bucket is not recreated when it already exists
 func TestInitializeS3BucketWhenBucketExists(t *testing.T) {
@@ -40,16 +14,16 @@ func TestInitializeS3BucketWhenBucketExists(t *testing.T) {
 
 	bucket := "Test"
 	region := "test"
-	s3 := &fakeS3{}
+	s3 := &mocks.MockS3{}
 
 	err := storage.InitializeS3Bucket(bucket, region, s3)
 
-	if s3.headBucketInvocations != 1 {
-		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.headBucketInvocations)
+	if s3.HeadBucketInvocations != 1 {
+		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.HeadBucketInvocations)
 	}
 
-	if s3.bucketName != bucket {
-		t.Errorf("Expected %v, got %v.", bucket, s3.bucketName)
+	if s3.BucketName != bucket {
+		t.Errorf("Expected %v, got %v.", bucket, s3.BucketName)
 	}
 
 	if err != nil {
@@ -63,26 +37,24 @@ func TestInitializeS3BucketWhenBucketDoesNotExists(t *testing.T) {
 
 	bucket := "Test"
 	region := "test"
-	s3 := &fakeS3{
-		headBucketError: errors.New("some error"),
-	}
+	s3 := &mocks.MockS3{HeadBucketError: errors.New("some error")}
 
 	err := storage.InitializeS3Bucket(bucket, region, s3)
 
-	if s3.headBucketInvocations != 1 {
-		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.headBucketInvocations)
+	if s3.HeadBucketInvocations != 1 {
+		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.HeadBucketInvocations)
 	}
 
-	if s3.bucketName != bucket {
-		t.Errorf("Expected %v, got %v.", bucket, s3.bucketName)
+	if s3.BucketName != bucket {
+		t.Errorf("Expected %v, got %v.", bucket, s3.BucketName)
 	}
 
-	if s3.createBucketInvocations != 1 {
-		t.Errorf("Expected 1 call to CreateTable, got %v.", s3.createBucketInvocations)
+	if s3.CreateBucketInvocations != 1 {
+		t.Errorf("Expected 1 call to CreateTable, got %v.", s3.CreateBucketInvocations)
 	}
 
-	if s3.region != region {
-		t.Errorf("Expected %v, got %v.", region, s3.region)
+	if s3.Region != region {
+		t.Errorf("Expected %v, got %v.", region, s3.Region)
 	}
 
 	if err != nil {
@@ -97,27 +69,24 @@ func TestInitializeS3BucketWhenCreateBucketErrors(t *testing.T) {
 	bucket := "Test"
 	region := "test"
 	someError := errors.New("some error")
-	s3 := &fakeS3{
-		headBucketError:   someError,
-		createBucketError: someError,
-	}
+	s3 := &mocks.MockS3{HeadBucketError: someError, CreateBucketError: someError}
 
 	err := storage.InitializeS3Bucket(bucket, region, s3)
 
-	if s3.headBucketInvocations != 1 {
-		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.headBucketInvocations)
+	if s3.HeadBucketInvocations != 1 {
+		t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.HeadBucketInvocations)
 	}
 
-	if s3.bucketName != bucket {
-		t.Errorf("Expected %v, got %v.", bucket, s3.bucketName)
+	if s3.BucketName != bucket {
+		t.Errorf("Expected %v, got %v.", bucket, s3.BucketName)
 	}
 
-	if s3.createBucketInvocations != 1 {
-		t.Errorf("Expected 1 call to CreateTable, got %v.", s3.createBucketInvocations)
+	if s3.CreateBucketInvocations != 1 {
+		t.Errorf("Expected 1 call to CreateTable, got %v.", s3.CreateBucketInvocations)
 	}
 
-	if s3.region != region {
-		t.Errorf("Expected %v, got %v.", region, s3.region)
+	if s3.Region != region {
+		t.Errorf("Expected %v, got %v.", region, s3.Region)
 	}
 
 	if err == nil {
