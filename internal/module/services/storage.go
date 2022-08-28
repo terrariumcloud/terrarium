@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -36,6 +35,7 @@ var (
 	RecieveSourceZipError     = status.Error(codes.Unknown, "Failed to recieve source zip.")
 	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
 	SendSourceZipError        = status.Error(codes.Unknown, "Failed to send source zip.")
+	ContentLenghtError        = status.Error(codes.Unknown, "Failed to read correct content lenght.")
 )
 
 type StorageService struct {
@@ -137,10 +137,10 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 
 		log.Println("Source zip downloaded.")
 		return nil
-	} else if err != nil {
+	} else if err != nil { // TODO: check if this is unreachable/dead code
 		log.Println(err)
 		return err
 	} else {
-		return errors.New("unexpected content lenght")
+		return ContentLenghtError
 	}
 }

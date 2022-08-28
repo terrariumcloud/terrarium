@@ -15,10 +15,13 @@ type MockS3 struct {
 	CreateBucketOut         *s3.CreateBucketOutput
 	CreateBucketError       error
 	Region                  string
-	PutItemInvocations      int
+	PutObjectInvocations    int
 	Filename                string
-	PutItemOut              *s3.PutObjectOutput
-	PutItemError            error
+	PutObjectOut            *s3.PutObjectOutput
+	PutObjectError          error
+	GetObjectInvocations    int
+	GetObjectOut            *s3.GetObjectOutput
+	GetObjectError          error
 }
 
 func (ms3 *MockS3) HeadBucket(in *s3.HeadBucketInput) (*s3.HeadBucketOutput, error) {
@@ -35,8 +38,15 @@ func (ms3 *MockS3) CreateBucket(in *s3.CreateBucketInput) (*s3.CreateBucketOutpu
 }
 
 func (ms3 *MockS3) PutObject(in *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
-	ms3.PutItemInvocations++
+	ms3.PutObjectInvocations++
 	ms3.BucketName = *in.Bucket
 	ms3.Filename = *in.Key
-	return ms3.PutItemOut, ms3.PutItemError
+	return ms3.PutObjectOut, ms3.PutObjectError
+}
+
+func (ms3 *MockS3) GetObject(in *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+	ms3.GetObjectInvocations++
+	ms3.BucketName = *in.Bucket
+	ms3.Filename = *in.Key
+	return ms3.GetObjectOut, ms3.GetObjectError
 }
