@@ -192,7 +192,7 @@ func TestRegisterContainerDependencies(t *testing.T) {
 	}
 }
 
-// This test checks if error is returned when PutItem fails
+// This test checks if error is returned when UpdateItem fails
 func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
