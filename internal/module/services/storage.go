@@ -47,12 +47,12 @@ type StorageService struct {
 
 // Registers StorageService with grpc server
 func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterStorageServer(grpcServer, s)
-
 	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
 		log.Println(err)
 		return BucketInitializationError
 	}
+
+	RegisterStorageServer(grpcServer, s)
 
 	return nil
 }

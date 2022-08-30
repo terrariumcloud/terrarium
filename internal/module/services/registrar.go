@@ -52,11 +52,11 @@ type Module struct {
 
 // Registers RegistrarService with grpc server
 func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterRegistrarServer(grpcServer, s)
-
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		return ModuleTableInitializationError
 	}
+
+	RegisterRegistrarServer(grpcServer, s)
 
 	return nil
 }

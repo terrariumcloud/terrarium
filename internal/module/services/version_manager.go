@@ -53,12 +53,12 @@ type ModuleVersion struct {
 
 // Registers VersionManagerService with grpc server
 func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterVersionManagerServer(grpcServer, s)
-
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		log.Println(err)
 		return ModuleVersionsTableInitializationError
 	}
+
+	RegisterVersionManagerServer(grpcServer, s)
 
 	return nil
 }

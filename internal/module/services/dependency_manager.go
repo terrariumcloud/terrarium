@@ -58,12 +58,12 @@ type ModuleDependencies struct {
 
 // Registers DependencyManagerService with grpc server
 func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterDependencyManagerServer(grpcServer, s)
-
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		log.Println(err)
 		return ModuleDependenciesTableInitializationError
 	}
+
+	RegisterDependencyManagerServer(grpcServer, s)
 
 	return nil
 }

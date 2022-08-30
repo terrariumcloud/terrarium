@@ -94,7 +94,7 @@ func TestUploadSourceZip(t *testing.T) {
 		t.Errorf("Expected no error, got %v.", err)
 	}
 
-	if mus.RecvInvocations != 1 {
+	if mus.RecvInvocations != 2 {
 		t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
 	}
 

@@ -252,7 +252,6 @@ func TestRetrieveContainerDependencies(t *testing.T) {
 		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
 	}
 
-	// TODO: mock GetItem out to provide data for actual response
 	if srv.Response == nil {
 		t.Error("Expected response, got nil.")
 	}
@@ -344,7 +343,6 @@ func TestRetrieveModuleDependencies(t *testing.T) {
 		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
 	}
 
-	// TODO: mock GetItem out to provide data for actual response
 	if srv.Response == nil {
 		t.Error("Expected response, got nil.")
 	}

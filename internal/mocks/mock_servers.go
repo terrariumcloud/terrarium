@@ -31,7 +31,7 @@ func (mus *MockUploadSourceZipServer) Recv() (*terrarium.UploadSourceZipRequest,
 		return nil, mus.RecvError
 	}
 
-	if mus.RecvMaxInvocations >= mus.RecvInvocations {
+	if mus.RecvInvocations == mus.RecvMaxInvocations {
 		return nil, io.EOF
 	}
 
