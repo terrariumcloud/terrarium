@@ -173,7 +173,6 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_Upload
 
 		if upErr != nil {
 			log.Printf("Failed to send: %v", upErr)
-			server.SendAndClose(nil) //?
 			return upErr
 		}
 	}
