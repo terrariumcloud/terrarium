@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VersionManagerClient interface {
-	BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*module.BeginVersionResponse, error)
-	AbortVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
-	PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
+	BeginVersion(ctx context.Context, in *module.BeginVersionRequest, opts ...grpc.CallOption) (*module.Response, error)
+	AbortVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error)
+	PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error)
 }
 
 type versionManagerClient struct {
@@ -36,8 +36,8 @@ func NewVersionManagerClient(cc grpc.ClientConnInterface) VersionManagerClient {
 	return &versionManagerClient{cc}
 }
 
-func (c *versionManagerClient) BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*module.BeginVersionResponse, error) {
-	out := new(module.BeginVersionResponse)
+func (c *versionManagerClient) BeginVersion(ctx context.Context, in *module.BeginVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.VersionManager/BeginVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -45,8 +45,8 @@ func (c *versionManagerClient) BeginVersion(ctx context.Context, in *BeginVersio
 	return out, nil
 }
 
-func (c *versionManagerClient) AbortVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
-	out := new(module.TransactionStatusResponse)
+func (c *versionManagerClient) AbortVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.VersionManager/AbortVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (c *versionManagerClient) AbortVersion(ctx context.Context, in *TerminateVe
 	return out, nil
 }
 
-func (c *versionManagerClient) PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
-	out := new(module.TransactionStatusResponse)
+func (c *versionManagerClient) PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.VersionManager/PublishVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -67,9 +67,9 @@ func (c *versionManagerClient) PublishVersion(ctx context.Context, in *Terminate
 // All implementations must embed UnimplementedVersionManagerServer
 // for forward compatibility
 type VersionManagerServer interface {
-	BeginVersion(context.Context, *BeginVersionRequest) (*module.BeginVersionResponse, error)
-	AbortVersion(context.Context, *TerminateVersionRequest) (*module.TransactionStatusResponse, error)
-	PublishVersion(context.Context, *TerminateVersionRequest) (*module.TransactionStatusResponse, error)
+	BeginVersion(context.Context, *module.BeginVersionRequest) (*module.Response, error)
+	AbortVersion(context.Context, *TerminateVersionRequest) (*module.Response, error)
+	PublishVersion(context.Context, *TerminateVersionRequest) (*module.Response, error)
 	mustEmbedUnimplementedVersionManagerServer()
 }
 
@@ -77,13 +77,13 @@ type VersionManagerServer interface {
 type UnimplementedVersionManagerServer struct {
 }
 
-func (UnimplementedVersionManagerServer) BeginVersion(context.Context, *BeginVersionRequest) (*module.BeginVersionResponse, error) {
+func (UnimplementedVersionManagerServer) BeginVersion(context.Context, *module.BeginVersionRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BeginVersion not implemented")
 }
-func (UnimplementedVersionManagerServer) AbortVersion(context.Context, *TerminateVersionRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedVersionManagerServer) AbortVersion(context.Context, *TerminateVersionRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbortVersion not implemented")
 }
-func (UnimplementedVersionManagerServer) PublishVersion(context.Context, *TerminateVersionRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedVersionManagerServer) PublishVersion(context.Context, *TerminateVersionRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishVersion not implemented")
 }
 func (UnimplementedVersionManagerServer) mustEmbedUnimplementedVersionManagerServer() {}
@@ -100,7 +100,7 @@ func RegisterVersionManagerServer(s grpc.ServiceRegistrar, srv VersionManagerSer
 }
 
 func _VersionManager_BeginVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BeginVersionRequest)
+	in := new(module.BeginVersionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func _VersionManager_BeginVersion_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/terrarium.module.services.VersionManager/BeginVersion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VersionManagerServer).BeginVersion(ctx, req.(*BeginVersionRequest))
+		return srv.(VersionManagerServer).BeginVersion(ctx, req.(*module.BeginVersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

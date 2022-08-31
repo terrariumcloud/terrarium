@@ -9,9 +9,9 @@ import (
 
 var dependencyManagerCmd = &cobra.Command{
 	Use:   "dependency-manager",
-	Short: "Starts the Terrarium GRPC Dependency Resolver service",
-	Long:  "Runs the Terrarium GRPC Dependency Resolver server.",
-	Run:   runDependencyResolver,
+	Short: "Starts the Terrarium GRPC Dependency Manager service",
+	Long:  "Runs the Terrarium GRPC Dependency Manager server.",
+	Run:   runDependencyManager,
 }
 
 func init() {
@@ -19,11 +19,13 @@ func init() {
 	dependencyManagerCmd.Flags().StringVarP(&services.ModuleDependenciesTableName, "table", "t", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
 }
 
-func runDependencyResolver(cmd *cobra.Command, args []string) {
+func runDependencyManager(cmd *cobra.Command, args []string) {
 
 	dependencyServiceServer := &services.DependencyManagerService{
-		Db: storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:  services.ModuleDependenciesTableName,
+		Schema: services.GetModuleDependenciesSchema(services.ModuleDependenciesTableName),
 	}
 
-	startService("Terrarium GRPC Dependency Resolver service", dependencyServiceServer)
+	startService("Terrarium GRPC Dependency Manager service", dependencyServiceServer)
 }

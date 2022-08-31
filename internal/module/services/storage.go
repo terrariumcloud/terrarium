@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,8 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	grpc "google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -23,9 +23,20 @@ const (
 	DefaultChunkSize                     = 64 * 1024 // 64 KB
 )
 
-var BucketName string = DefaultBucketName
-var StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
-var ChunkSize = DefaultChunkSize
+var (
+	BucketName             string = DefaultBucketName
+	StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
+	ChunkSize                     = DefaultChunkSize
+
+	SourceZipUploaded = &terrarium.Response{Message: "Source zip uploaded successfully."}
+
+	BucketInitializationError = status.Error(codes.Unknown, "Failed to initialize bucket for storage.")
+	UploadSourceZipError      = status.Error(codes.Unknown, "Failed to upload source zip.")
+	RecieveSourceZipError     = status.Error(codes.Unknown, "Failed to recieve source zip.")
+	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
+	SendSourceZipError        = status.Error(codes.Unknown, "Failed to send source zip.")
+	ContentLenghtError        = status.Error(codes.Unknown, "Failed to read correct content lenght.")
+)
 
 type StorageService struct {
 	UnimplementedStorageServer
@@ -34,45 +45,52 @@ type StorageService struct {
 	Region     string
 }
 
+// Registers StorageService with grpc server
 func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterStorageServer(grpcServer, s)
 	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
-		return err
+		log.Println(err)
+		return BucketInitializationError
 	}
+
+	RegisterStorageServer(grpcServer, s)
+
 	return nil
 }
 
 // Upload Source Zip to storage
 func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
+	log.Println("Uploading source zip.")
 	zip := []byte{}
-	var sessionKey string
-
-	if md, ok := metadata.FromIncomingContext(server.Context()); ok {
-		sessionKey = md.Get("session_key")[0]
-	}
+	var filename string
 
 	for {
 		req, err := server.Recv()
 
+		if filename == "" && req != nil {
+			filename = fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
+		}
+
 		if err == io.EOF {
 			log.Printf("Received file with total lenght: %v", len(zip))
+
 			in := &s3.PutObjectInput{
 				Bucket: aws.String(BucketName),
-				Key:    aws.String(fmt.Sprintf("%s.zip", sessionKey)),
+				Key:    aws.String(filename),
 				Body:   bytes.NewReader(zip),
 			}
 
 			if _, err := s.S3.PutObject(in); err != nil {
 				log.Println(err)
-				return err
+				return UploadSourceZipError
 			}
 
 			log.Println("Source zip uploaded successfully.")
-			return server.SendAndClose(ZipUploaded)
+			return server.SendAndClose(SourceZipUploaded)
 		}
 
 		if err != nil {
-			return err
+			log.Println(err)
+			return RecieveSourceZipError
 		}
 
 		log.Printf("Recieved %v bytes", len(req.ZipDataChunk))
@@ -83,45 +101,46 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 // Download Source Zip from storage
 func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {
 	log.Println("Downloading source zip.")
-	//TODO: fetch session key based on request data
-	sessionKey := "123"
+	filename := fmt.Sprintf("%s_%s.zip", request.GetModule().Name, request.Module.GetVersion())
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
-		Key:    aws.String(sessionKey),
+		Key:    aws.String(filename),
 	}
 
 	out, err := s.S3.GetObject(in)
 
 	if err != nil {
-		log.Printf("Failed to get object: %s", err.Error())
-		return err
+		log.Println(err)
+		return DownloadSourceZipError
 	}
 
-	buf := make([]byte, *out.ContentLength)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(out.Body)
+	bb := buf.Bytes()
 
-	n, err := out.Body.Read(buf)
 	outContentLength := int(*out.ContentLength)
-	if n == outContentLength {
+	if len(bb) == outContentLength {
 		res := &terrarium.SourceZipResponse{}
 		for i := 0; i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
-				res.ZipDataChunk = buf[i:outContentLength]
+				res.ZipDataChunk = bb[i:outContentLength]
 			} else {
-				res.ZipDataChunk = buf[i : i+ChunkSize]
+				res.ZipDataChunk = bb[i : i+ChunkSize]
 			}
 
 			if err := server.Send(res); err != nil {
-				log.Printf("Failed to send: %s", err.Error())
-				return err
+				log.Println(err)
+				return SendSourceZipError
 			}
 		}
 
+		log.Println("Source zip downloaded.")
 		return nil
-	} else if err != nil {
-		log.Printf("Failed to read content: %s", err.Error())
+	} else if err != nil { // TODO: check if this is unreachable/dead code
+		log.Println(err)
 		return err
 	} else {
-		return errors.New("unexpected content lenght")
+		return ContentLenghtError
 	}
 }

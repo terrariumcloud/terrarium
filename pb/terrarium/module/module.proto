@@ -19,14 +19,14 @@ option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrar
 
 
 service Publisher {
-  rpc Register(RegisterModuleRequest) returns (TransactionStatusResponse) {}
-  rpc BeginVersion(BeginVersionRequest) returns (BeginVersionResponse) {}
-  rpc RegisterModuleDependencies(RegisterModuleDependenciesRequest) returns (TransactionStatusResponse) {}
-  rpc RegisterContainerDependencies(RegisterContainerDependenciesRequest) returns (TransactionStatusResponse) {}
+  rpc Register(RegisterModuleRequest) returns (Response) {}
+  rpc BeginVersion(BeginVersionRequest) returns (Response) {}
+  rpc RegisterModuleDependencies(RegisterModuleDependenciesRequest) returns (Response) {}
+  rpc RegisterContainerDependencies(RegisterContainerDependenciesRequest) returns (Response) {}
   // Register Audit Trail
-  rpc UploadSourceZip (stream UploadSourceZipRequest) returns (TransactionStatusResponse) {}
+  rpc UploadSourceZip (stream UploadSourceZipRequest) returns (Response) {}
   // Upload Documentation
-  rpc EndVersion(EndVersionRequest) returns (TransactionStatusResponse) {}
+  rpc EndVersion(EndVersionRequest) returns (Response) {}
 }
 
 service Consumer {
@@ -35,68 +35,54 @@ service Consumer {
   rpc RetrieveModuleDependencies(RetrieveModuleDependenciesRequest) returns (stream ModuleDependenciesResponse) {}
 }
 
-enum Status {
-  OK = 0;
-  UNKNOWN_ERROR = 1;
-  NOT_AUTHORIZED_ERROR = 2;
-}
-
-enum Maturity {
-  IDEA = 0;
-  PLANNING = 1;
-  DEVELOPING = 2;
-  ALPHA = 3;
-  BETA = 4;
-  STABLE = 5;
-  DEPRECATED = 6;
-  END_OF_LIFE = 7;
-}
-
-message TransactionStatusResponse {
-  Status status = 1;
-  string status_message = 2;
-}
-
-
 message RegisterModuleRequest {
   string api_key = 1;
   string name = 2;
   string description = 3;
-  string source_url= 4;
+  string source = 4;
+  enum Maturity {
+    IDEA = 0;
+    PLANNING = 1;
+    DEVELOPING = 2;
+    ALPHA = 3;
+    BETA = 4;
+    STABLE = 5;
+    DEPRECATED = 6;
+    END_OF_LIFE = 7;
+  }
   Maturity maturity = 5;
 }
 
-message BeginVersionRequest {
-  string api_key = 1;
-  VersionedModule module = 2;
+message Response {
+  string message = 1;
 }
 
-message BeginVersionResponse {
-  string session_key = 1;
-}
-
-message VersionedModule {
+message Module {
   string name = 1;
   string version = 2;
 }
 
+message BeginVersionRequest {
+  Module module = 1;
+}
+
 message RegisterModuleDependenciesRequest {
-  string session_key = 1;
-  repeated VersionedModule modules = 2;
+  Module module = 1;
+  repeated Module dependencies = 2;
 }
 
 message RegisterContainerDependenciesRequest {
-  string session_key = 1;
-  repeated string container_image_references = 2;
+  Module module = 1;
+  repeated string dependencies = 2;
 }
 
 message UploadSourceZipRequest {
-  string session_key = 1;
+  Module module = 1;
   bytes zip_data_chunk = 2;
 }
 
 message EndVersionRequest {
-  string session_key = 1;
+  Module module = 1;
   enum Action {
     DISCARD = 0;
     PUBLISH = 1;
@@ -105,8 +91,7 @@ message EndVersionRequest {
 }
 
 message DownloadSourceZipRequest {
-  string api_key = 1;
-  VersionedModule module = 2;
+  Module module = 1;
 }
 
 message SourceZipResponse {
@@ -114,23 +99,21 @@ message SourceZipResponse {
 }
 
 message RetrieveModuleDependenciesRequest {
-  string api_key = 1;
-  VersionedModule module = 2;
-  bool include_recursive = 3;
+  Module module = 1;
+  bool recursive = 2;
 }
 
 message ModuleDependenciesResponse {
-  VersionedModule origin = 1;
-  repeated VersionedModule modules = 2;
+  Module module = 1;
+  repeated Module dependencies = 2;
 }
 
 message RetrieveContainerDependenciesRequest {
-  string api_key = 1;
-  VersionedModule module = 2;
-  bool include_recursive = 3;
+  Module module = 1;
+  bool recursive = 2;
 }
 
 message ContainerDependenciesResponse {
-  VersionedModule origin = 1;
-  repeated string container_image_references = 2;
+  Module module = 1;
+  repeated string dependencies = 2;
 }

@@ -23,8 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DependencyManagerClient interface {
-	RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
-	RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error)
+	RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error)
+	RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error)
 	RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequest, opts ...grpc.CallOption) (DependencyManager_RetrieveContainerDependenciesClient, error)
 	RetrieveModuleDependencies(ctx context.Context, in *module.RetrieveModuleDependenciesRequest, opts ...grpc.CallOption) (DependencyManager_RetrieveModuleDependenciesClient, error)
 }
@@ -37,8 +37,8 @@ func NewDependencyManagerClient(cc grpc.ClientConnInterface) DependencyManagerCl
 	return &dependencyManagerClient{cc}
 }
 
-func (c *dependencyManagerClient) RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
-	out := new(module.TransactionStatusResponse)
+func (c *dependencyManagerClient) RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.DependencyManager/RegisterModuleDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *dependencyManagerClient) RegisterModuleDependencies(ctx context.Context
 	return out, nil
 }
 
-func (c *dependencyManagerClient) RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.TransactionStatusResponse, error) {
-	out := new(module.TransactionStatusResponse)
+func (c *dependencyManagerClient) RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
+	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.DependencyManager/RegisterContainerDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -123,8 +123,8 @@ func (x *dependencyManagerRetrieveModuleDependenciesClient) Recv() (*module.Modu
 // All implementations must embed UnimplementedDependencyManagerServer
 // for forward compatibility
 type DependencyManagerServer interface {
-	RegisterModuleDependencies(context.Context, *module.RegisterModuleDependenciesRequest) (*module.TransactionStatusResponse, error)
-	RegisterContainerDependencies(context.Context, *module.RegisterContainerDependenciesRequest) (*module.TransactionStatusResponse, error)
+	RegisterModuleDependencies(context.Context, *module.RegisterModuleDependenciesRequest) (*module.Response, error)
+	RegisterContainerDependencies(context.Context, *module.RegisterContainerDependenciesRequest) (*module.Response, error)
 	RetrieveContainerDependencies(*module.RetrieveContainerDependenciesRequest, DependencyManager_RetrieveContainerDependenciesServer) error
 	RetrieveModuleDependencies(*module.RetrieveModuleDependenciesRequest, DependencyManager_RetrieveModuleDependenciesServer) error
 	mustEmbedUnimplementedDependencyManagerServer()
@@ -134,10 +134,10 @@ type DependencyManagerServer interface {
 type UnimplementedDependencyManagerServer struct {
 }
 
-func (UnimplementedDependencyManagerServer) RegisterModuleDependencies(context.Context, *module.RegisterModuleDependenciesRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedDependencyManagerServer) RegisterModuleDependencies(context.Context, *module.RegisterModuleDependenciesRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterModuleDependencies not implemented")
 }
-func (UnimplementedDependencyManagerServer) RegisterContainerDependencies(context.Context, *module.RegisterContainerDependenciesRequest) (*module.TransactionStatusResponse, error) {
+func (UnimplementedDependencyManagerServer) RegisterContainerDependencies(context.Context, *module.RegisterContainerDependenciesRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterContainerDependencies not implemented")
 }
 func (UnimplementedDependencyManagerServer) RetrieveContainerDependencies(*module.RetrieveContainerDependenciesRequest, DependencyManager_RetrieveContainerDependenciesServer) error {
