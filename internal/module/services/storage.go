@@ -67,7 +67,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 		req, err := server.Recv()
 
 		if filename == "" && req != nil {
-			filename = fmt.Sprintf("%s_%s.zip", req.Module.GetName(), req.Module.GetVersion())
+			filename = fmt.Sprintf("%s/%s.zip", req.Module.GetName(), req.Module.GetVersion())
 		}
 
 		if err == io.EOF {
@@ -101,7 +101,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 // Download Source Zip from storage
 func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {
 	log.Println("Downloading source zip.")
-	filename := fmt.Sprintf("%s_%s.zip", request.GetModule().Name, request.Module.GetVersion())
+	filename := fmt.Sprintf("%s/%s.zip", request.GetModule().Name, request.Module.GetVersion())
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
