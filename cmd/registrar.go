@@ -27,5 +27,5 @@ func runRegistrarService(cmd *cobra.Command, args []string) {
 		Schema: services.GetModulesSchema(services.RegistrarTableName),
 	}
 
-	startService("Terrarium GRPC Registrar service", registrarServiceServer)
+	startGRPCService("Terrarium GRPC Registrar service", registrarServiceServer)
 }

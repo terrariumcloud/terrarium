@@ -9,6 +9,7 @@ service VersionManager {
   rpc BeginVersion(BeginVersionRequest) returns (terrarium.module.BeginVersionResponse);
   rpc AbortVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
   rpc PublishVersion(TerminateVersionRequest) returns (terrarium.module.TransactionStatusResponse);
+  rpc ListModuleVersions(ListModuleVersionsRequest) returns (ListModuleVersionsResponse);
 }
 
 message BeginVersionRequest {
@@ -17,4 +18,12 @@ message BeginVersionRequest {
 
 message TerminateVersionRequest {
     string session_key = 1;
+}
+
+message ListModuleVersionsRequest {
+  string module = 1;
+}
+
+message ListModuleVersionsResponse {
+  repeated string versions = 1;
 }

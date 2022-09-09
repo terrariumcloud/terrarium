@@ -25,5 +25,5 @@ func runGateway(cmd *cobra.Command, args []string) {
 
 	gatewayServer := &services.TerrariumGrpcGateway{}
 
-	startService("Terrarium GRPC Gateway service", gatewayServer)
+	startGRPCService("Terrarium GRPC Gateway service", gatewayServer)
 }

@@ -27,5 +27,5 @@ func runStorageService(cmd *cobra.Command, args []string) {
 		Region:     awsRegion,
 	}
 
-	startService("Terrarium GRPC Storage service", storageServiceServer)
+	startGRPCService("Terrarium GRPC Storage service", storageServiceServer)
 }

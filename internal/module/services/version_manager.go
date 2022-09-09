@@ -2,17 +2,19 @@ package services
 
 import (
 	"context"
+
 	"log"
 	"time"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/google/uuid"
 )
 
@@ -21,8 +23,8 @@ const (
 	DefaultVersionManagerEndpoint = "version_manager:3001"
 )
 
-var VersionsTableName string = DefaultVersionsTableName
-var VersionManagerEndpoint string = DefaultVersionManagerEndpoint
+var VersionsTableName = DefaultVersionsTableName
+var VersionManagerEndpoint = DefaultVersionManagerEndpoint
 
 type VersionManagerService struct {
 	UnimplementedVersionManagerServer
@@ -47,8 +49,8 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 	return nil
 }
 
-// Creates new Module Version with Version Manager service
-func (s *VersionManagerService) BeginVersion(ctx context.Context, request *BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
+// BeginVersion Creates new Module Version with Version Manager service
+func (s *VersionManagerService) BeginVersion(_ context.Context, request *BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
 	log.Println("Creating new version.")
 
 	mv := ModuleVersion{
@@ -83,8 +85,8 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *Begin
 	return response, nil
 }
 
-// Removes Module Version with Version Manager service
-func (s *VersionManagerService) AbortVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+// AbortVersion Removes Module Version with Version Manager service
+func (s *VersionManagerService) AbortVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	log.Println("Aborting module version.")
 
 	in := &dynamodb.DeleteItemInput{
@@ -105,8 +107,8 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *Termi
 	return VersionAborted, nil
 }
 
-// Updates Module Version to published with Verison Manager service
-func (s *VersionManagerService) PublishVersion(ctx context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+// PublishVersion Updates Module Version to published with Version Manager service
+func (s *VersionManagerService) PublishVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
 	log.Println("Publishing module version.")
 
 	in := &dynamodb.UpdateItemInput{
@@ -133,60 +135,43 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *Ter
 	return VersionPublished, nil
 }
 
-// GetModuleVersoinsSchema returns CreateTableInput
-// that can be used to create table if it does not exist
-// func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
-// 	return &dynamodb.CreateTableInput{
-// 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-// 			{
-// 				AttributeName: aws.String("_id"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 			{
-// 				AttributeName: aws.String("name"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 			{
-// 				AttributeName: aws.String("version"),
-// 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-// 			},
-// 		},
-// 		KeySchema: []*dynamodb.KeySchemaElement{
-// 			{
-// 				AttributeName: aws.String("name"),
-// 				KeyType:       aws.String("HASH"),
-// 			},
-// 			{
-// 				AttributeName: aws.String("version"),
-// 				KeyType:       aws.String("RANGE"),
-// 			},
-// 		},
-// 		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
-// 			{
-// 				IndexName: aws.String("VersionIdIndex"),
-// 				KeySchema: []*dynamodb.KeySchemaElement{
-// 					{
-// 						AttributeName: aws.String("_id"),
-// 						KeyType:       aws.String("HASH"),
-// 					},
-// 				},
-// 				Projection: &dynamodb.Projection{
-// 					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
-// 				},
-// 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-// 					ReadCapacityUnits:  aws.Int64(1),
-// 					WriteCapacityUnits: aws.Int64(1),
-// 				},
-// 			},
-// 		},
-// 		TableName:   aws.String(table),
-// 		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
-// 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-// 			ReadCapacityUnits:  aws.Int64(1),
-// 			WriteCapacityUnits: aws.Int64(1),
-// 		},
-// 	}
-// }
+// ListModuleVersions Retrieve all versions of a given module and return an array of versions.
+// Only versions that have been published should be reported
+func (s *VersionManagerService) ListModuleVersions(_ context.Context, request *ListModuleVersionsRequest) (*ListModuleVersionsResponse, error) {
+	filter := expression.And(expression.Name("name").Equal(expression.Value(request.Module)), expression.Name("published_on").AttributeExists())
+	builder := expression.NewBuilder()
+	builder.WithProjection(expression.NamesList(expression.Name("version")))
+	builder.WithFilter(filter)
+	expr, err := builder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		TableName:                 aws.String(VersionsTableName),
+	}
+
+	response, err := s.Db.Scan(scanQueryInputs)
+	if response.Items == nil {
+		return nil, err
+	}
+
+	grpcResponse := ListModuleVersionsResponse{}
+	for _, item := range response.Items {
+		moduleVersion := ModuleVersion{}
+		if err := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err != nil {
+			return nil, err
+		}
+		grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
+	}
+
+	return &grpcResponse, nil
+}
+
+// GetModuleVersionsSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
