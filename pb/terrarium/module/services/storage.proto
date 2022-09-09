@@ -6,6 +6,6 @@ import "pb/terrarium/module/module.proto";
 option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services";
 
 service Storage {
-  rpc UploadSourceZip(stream terrarium.module.UploadSourceZipRequest) returns (terrarium.module.TransactionStatusResponse) {}
+  rpc UploadSourceZip(stream terrarium.module.UploadSourceZipRequest) returns (terrarium.module.Response) {}
   rpc DownloadSourceZip(terrarium.module.DownloadSourceZipRequest) returns (stream terrarium.module.SourceZipResponse) {}
 }

@@ -7,7 +7,9 @@ import (
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -21,8 +23,16 @@ const (
 	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
 )
 
-var RegistrarTableName string = DefaultRegistrarTableName
-var RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
+var (
+	RegistrarTableName       string = DefaultRegistrarTableName
+	RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
+
+	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
+
+	ModuleTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for modules.")
+	ModuleRegisterError            = status.Error(codes.Unknown, "Failed to register module.")
+	MarshalModuleError             = status.Error(codes.Unknown, "Failed to marshal module.")
+)
 
 type RegistrarService struct {
 	UnimplementedRegistrarServer
@@ -35,29 +45,31 @@ type Module struct {
 	ID          interface{} `json:"id" bson:"_id" dynamodbav:"_id"`
 	Name        string      `json:"name" bson:"name" dynamodbav:"name"`
 	Description string      `json:"description" bson:"description" dynamodbav:"description"`
-	SourceUrl   string      `json:"source_url" bson:"source_url" dynamodbav:"source_url"`
+	Source      string      `json:"source_url" bson:"source_url" dynamodbav:"source"`
 	Maturity    string      `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
 	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
+// Registers RegistrarService with grpc server
 func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	RegisterRegistrarServer(grpcServer, s)
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
-		return err
+		return ModuleTableInitializationError
 	}
-	return nil
 
+	RegisterRegistrarServer(grpcServer, s)
+
+	return nil
 }
 
 // Register new Module in Terrarium
-func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Registering new module.")
 
 	ms := Module{
 		ID:          uuid.NewString(),
 		Name:        request.GetName(),
 		Description: request.GetDescription(),
-		SourceUrl:   request.GetSourceUrl(),
+		Source:      request.GetSource(),
 		Maturity:    request.GetMaturity().String(),
 		CreatedOn:   time.Now().UTC().String(),
 	}
@@ -65,8 +77,8 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	av, err := dynamodbattribute.MarshalMap(ms)
 
 	if err != nil {
-		log.Printf("Failed to marshal: %s", err.Error())
-		return MarshalModuleError, err
+		log.Println(err)
+		return nil, MarshalModuleError
 	}
 
 	in := &dynamodb.PutItemInput{
@@ -75,8 +87,8 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	}
 
 	if _, err = s.Db.PutItem(in); err != nil {
-		log.Printf("Failed to put item: %s", err.Error())
-		return ModuleNotRegistered, err
+		log.Println(err)
+		return nil, ModuleRegisterError
 	}
 
 	log.Println("New module registered.")
@@ -84,6 +96,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 }
 
 // GetModulesSchema returns CreateTableInput
+// that can be used to create table if it does not exist
 func GetModulesSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -99,10 +112,6 @@ func GetModulesSchema(table string) *dynamodb.CreateTableInput {
 			},
 		},
 		TableName:   aws.String(table),
-		BillingMode: aws.String(dynamodb.BillingModeProvisioned),
-		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(1),
-			WriteCapacityUnits: aws.Int64(1),
-		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
 	}
 }

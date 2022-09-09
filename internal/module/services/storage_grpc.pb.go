@@ -46,7 +46,7 @@ func (c *storageClient) UploadSourceZip(ctx context.Context, opts ...grpc.CallOp
 
 type Storage_UploadSourceZipClient interface {
 	Send(*module.UploadSourceZipRequest) error
-	CloseAndRecv() (*module.TransactionStatusResponse, error)
+	CloseAndRecv() (*module.Response, error)
 	grpc.ClientStream
 }
 
@@ -58,11 +58,11 @@ func (x *storageUploadSourceZipClient) Send(m *module.UploadSourceZipRequest) er
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *storageUploadSourceZipClient) CloseAndRecv() (*module.TransactionStatusResponse, error) {
+func (x *storageUploadSourceZipClient) CloseAndRecv() (*module.Response, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(module.TransactionStatusResponse)
+	m := new(module.Response)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func _Storage_UploadSourceZip_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type Storage_UploadSourceZipServer interface {
-	SendAndClose(*module.TransactionStatusResponse) error
+	SendAndClose(*module.Response) error
 	Recv() (*module.UploadSourceZipRequest, error)
 	grpc.ServerStream
 }
@@ -147,7 +147,7 @@ type storageUploadSourceZipServer struct {
 	grpc.ServerStream
 }
 
-func (x *storageUploadSourceZipServer) SendAndClose(m *module.TransactionStatusResponse) error {
+func (x *storageUploadSourceZipServer) SendAndClose(m *module.Response) error {
 	return x.ServerStream.SendMsg(m)
 }
 

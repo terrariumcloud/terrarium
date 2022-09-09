@@ -5,300 +5,403 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"google.golang.org/grpc"
 )
 
-type fakeDynamoDB struct {
-	dynamodbiface.DynamoDBAPI
-	err                  error
-	numberOfPutItemCalls int
-	tableName            *string
+type MockRetrieveContainerDependenciesServer struct {
+	grpc.ServerStream
+	SendInvocations int
+	Response        *terrarium.ContainerDependenciesResponse
+	Err             error
 }
 
-func (fd *fakeDynamoDB) PutItem(item *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
-	fd.tableName = item.TableName
-	output := new(dynamodb.PutItemOutput)
-	output.Attributes = make(map[string]*dynamodb.AttributeValue)
-	fd.numberOfPutItemCalls++
-	return output, fd.err
+func (srv *MockRetrieveContainerDependenciesServer) Send(res *terrarium.ContainerDependenciesResponse) error {
+	srv.SendInvocations++
+	srv.Response = res
+	return srv.Err
 }
 
+type MockRetrieveModuleDependenciesServer struct {
+	grpc.ServerStream
+	SendInvocations int
+	Response        *terrarium.ModuleDependenciesResponse
+	Err             error
+}
+
+func (srv *MockRetrieveModuleDependenciesServer) Send(res *terrarium.ModuleDependenciesResponse) error {
+	srv.SendInvocations++
+	srv.Response = res
+	return srv.Err
+}
+
+// This test checks if there was no error
+func TestRegisterDependencyManagerWithServer(t *testing.T) {
+	t.Parallel()
+
+	db := &mocks.MockDynamoDB{}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	s := grpc.NewServer(*new([]grpc.ServerOption)...)
+
+	err := dms.RegisterWithServer(s)
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v.", err)
+	}
+
+	if db.DescribeTableInvocations != 1 {
+		t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
+	}
+
+	if db.CreateTableInvocations != 0 {
+		t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
+	}
+}
+
+// This test checks if error is returned when Table initialization fails
+func TestRegisterWithServerWhenModuleDependenciesTableInitializationErrors(t *testing.T) {
+	t.Parallel()
+
+	db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	s := grpc.NewServer(*new([]grpc.ServerOption)...)
+
+	err := dms.RegisterWithServer(s)
+
+	if err != services.ModuleDependenciesTableInitializationError {
+		t.Errorf("Expected %v, got %v.", services.ModuleDependenciesTableInitializationError, err)
+	}
+
+	if db.DescribeTableInvocations != 1 {
+		t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
+	}
+
+	if db.CreateTableInvocations != 0 {
+		t.Errorf("Expected 0 calls to CreateTable, got %v.", db.CreateTableInvocations)
+	}
+}
+
+// This test checks if correct response is returned when module dependencies are registered
 func TestRegisterModuleDependencies(t *testing.T) {
 	t.Parallel()
 
-	fd := &fakeDynamoDB{}
+	db := &mocks.MockDynamoDB{}
 
-	dependencyService := &services.DependencyManagerService{
-		Db: fd,
-	}
-	modules := []*terrarium.VersionedModule{
-		{
-			Name:    "test",
-			Version: "v1.0.0",
-		},
-		{
-			Name:    "test2",
-			Version: "v1.1.0",
+	svc := &services.DependencyManagerService{Db: db}
+
+	req := &terrarium.RegisterModuleDependenciesRequest{
+		Module: &terrarium.Module{Name: "test", Version: "v1"},
+		Dependencies: []*terrarium.Module{
+			{Name: "test", Version: "v1.0.0"},
+			{Name: "test2", Version: "v1.1.0"},
 		},
 	}
-	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
-	}
-	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
+
+	res, err := svc.RegisterModuleDependencies(context.TODO(), req)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if response == nil {
-		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
+	if db.PutItemInvocations != 1 {
+		t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
 	}
 
-	if fd.numberOfPutItemCalls != 1 {
-		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if db.TableName != services.ModuleDependenciesTableName {
+		t.Errorf("Expected tableName to be %v, got %v.", services.ModuleDependenciesTableName, db.TableName)
 	}
 
-	if fd.tableName == nil {
-		t.Errorf("Expected tableName, got nil.")
-	} else {
-		if *fd.tableName != services.DefaultModuleDependenciesTableName {
-			t.Errorf("Expected tableName to be %s, got %s", services.DefaultModuleDependenciesTableName, *fd.tableName)
-		}
+	if res != services.ModuleDependenciesRegistered {
+		t.Errorf("Expected %v, got %v.", services.ModuleDependenciesRegistered, res)
 	}
 }
 
-func TestRegisterModuleDependenciesWhenPutItemReturnsError(t *testing.T) {
+// This test checks if error is returned when PutItem fails
+func TestRegisterModuleDependenciesWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
-	fd := &fakeDynamoDB{
-		err: errors.New("test"),
-	}
+	db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
 
-	dependencyService := &services.DependencyManagerService{
-		Db: fd,
-	}
-	modules := []*terrarium.VersionedModule{
-		{
-			Name:    "test",
-			Version: "v1.0.0",
-		},
-		{
-			Name:    "test2",
-			Version: "v1.1.0",
+	svc := &services.DependencyManagerService{Db: db}
+
+	req := &terrarium.RegisterModuleDependenciesRequest{
+		Module: &terrarium.Module{Name: "test", Version: "v1"},
+		Dependencies: []*terrarium.Module{
+			{Name: "test", Version: "v1.0.0"},
+			{Name: "test2", Version: "v1.1.0"},
 		},
 	}
-	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
-	}
-	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
 
-	if err == nil {
-		t.Error("Expected error, got nil")
-	} else {
-		if response.Status != terrarium.Status_UNKNOWN_ERROR {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
-		}
+	res, err := svc.RegisterModuleDependencies(context.TODO(), req)
+
+	if res != nil {
+		t.Errorf("Expected no response, got %v", err)
 	}
 
-	if fd.numberOfPutItemCalls != 1 {
-		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if db.PutItemInvocations != 1 {
+		t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
 	}
 
-	if fd.tableName == nil {
-		t.Errorf("Expected tableName, got nil.")
-	} else {
-		if *fd.tableName != services.DefaultModuleDependenciesTableName {
-			t.Errorf("Expected tableName to be %s, got %s", services.DefaultModuleDependenciesTableName, *fd.tableName)
-		}
+	if db.TableName != services.ModuleDependenciesTableName {
+		t.Errorf("Expected tableName to be %v, got %v.", services.ModuleDependenciesTableName, db.TableName)
+	}
+
+	if err != services.RegisterModuleDependenciesError {
+		t.Errorf("Expected %v, got %v.", services.RegisterModuleDependenciesError, err)
 	}
 }
 
-func IgnoreTestRegisterModuleDependenciesE2E(t *testing.T) {
-	t.Parallel()
+// TODO: Test for MarshalModuleDependenciesError
 
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-
-	svc := dynamodb.New(sess)
-
-	dependencyService := &services.DependencyManagerService{
-		Db: svc,
-	}
-	modules := []*terrarium.VersionedModule{
-		{
-			Name:    "test",
-			Version: "v1.0.0",
-		},
-		{
-			Name:    "test2",
-			Version: "v1.1.0",
-		},
-	}
-	request := terrarium.RegisterModuleDependenciesRequest{
-		SessionKey: "123",
-		Modules:    modules,
-	}
-	response, err := dependencyService.RegisterModuleDependencies(context.TODO(), &request)
-
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-
-	if response == nil {
-		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
-	}
-}
-
+// This test checks if correct response is returned when container dependencies are registered
 func TestRegisterContainerDependencies(t *testing.T) {
 	t.Parallel()
 
-	fd := &fakeDynamoDB{}
+	db := &mocks.MockDynamoDB{}
 
-	dependencyService := &services.DependencyManagerService{
-		Db: fd,
+	svc := &services.DependencyManagerService{Db: db}
+
+	req := &terrarium.RegisterContainerDependenciesRequest{
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
+		Dependencies: []string{"test", "test2"},
 	}
-	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
-	}
-	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+
+	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if response == nil {
-		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
+	if db.UpdateItemInvocations != 1 {
+		t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
 	}
 
-	if fd.numberOfPutItemCalls != 1 {
-		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if db.TableName != services.ModuleDependenciesTableName {
+		t.Errorf("Expected tableName to be %v, got %v.", services.ModuleDependenciesTableName, db.TableName)
 	}
 
-	// if fd.tableName == nil {
-	// 	t.Errorf("Expected tableName, got nil.")
-	// } else {
-	// 	if *fd.tableName != services.DefaultContainerDependenciesTableName {
-	// 		t.Errorf("Expected tableName to be %s, got %s", services.DefaultContainerDependenciesTableName, *fd.tableName)
-	// 	}
-	// }
+	if res != services.ContainerDependenciesRegistered {
+		t.Errorf("Expected %v, got %v.", services.ContainerDependenciesRegistered, res)
+	}
 }
 
-func TestRegisterContainerDependenciesWhenPutItemReturnsError(t *testing.T) {
+// This test checks if error is returned when UpdateItem fails
+func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
-	fd := &fakeDynamoDB{
-		err: errors.New("test"),
+	db := &mocks.MockDynamoDB{UpdateItemError: errors.New("some error")}
+
+	svc := &services.DependencyManagerService{Db: db}
+
+	req := &terrarium.RegisterContainerDependenciesRequest{
+		Module:       &terrarium.Module{Name: "test", Version: "v1"},
+		Dependencies: []string{"test", "test2"},
 	}
 
-	dependencyService := &services.DependencyManagerService{
-		Db: fd,
-	}
-	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
-	}
-	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
-	if err == nil {
-		t.Error("Expected error, got nil")
-	} else {
-		if response.Status != terrarium.Status_UNKNOWN_ERROR {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_UNKNOWN_ERROR, response.Status)
-		}
+	if res != nil {
+		t.Errorf("Expected no response, got %v", res)
 	}
 
-	if fd.numberOfPutItemCalls != 1 {
-		t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
+	if db.UpdateItemInvocations != 1 {
+		t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
 	}
 
-	// if fd.tableName == nil {
-	// 	t.Errorf("Expected tableName, got nil.")
-	// } else {
-	// 	if *fd.tableName != services.DefaultContainerDependenciesTableName {
-	// 		t.Errorf("Expected tableName to be %s, got %s", services.DefaultContainerDependenciesTableName, *fd.tableName)
-	// 	}
-	// }
+	if db.TableName != services.ModuleDependenciesTableName {
+		t.Errorf("Expected tableName to be %v, got %v.", services.ModuleDependenciesTableName, db.TableName)
+	}
+
+	if err != services.RegisterContainerDependenciesError {
+		t.Errorf("Expected %v, got %v.", services.RegisterContainerDependenciesError, err)
+	}
 }
 
-func IgnoreTestRegisterContainerDependenciesE2E(t *testing.T) {
+// This test checks if correct response is returned when container dependencies are retrieved
+func TestRetrieveContainerDependencies(t *testing.T) {
 	t.Parallel()
 
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
+	out := &dynamodb.GetItemOutput{}
 
-	svc := dynamodb.New(sess)
+	db := &mocks.MockDynamoDB{GetItemOut: out}
 
-	dependencyService := &services.DependencyManagerService{
-		Db: svc,
-	}
+	dms := &services.DependencyManagerService{Db: db}
 
-	request := terrarium.RegisterContainerDependenciesRequest{
-		SessionKey:               "123",
-		ContainerImageReferences: []string{"test", "test2"},
-	}
-	response, err := dependencyService.RegisterContainerDependencies(context.TODO(), &request)
+	srv := &MockRetrieveContainerDependenciesServer{}
+
+	req := &terrarium.RetrieveContainerDependenciesRequest{}
+
+	err := dms.RetrieveContainerDependencies(req, srv)
 
 	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
+		t.Errorf("Expected nil, got %v", err)
 	}
 
-	if response == nil {
-		t.Errorf("Expected response, got nil.")
-	} else {
-		if response.Status != terrarium.Status_OK {
-			t.Errorf("Expected response status %v, got %v", terrarium.Status_OK, response.Status)
-		}
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 1 {
+		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
+	}
+
+	if srv.Response == nil {
+		t.Error("Expected response, got nil.")
 	}
 }
 
-// func TestRetrieveContainerDependencies(t *testing.T) {
-// 	t.Run("It retrieves container dependencies details", func(t *testing.T) {
+// This test checks if error is returned when GetItem fails
+func TestRetrieveContainerDependenciesWhenGetItemErrors(t *testing.T) {
+	t.Parallel()
 
-// 		fd := &fakeDynamoDB{}
+	db := &mocks.MockDynamoDB{GetItemError: errors.New("some error")}
 
-// 		dependencyService := &DependencyService{
-// 			Db: fd,
-// 		}
+	dms := &services.DependencyManagerService{Db: db}
 
-// 		request := &terrarium.RetrieveContainerDependenciesRequest{}
-// 		fds := &FakeDependencyService{}
+	srv := &MockRetrieveContainerDependenciesServer{}
 
-// 		if err := dependencyService.RetrieveContainerDependencies(request, fds); err != nil {
-// 			t.Errorf("Expected no error, got %v", err)
-// 		}
+	req := &terrarium.RetrieveContainerDependenciesRequest{}
 
-// 		// if fd.numberOfPutItemCalls != 1 {
-// 		// 	t.Errorf("Expected number of calls to PutItem to be %d, got %d", 1, fd.numberOfPutItemCalls)
-// 		// }
+	err := dms.RetrieveContainerDependencies(req, srv)
 
-// 		// if fd.tableName == nil {
-// 		// 	t.Errorf("Expected tableName, got nil.")
-// 		// } else {
-// 		// 	if *fd.tableName != DefaultModuleDependenciesTableName {
-// 		// 		t.Errorf("Expected tableName to be %s, got %s", DefaultModuleDependenciesTableName, *fd.tableName)
-// 		// 	}
-// 		// }
+	if err != services.GetContainerDependenciesError {
+		t.Errorf("Expected %v, got %v", services.GetContainerDependenciesError, err)
+	}
 
-// 	})
-// }
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 0 {
+		t.Errorf("Expected 0 calls to Send, got %v.", srv.SendInvocations)
+	}
+}
+
+// TODO: Test for UnmarshalContainerDependenciesError
+
+// This test checks if error is returned when Send fails
+func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
+	t.Parallel()
+
+	out := &dynamodb.GetItemOutput{}
+
+	db := &mocks.MockDynamoDB{GetItemOut: out}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	srv := &MockRetrieveContainerDependenciesServer{Err: errors.New("some error")}
+
+	req := &terrarium.RetrieveContainerDependenciesRequest{}
+
+	err := dms.RetrieveContainerDependencies(req, srv)
+
+	if err != services.SendContainerDependenciesError {
+		t.Errorf("Expected %v, got %v", services.SendContainerDependenciesError, err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 1 {
+		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
+	}
+}
+
+// This test checks if correct response is returned when module dependencies are retrieved
+func TestRetrieveModuleDependencies(t *testing.T) {
+	t.Parallel()
+
+	out := &dynamodb.GetItemOutput{}
+
+	db := &mocks.MockDynamoDB{GetItemOut: out}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	srv := &MockRetrieveModuleDependenciesServer{}
+
+	req := &terrarium.RetrieveModuleDependenciesRequest{}
+
+	err := dms.RetrieveModuleDependencies(req, srv)
+
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 1 {
+		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
+	}
+
+	if srv.Response == nil {
+		t.Error("Expected response, got nil.")
+	}
+}
+
+// This test checks if error is returned when GetItem fails
+func TestRetrieveModuleDependenciesWhenGetItemErrors(t *testing.T) {
+	t.Parallel()
+
+	db := &mocks.MockDynamoDB{GetItemError: errors.New("some error")}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	srv := &MockRetrieveModuleDependenciesServer{}
+
+	req := &terrarium.RetrieveModuleDependenciesRequest{}
+
+	err := dms.RetrieveModuleDependencies(req, srv)
+
+	if err != services.GetModuleDependenciesError {
+		t.Errorf("Expected %v, got %v", services.GetModuleDependenciesError, err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 0 {
+		t.Errorf("Expected 0 calls to Send, got %v.", srv.SendInvocations)
+	}
+}
+
+// TODO: Test for UnmarshalModuleDependenciesError
+
+// This test checks if error is returned when Send fails
+func TestRetrieveModuleDependenciesWhenSendErrors(t *testing.T) {
+	t.Parallel()
+
+	out := &dynamodb.GetItemOutput{}
+
+	db := &mocks.MockDynamoDB{GetItemOut: out}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	srv := &MockRetrieveModuleDependenciesServer{Err: errors.New("some error")}
+
+	req := &terrarium.RetrieveModuleDependenciesRequest{}
+
+	err := dms.RetrieveModuleDependencies(req, srv)
+
+	if err != services.SendModuleDependenciesError {
+		t.Errorf("Expected %v, got %v", services.SendModuleDependenciesError, err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if srv.SendInvocations != 1 {
+		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
+	}
+}

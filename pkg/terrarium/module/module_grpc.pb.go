@@ -22,14 +22,14 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PublisherClient interface {
-	Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error)
-	BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*BeginVersionResponse, error)
-	RegisterModuleDependencies(ctx context.Context, in *RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error)
-	RegisterContainerDependencies(ctx context.Context, in *RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error)
+	Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*Response, error)
+	BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*Response, error)
+	RegisterModuleDependencies(ctx context.Context, in *RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*Response, error)
+	RegisterContainerDependencies(ctx context.Context, in *RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*Response, error)
 	// Register Audit Trail
 	UploadSourceZip(ctx context.Context, opts ...grpc.CallOption) (Publisher_UploadSourceZipClient, error)
 	// Upload Documentation
-	EndVersion(ctx context.Context, in *EndVersionRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error)
+	EndVersion(ctx context.Context, in *EndVersionRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type publisherClient struct {
@@ -40,8 +40,8 @@ func NewPublisherClient(cc grpc.ClientConnInterface) PublisherClient {
 	return &publisherClient{cc}
 }
 
-func (c *publisherClient) Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error) {
-	out := new(TransactionStatusResponse)
+func (c *publisherClient) Register(ctx context.Context, in *RegisterModuleRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.Publisher/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func (c *publisherClient) Register(ctx context.Context, in *RegisterModuleReques
 	return out, nil
 }
 
-func (c *publisherClient) BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*BeginVersionResponse, error) {
-	out := new(BeginVersionResponse)
+func (c *publisherClient) BeginVersion(ctx context.Context, in *BeginVersionRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.Publisher/BeginVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -58,8 +58,8 @@ func (c *publisherClient) BeginVersion(ctx context.Context, in *BeginVersionRequ
 	return out, nil
 }
 
-func (c *publisherClient) RegisterModuleDependencies(ctx context.Context, in *RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error) {
-	out := new(TransactionStatusResponse)
+func (c *publisherClient) RegisterModuleDependencies(ctx context.Context, in *RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.Publisher/RegisterModuleDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -67,8 +67,8 @@ func (c *publisherClient) RegisterModuleDependencies(ctx context.Context, in *Re
 	return out, nil
 }
 
-func (c *publisherClient) RegisterContainerDependencies(ctx context.Context, in *RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error) {
-	out := new(TransactionStatusResponse)
+func (c *publisherClient) RegisterContainerDependencies(ctx context.Context, in *RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.Publisher/RegisterContainerDependencies", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (c *publisherClient) UploadSourceZip(ctx context.Context, opts ...grpc.Call
 
 type Publisher_UploadSourceZipClient interface {
 	Send(*UploadSourceZipRequest) error
-	CloseAndRecv() (*TransactionStatusResponse, error)
+	CloseAndRecv() (*Response, error)
 	grpc.ClientStream
 }
 
@@ -99,19 +99,19 @@ func (x *publisherUploadSourceZipClient) Send(m *UploadSourceZipRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *publisherUploadSourceZipClient) CloseAndRecv() (*TransactionStatusResponse, error) {
+func (x *publisherUploadSourceZipClient) CloseAndRecv() (*Response, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(TransactionStatusResponse)
+	m := new(Response)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *publisherClient) EndVersion(ctx context.Context, in *EndVersionRequest, opts ...grpc.CallOption) (*TransactionStatusResponse, error) {
-	out := new(TransactionStatusResponse)
+func (c *publisherClient) EndVersion(ctx context.Context, in *EndVersionRequest, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.Publisher/EndVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -123,14 +123,14 @@ func (c *publisherClient) EndVersion(ctx context.Context, in *EndVersionRequest,
 // All implementations must embed UnimplementedPublisherServer
 // for forward compatibility
 type PublisherServer interface {
-	Register(context.Context, *RegisterModuleRequest) (*TransactionStatusResponse, error)
-	BeginVersion(context.Context, *BeginVersionRequest) (*BeginVersionResponse, error)
-	RegisterModuleDependencies(context.Context, *RegisterModuleDependenciesRequest) (*TransactionStatusResponse, error)
-	RegisterContainerDependencies(context.Context, *RegisterContainerDependenciesRequest) (*TransactionStatusResponse, error)
+	Register(context.Context, *RegisterModuleRequest) (*Response, error)
+	BeginVersion(context.Context, *BeginVersionRequest) (*Response, error)
+	RegisterModuleDependencies(context.Context, *RegisterModuleDependenciesRequest) (*Response, error)
+	RegisterContainerDependencies(context.Context, *RegisterContainerDependenciesRequest) (*Response, error)
 	// Register Audit Trail
 	UploadSourceZip(Publisher_UploadSourceZipServer) error
 	// Upload Documentation
-	EndVersion(context.Context, *EndVersionRequest) (*TransactionStatusResponse, error)
+	EndVersion(context.Context, *EndVersionRequest) (*Response, error)
 	mustEmbedUnimplementedPublisherServer()
 }
 
@@ -138,22 +138,22 @@ type PublisherServer interface {
 type UnimplementedPublisherServer struct {
 }
 
-func (UnimplementedPublisherServer) Register(context.Context, *RegisterModuleRequest) (*TransactionStatusResponse, error) {
+func (UnimplementedPublisherServer) Register(context.Context, *RegisterModuleRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedPublisherServer) BeginVersion(context.Context, *BeginVersionRequest) (*BeginVersionResponse, error) {
+func (UnimplementedPublisherServer) BeginVersion(context.Context, *BeginVersionRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BeginVersion not implemented")
 }
-func (UnimplementedPublisherServer) RegisterModuleDependencies(context.Context, *RegisterModuleDependenciesRequest) (*TransactionStatusResponse, error) {
+func (UnimplementedPublisherServer) RegisterModuleDependencies(context.Context, *RegisterModuleDependenciesRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterModuleDependencies not implemented")
 }
-func (UnimplementedPublisherServer) RegisterContainerDependencies(context.Context, *RegisterContainerDependenciesRequest) (*TransactionStatusResponse, error) {
+func (UnimplementedPublisherServer) RegisterContainerDependencies(context.Context, *RegisterContainerDependenciesRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterContainerDependencies not implemented")
 }
 func (UnimplementedPublisherServer) UploadSourceZip(Publisher_UploadSourceZipServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadSourceZip not implemented")
 }
-func (UnimplementedPublisherServer) EndVersion(context.Context, *EndVersionRequest) (*TransactionStatusResponse, error) {
+func (UnimplementedPublisherServer) EndVersion(context.Context, *EndVersionRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndVersion not implemented")
 }
 func (UnimplementedPublisherServer) mustEmbedUnimplementedPublisherServer() {}
@@ -246,7 +246,7 @@ func _Publisher_UploadSourceZip_Handler(srv interface{}, stream grpc.ServerStrea
 }
 
 type Publisher_UploadSourceZipServer interface {
-	SendAndClose(*TransactionStatusResponse) error
+	SendAndClose(*Response) error
 	Recv() (*UploadSourceZipRequest, error)
 	grpc.ServerStream
 }
@@ -255,7 +255,7 @@ type publisherUploadSourceZipServer struct {
 	grpc.ServerStream
 }
 
-func (x *publisherUploadSourceZipServer) SendAndClose(m *TransactionStatusResponse) error {
+func (x *publisherUploadSourceZipServer) SendAndClose(m *Response) error {
 	return x.ServerStream.SendMsg(m)
 }
 
