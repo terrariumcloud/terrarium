@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi"
 	"log"
 	"net"
+	"net/http"
 
 	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 
@@ -22,7 +25,7 @@ var awsRegion string
 var rootCmd = &cobra.Command{
 	Use:   "terrarium",
 	Short: "Terrarium Services",
-	Long:  "Runs GRPC server that exposes Terrarium Services",
+	Long:  "Runs backend that exposes Terrarium Services",
 }
 
 func init() {
@@ -35,7 +38,7 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-func startService(name string, service services.Service) {
+func startGRPCService(name string, service services.Service) {
 	log.Printf("Starting %s", name)
 
 	listener, err := net.Listen("tcp4", endpoint)
@@ -54,6 +57,12 @@ func startService(name string, service services.Service) {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %v", err)
 	}
+}
+
+func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
+	log.Printf("Starting %s", name)
+	log.Println(fmt.Sprintf("Listening on %s", endpoint))
+	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
 }
 
 // Execute root command

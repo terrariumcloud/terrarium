@@ -9,8 +9,17 @@ service VersionManager {
   rpc BeginVersion(terrarium.module.BeginVersionRequest) returns (terrarium.module.Response);
   rpc AbortVersion(TerminateVersionRequest) returns (terrarium.module.Response);
   rpc PublishVersion(TerminateVersionRequest) returns (terrarium.module.Response);
+  rpc ListModuleVersions(ListModuleVersionsRequest) returns (ListModuleVersionsResponse);
 }
 
 message TerminateVersionRequest {
     terrarium.module.Module module = 1;
+}
+
+message ListModuleVersionsRequest {
+  string module = 1;
+}
+
+message ListModuleVersionsResponse {
+  repeated string versions = 1;
 }

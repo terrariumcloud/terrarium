@@ -27,5 +27,5 @@ func runDependencyManager(cmd *cobra.Command, args []string) {
 		Schema: services.GetModuleDependenciesSchema(services.ModuleDependenciesTableName),
 	}
 
-	startService("Terrarium GRPC Dependency Manager service", dependencyServiceServer)
+	startGRPCService("Terrarium GRPC Dependency Resolver service", dependencyServiceServer)
 }
