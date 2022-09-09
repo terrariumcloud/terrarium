@@ -116,7 +116,6 @@ func (h *modulesV1HttpService) archiveHandler() http.Handler {
 		client := services.NewStorageClient(conn)
 
 		downloadStream, err2 := client.DownloadSourceZip(context.TODO(), &pb.DownloadSourceZipRequest{
-			ApiKey: "TODO",
 			Module: getVersionedModuleFromRequest(r),
 		})
 		if err2 != nil {

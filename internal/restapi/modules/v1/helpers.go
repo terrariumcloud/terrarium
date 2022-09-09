@@ -16,13 +16,13 @@ func getModuleNameFromRequest(r *http.Request) string {
 	return fmt.Sprintf("%s/%s/%s", orgName, moduleName, providerName)
 }
 
-func getVersionedModuleFromRequest(r *http.Request) *pb.VersionedModule {
+func getVersionedModuleFromRequest(r *http.Request) *pb.Module {
 	params := mux.Vars(r)
 	orgName := params["organization_name"]
 	moduleName := params["name"]
 	providerName := params["provider"]
 	version := params["version"]
-	return &pb.VersionedModule{
+	return &pb.Module{
 		Name:    fmt.Sprintf("%s/%s/%s", orgName, moduleName, providerName),
 		Version: version,
 	}

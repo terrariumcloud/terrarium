@@ -66,7 +66,7 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 }
 
 // BeginVersion Creates new Module Version with Version Manager service
-func (s *VersionManagerService) BeginVersion(_ context.Context, request *BeginVersionRequest) (*terrarium.BeginVersionResponse, error) {
+func (s *VersionManagerService) BeginVersion(_ context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Creating new version.")
 	mv := ModuleVersion{
 		Name:      request.Module.GetName(),
@@ -96,7 +96,7 @@ func (s *VersionManagerService) BeginVersion(_ context.Context, request *BeginVe
 }
 
 // AbortVersion Removes Module Version with Version Manager service
-func (s *VersionManagerService) AbortVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *VersionManagerService) AbortVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Aborting module version.")
 	in := &dynamodb.DeleteItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
@@ -116,7 +116,7 @@ func (s *VersionManagerService) AbortVersion(_ context.Context, request *Termina
 }
 
 // PublishVersion Updates Module Version to published with Version Manager service
-func (s *VersionManagerService) PublishVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.TransactionStatusResponse, error) {
+func (s *VersionManagerService) PublishVersion(_ context.Context, request *TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing module version.")
 	in := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
