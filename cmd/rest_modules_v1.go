@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
 	modulesv1 "github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi/modules/v1"
 
 	"github.com/spf13/cobra"
@@ -23,6 +24,8 @@ func init() {
 		"modules",
 		"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
 	)
+	modulesV1Cmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	modulesV1Cmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 	rootCmd.AddCommand(modulesV1Cmd)
 }
 

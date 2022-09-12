@@ -46,10 +46,12 @@ func New() *modulesV1HttpService {
 }
 
 func (h *modulesV1HttpService) createRouter(mountPath string) *mux.Router {
-	r := &mux.Router{}
-	sr := r.PathPrefix(fmt.Sprintf("%s/v1", mountPath)).Subrouter()
-	sr.StrictSlash(true)
+	prefix := fmt.Sprintf("%s/v1", mountPath)
+	log.Printf("Prefix for registry implementation: %s", prefix)
+	r := mux.NewRouter()
 	r.Handle("/healthz", h.healthHandler()).Methods(http.MethodGet)
+	sr := r.PathPrefix(prefix).Subrouter()
+	sr.StrictSlash(true)
 	sr.Handle("/{organization_name}/{name}/{provider}/versions", h.getModuleVersionHandler()).Methods(http.MethodGet)
 	sr.Handle("/{organization_name}/{name}/{provider}/{version}/download", h.downloadModuleHandler()).Methods(http.MethodGet)
 	sr.Handle("/{organization_name}/{name}/{provider}/{version}/archive", h.archiveHandler()).Methods(http.MethodGet)
@@ -69,6 +71,7 @@ func (h *modulesV1HttpService) healthHandler() http.Handler {
 // https://www.terraform.io/internals/module-registry-protocol#download-source-code-for-a-specific-module-version
 func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		log.Printf("getModuleVersionHandler")
 		moduleName := getModuleNameFromRequest(r)
 		conn, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -94,6 +97,7 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 
 func (h *modulesV1HttpService) downloadModuleHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		log.Printf("downloadModuleHandler")
 		// At this stage there is no validation about parameters given to that function, validation is done as part of download.
 		rw.Header().Add("X-Terraform-Get", "./archive?archive=zip")
 		h.responseHandler.Write(rw, nil, http.StatusNoContent)
