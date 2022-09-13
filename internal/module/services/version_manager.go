@@ -142,12 +142,13 @@ func (s *VersionManagerService) PublishVersion(_ context.Context, request *Termi
 // ListModuleVersions Retrieve all versions of a given module and return an array of versions.
 // Only versions that have been published should be reported
 func (s *VersionManagerService) ListModuleVersions(_ context.Context, request *ListModuleVersionsRequest) (*ListModuleVersionsResponse, error) {
-	filter := expression.And(expression.Name("name").Equal(expression.Value(request.Module)), expression.Name("published_on").AttributeExists())
-	builder := expression.NewBuilder()
-	builder.WithProjection(expression.NamesList(expression.Name("version")))
-	builder.WithFilter(filter)
-	expr, err := builder.Build()
+	projection := expression.NamesList(expression.Name("version"))
+	filter := expression.And(
+		expression.Name("name").Equal(expression.Value(request.Module)),
+		expression.Name("published_on").AttributeExists())
+	expr, err := expression.NewBuilder().WithProjection(projection).WithFilter(filter).Build()
 	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
 
@@ -155,21 +156,26 @@ func (s *VersionManagerService) ListModuleVersions(_ context.Context, request *L
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(VersionsTableName),
 	}
 
 	response, err := s.Db.Scan(scanQueryInputs)
-	if response.Items == nil {
+	if err != nil {
+		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 
 	grpcResponse := ListModuleVersionsResponse{}
-	for _, item := range response.Items {
-		moduleVersion := ModuleVersion{}
-		if err := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err != nil {
-			return nil, err
+	if response.Items != nil {
+		for _, item := range response.Items {
+			moduleVersion := ModuleVersion{}
+			if err3 := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err3 != nil {
+				log.Printf("UnmarshalMap failed: %v", err3)
+				return nil, err3
+			}
+			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
 		}
-		grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
 	}
 
 	return &grpcResponse, nil

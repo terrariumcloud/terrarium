@@ -75,7 +75,7 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 		moduleName := getModuleNameFromRequest(r)
 		conn, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Printf("Failed to connect: %v", err)
+			log.Printf("Failed to connect to '%s': %v", services.VersionManagerEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -85,7 +85,7 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 
 		versionResponse, err2 := client.ListModuleVersions(context.TODO(), &services.ListModuleVersionsRequest{Module: moduleName})
 		if err2 != nil {
-			log.Printf("Failed to connect: %v", err2)
+			log.Printf("Failed GRPC call with error: %v", err2)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
 			return
 		}
