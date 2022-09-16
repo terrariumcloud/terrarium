@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegistrarClient interface {
 	Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error)
+	ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error)
 }
 
 type registrarClient struct {
@@ -43,11 +44,21 @@ func (c *registrarClient) Register(ctx context.Context, in *module.RegisterModul
 	return out, nil
 }
 
+func (c *registrarClient) ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error) {
+	out := new(ListModulesResponse)
+	err := c.cc.Invoke(ctx, "/terrarium.module.services.Registrar/ListModules", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegistrarServer is the server API for Registrar service.
 // All implementations must embed UnimplementedRegistrarServer
 // for forward compatibility
 type RegistrarServer interface {
 	Register(context.Context, *module.RegisterModuleRequest) (*module.Response, error)
+	ListModules(context.Context, *ListModulesRequest) (*ListModulesResponse, error)
 	mustEmbedUnimplementedRegistrarServer()
 }
 
@@ -57,6 +68,9 @@ type UnimplementedRegistrarServer struct {
 
 func (UnimplementedRegistrarServer) Register(context.Context, *module.RegisterModuleRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedRegistrarServer) ListModules(context.Context, *ListModulesRequest) (*ListModulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListModules not implemented")
 }
 func (UnimplementedRegistrarServer) mustEmbedUnimplementedRegistrarServer() {}
 
@@ -89,6 +103,24 @@ func _Registrar_Register_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Registrar_ListModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistrarServer).ListModules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/terrarium.module.services.Registrar/ListModules",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistrarServer).ListModules(ctx, req.(*ListModulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Registrar_ServiceDesc is the grpc.ServiceDesc for Registrar service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -99,6 +131,10 @@ var Registrar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _Registrar_Register_Handler,
+		},
+		{
+			MethodName: "ListModules",
+			Handler:    _Registrar_ListModules_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
