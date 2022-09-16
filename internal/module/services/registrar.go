@@ -20,13 +20,13 @@ import (
 )
 
 const (
-	DefaultRegistrarTableName              = "terrarium-modules"
-	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
+	DefaultRegistrarTableName       = "terrarium-modules"
+	DefaultRegistrarServiceEndpoint = "registrar:3001"
 )
 
 var (
 	RegistrarTableName       string = DefaultRegistrarTableName
-	RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
+	RegistrarServiceEndpoint string = DefaultRegistrarServiceEndpoint
 
 	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
