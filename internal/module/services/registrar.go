@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/google/uuid"
 )
 
@@ -94,6 +95,51 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	log.Println("New module registered.")
 	return ModuleRegistered, nil
 }
+
+//
+
+// ListModules Retrieve all published modules
+
+func (s *VersionManagerService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
+
+	// return all
+
+	expr, err := expression.NewBuilder().Build()
+	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
+		return nil, err
+	}
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(RegistrarTableName),
+	}
+
+	response, err := s.Db.Scan(scanQueryInputs)
+	if err != nil {
+		log.Printf("ScanInput failed: %v", err)
+		return nil, err
+	}
+
+	grpcResponse := ListModulesResponse{}
+	if response.Items != nil {
+		for _, item := range response.Items {
+			modules := Module{}
+			if err3 := dynamodbattribute.UnmarshalMap(item, &modules); err3 != nil {
+				log.Printf("UnmarshalMap failed: %v", err3)
+				return nil, err3
+			}
+			grpcResponse.Modules = append(grpcResponse.Modules, modules)
+		}
+	}
+
+	return &grpcResponse, nil
+}
+
+//
 
 // GetModulesSchema returns CreateTableInput
 // that can be used to create table if it does not exist

@@ -7,4 +7,19 @@ option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/m
 
 service Registrar {
   rpc Register(terrarium.module.RegisterModuleRequest) returns (terrarium.module.Response);
+  rpc ListModules(ListModulesRequest) returns (ListModulesResponse);
+
+}
+
+message ListModulesRequest {
+  string module = 1;
+}
+
+message ListModulesResponse {
+  string name = 1;
+  string provider = 2;
+  string description = 3;
+  string source_url = 4;
+  string maturity = 5;
+   // string organization = 6 ??
 }
