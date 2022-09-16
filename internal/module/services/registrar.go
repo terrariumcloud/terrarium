@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
@@ -15,17 +16,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/google/uuid"
 )
 
 const (
-	DefaultRegistrarTableName              = "terrarium-modules"
-	DefaultRegistrarServiceDefaultEndpoint = "registrar:3001"
+	DefaultRegistrarTableName       = "terrarium-modules"
+	DefaultRegistrarServiceEndpoint = "registrar:3001"
 )
 
 var (
 	RegistrarTableName       string = DefaultRegistrarTableName
-	RegistrarServiceEndpoint string = DefaultRegistrarServiceDefaultEndpoint
+	RegistrarServiceEndpoint string = DefaultRegistrarServiceEndpoint
 
 	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
@@ -93,6 +95,60 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 
 	log.Println("New module registered.")
 	return ModuleRegistered, nil
+}
+
+//
+
+// ListModules Retrieve all published modules
+
+func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
+
+	// return all
+
+	expr, err := expression.NewBuilder().Build()
+	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
+		return nil, err
+	}
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(RegistrarTableName),
+	}
+
+	response, err := s.Db.Scan(scanQueryInputs)
+	if err != nil {
+		log.Printf("ScanInput failed: %v", err)
+		return nil, err
+	}
+
+	grpcResponse := ListModulesResponse{}
+	if response.Items != nil {
+		for _, item := range response.Items {
+			module := Module{}
+			if err3 := dynamodbattribute.UnmarshalMap(item, &module); err3 != nil {
+				log.Printf("UnmarshalMap failed: %v", err3)
+				return nil, err3
+			}
+
+			moduleAddress := strings.Split(module.Name, "/")
+
+			moduleResponse := ModuleMetadata{
+				Organization: moduleAddress[0],
+				Name:         moduleAddress[1],
+				Provider:     moduleAddress[2],
+				Description:  module.Description,
+				SourceUrl:    module.Source,
+				Maturity:     terrarium.Maturity(terrarium.Maturity_value[module.Maturity]),
+			}
+			grpcResponse.Modules = append(grpcResponse.Modules, &moduleResponse)
+		}
+	}
+
+	return &grpcResponse, nil
 }
 
 // GetModulesSchema returns CreateTableInput
