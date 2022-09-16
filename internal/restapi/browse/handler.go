@@ -38,7 +38,7 @@ type Modules struct {
 }
 
 type ModuleResponse struct {
-	Modules []*Modules `json:"modules"`
+	Modules []*services.ModuleMetadata `json:"modules"`
 }
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -72,7 +72,6 @@ func (h *browseHttpService) healthHandler() http.Handler {
 func (h *browseHttpService) getModuleListHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getModuleListHandler")
-		module := getModuleFromRequest(r)
 		conn, err := grpc.Dial(services.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", services.RegistrarServiceEndpoint, err)
@@ -83,14 +82,14 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 
 		client := services.NewRegistrarClient(conn)
 
-		registrarResponse, err2 := client.ListModules(context.TODO(), &services.ListModulesRequest{Module: module})
+		registrarResponse, err2 := client.ListModules(context.TODO(), &services.ListModulesRequest{})
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
 			return
 		}
 		// add helpers.go
-		data, _ := json.Marshal(createModulesResponse(&Modules))
+		data, _ := json.Marshal(createModulesResponse(registrarResponse.Modules))
 
 		//data, _ := json.Marshal(createModulesResponse(registrarResponse.Name, registrarResponse.Provider, registrarResponse.Description, registrarResponse.SourceUrl, registrarResponse.Maturity))
 		rw.Header().Add("Content-Type", "application/json")
