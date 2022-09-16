@@ -1,3 +1,4 @@
+# TODO: need to validate the appropriate version of protoc is available 
 protoc --go_out=. --go_opt=module=github.com/terrariumcloud/terrarium-grpc-gateway \
     --go-grpc_out=. --go-grpc_opt=module=github.com/terrariumcloud/terrarium-grpc-gateway \
     pb/terrarium/module/module.proto \

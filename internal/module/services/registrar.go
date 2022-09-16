@@ -100,7 +100,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 
 // ListModules Retrieve all published modules
 
-func (s *VersionManagerService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
+func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
 
 	// return all
 

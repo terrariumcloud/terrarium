@@ -40,18 +40,29 @@ message RegisterModuleRequest {
   string name = 2;
   string description = 3;
   string source = 4;
-  enum Maturity {
-    IDEA = 0;
-    PLANNING = 1;
-    DEVELOPING = 2;
-    ALPHA = 3;
-    BETA = 4;
-    STABLE = 5;
-    DEPRECATED = 6;
-    END_OF_LIFE = 7;
-  }
   Maturity maturity = 5;
 }
+
+message ModuleMetadata {
+  string organization = 1;
+  string name = 2;
+  string provider = 3;
+  string description = 4;
+  string source_url = 5;
+  Maturity maturity = 6;
+}
+
+enum Maturity {
+  IDEA = 0;
+  PLANNING = 1;
+  DEVELOPING = 2;
+  ALPHA = 3;
+  BETA = 4;
+  STABLE = 5;
+  DEPRECATED = 6;
+  END_OF_LIFE = 7;
+}
+
 
 message Response {
   string message = 1;

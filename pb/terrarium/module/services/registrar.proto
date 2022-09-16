@@ -11,15 +11,17 @@ service Registrar {
 
 }
 
-message ListModulesRequest {
-  string module = 1;
+message ModuleMetadata {
+  string organization = 1;
+  string name = 2;
+  string provider = 3;
+  string description = 4;
+  string source_url = 5;
+  terrarium.module.Maturity maturity = 6;
 }
 
+message ListModulesRequest {}
+
 message ListModulesResponse {
-  string name = 1;
-  string provider = 2;
-  string description = 3;
-  string source_url = 4;
-  string maturity = 5;
-   // string organization = 6 ??
+  repeated ModuleMetadata modules = 1;
 }
