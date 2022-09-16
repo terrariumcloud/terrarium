@@ -23,7 +23,7 @@ func TestRegisterModule(t *testing.T) {
 		Name:        "test",
 		Description: "test desc",
 		Source:      "http://test.com",
-		Maturity:    terrarium.RegisterModuleRequest_ALPHA,
+		Maturity:    terrarium.Maturity_ALPHA,
 	}
 
 	res, err := svc.Register(context.TODO(), &req)
@@ -84,7 +84,7 @@ func TestRegisterModuleWhenPutItemErrors(t *testing.T) {
 		Name:        "test",
 		Description: "test desc",
 		Source:      "http://test.com",
-		Maturity:    terrarium.RegisterModuleRequest_ALPHA,
+		Maturity:    terrarium.Maturity_ALPHA,
 	}
 
 	res, err := svc.Register(context.TODO(), &req)

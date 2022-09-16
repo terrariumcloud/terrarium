@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
@@ -127,19 +128,28 @@ func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRe
 	grpcResponse := ListModulesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
-			modules := Module{}
-			if err3 := dynamodbattribute.UnmarshalMap(item, &modules); err3 != nil {
+			module := Module{}
+			if err3 := dynamodbattribute.UnmarshalMap(item, &module); err3 != nil {
 				log.Printf("UnmarshalMap failed: %v", err3)
 				return nil, err3
 			}
-			grpcResponse.Modules = append(grpcResponse.Modules, modules)
+
+			moduleAddress := strings.Split(module.Name, "/")
+
+			moduleResponse := ModuleMetadata{
+				Organization: moduleAddress[0],
+				Name:         moduleAddress[1],
+				Provider:     moduleAddress[2],
+				Description:  module.Description,
+				SourceUrl:    module.Source,
+				Maturity:     terrarium.Maturity(terrarium.Maturity_value[module.Maturity]),
+			}
+			grpcResponse.Modules = append(grpcResponse.Modules, &moduleResponse)
 		}
 	}
 
 	return &grpcResponse, nil
 }
-
-//
 
 // GetModulesSchema returns CreateTableInput
 // that can be used to create table if it does not exist
