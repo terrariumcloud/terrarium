@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/google/uuid"
 )
 
@@ -103,20 +102,8 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 
 func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
 
-	// return all
-
-	expr, err := expression.NewBuilder().Build()
-	if err != nil {
-		log.Printf("Expression Builder failed creation: %v", err)
-		return nil, err
-	}
-
 	scanQueryInputs := &dynamodb.ScanInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(RegistrarTableName),
+		TableName: aws.String(RegistrarTableName),
 	}
 
 	response, err := s.Db.Scan(scanQueryInputs)
@@ -133,7 +120,6 @@ func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRe
 				log.Printf("UnmarshalMap failed: %v", err3)
 				return nil, err3
 			}
-
 			moduleAddress := strings.Split(module.Name, "/")
 
 			moduleResponse := ModuleMetadata{
