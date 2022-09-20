@@ -88,10 +88,9 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
 			return
 		}
-		// add helpers.go
+
 		data, _ := json.Marshal(createModulesResponse(registrarResponse.Modules))
 
-		//data, _ := json.Marshal(createModulesResponse(registrarResponse.Name, registrarResponse.Provider, registrarResponse.Description, registrarResponse.SourceUrl, registrarResponse.Maturity))
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
 	})
