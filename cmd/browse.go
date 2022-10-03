@@ -22,6 +22,7 @@ func init() {
 	//	"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
 	//)
 	browseCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar", "", services.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
+	browseCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	rootCmd.AddCommand(browseCmd)
 }
 
