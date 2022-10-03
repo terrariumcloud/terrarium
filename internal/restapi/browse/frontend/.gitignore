@@ -10,7 +10,7 @@ public/modules/
 /coverage
 
 # production
-/build
+
 
 # misc
 .idea
