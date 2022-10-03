@@ -72,7 +72,7 @@ func (h *modulesV1HttpService) healthHandler() http.Handler {
 func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getModuleVersionHandler")
-		moduleName := getModuleNameFromRequest(r)
+		moduleName := GetModuleNameFromRequest(r)
 		conn, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", services.VersionManagerEndpoint, err)

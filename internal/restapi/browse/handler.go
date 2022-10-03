@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	v1 "github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi/modules/v1"
 	"log"
 	"net/http"
 	"os"
@@ -20,25 +21,6 @@ import (
 type browseHttpService struct {
 	responseHandler restapi.ResponseHandler
 	errorHandler    restapi.ErrorHandler
-}
-
-// ???
-
-type ModuleItem struct {
-	//Module string `json:"module"`
-	Name        string `json:"name"`
-	Provider    string `json:"provider"`
-	Description string `json:"description"`
-	SourceUrl   string `json:"source_url"`
-	Maturity    string `json:"maturity"`
-}
-
-type Modules struct {
-	Modules []*ModuleItem `json:"module"`
-}
-
-type ModuleResponse struct {
-	Modules []*services.ModuleMetadata `json:"modules"`
 }
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -58,6 +40,7 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter := rootRouter.PathPrefix(apiPrefix).Subrouter()
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 
 	return rootRouter
 }
@@ -71,7 +54,6 @@ func (h *browseHttpService) healthHandler() http.Handler {
 // GetModuleListHandler will return a list of all published module.
 func (h *browseHttpService) getModuleListHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		log.Printf("getModuleListHandler")
 		conn, err := grpc.Dial(services.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", services.RegistrarServiceEndpoint, err)
@@ -93,5 +75,46 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
+	})
+}
+
+func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		moduleName := v1.GetModuleNameFromRequest(r)
+		conn, err := grpc.Dial(services.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Printf("Failed to connect to '%s': %v", services.RegistrarServiceEndpoint, err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		connVersion, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Printf("Failed to connect to '%s': %v", services.VersionManagerEndpoint, err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(connVersion)
+
+		clientRegistrar := services.NewRegistrarClient(conn)
+
+		registrarResponse, err := clientRegistrar.GetModule(context.TODO(), &services.GetModuleRequest{Name: moduleName})
+		if err != nil {
+			log.Printf("Failed GRPC call with error: %v", err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		clientVersion := services.NewVersionManagerClient(connVersion)
+		versionResponse, err := clientVersion.ListModuleVersions(context.TODO(), &services.ListModuleVersionsRequest{Module: moduleName})
+		if err != nil {
+			log.Printf("Failed GRPC call with error: %v", err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data := createModuleMetadataResponse(registrarResponse.GetModule(), versionResponse.Versions)
+		h.responseHandler.Write(rw, data, http.StatusOK)
 	})
 }

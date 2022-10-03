@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"log"
 	"strings"
 	"time"
@@ -96,10 +98,60 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	return ModuleRegistered, nil
 }
 
-//
+func unmarshalModule(item map[string]*dynamodb.AttributeValue) (*ModuleMetadata, error) {
+	module := Module{}
+	if err := dynamodbattribute.UnmarshalMap(item, &module); err != nil {
+		log.Printf("UnmarshalMap failed: %v", err)
+		return nil, err
+	}
+	moduleAddress := strings.Split(module.Name, "/")
+
+	result := ModuleMetadata{
+		Organization: moduleAddress[0],
+		Name:         moduleAddress[1],
+		Provider:     moduleAddress[2],
+		Description:  module.Description,
+		SourceUrl:    module.Source,
+		Maturity:     terrarium.Maturity(terrarium.Maturity_value[module.Maturity]),
+	}
+	return &result, nil
+}
+
+// GetModule Retrieve module metadata
+func (s *RegistrarService) GetModule(_ context.Context, request *GetModuleRequest) (*GetModuleResponse, error) {
+	filter := expression.Name("name").Equal(expression.Value(request.Name))
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
+		return nil, err
+	}
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		TableName:                 aws.String(RegistrarTableName),
+	}
+
+	response, err := s.Db.Scan(scanQueryInputs)
+	if err != nil {
+		log.Printf("ScanInput failed: %v", err)
+		return nil, err
+	}
+
+	if response.Items == nil || len(response.Items) < 1 {
+		return nil, fmt.Errorf("module not found '%v'", request.GetName())
+	}
+	grpcResponse := GetModuleResponse{}
+	if moduleMetadata, err := unmarshalModule(response.Items[0]); err != nil {
+		return nil, err
+	} else {
+		grpcResponse.Module = moduleMetadata
+		return &grpcResponse, nil
+	}
+}
 
 // ListModules Retrieve all published modules
-
 func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
 
 	scanQueryInputs := &dynamodb.ScanInput{
@@ -115,22 +167,11 @@ func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRe
 	grpcResponse := ListModulesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
-			module := Module{}
-			if err3 := dynamodbattribute.UnmarshalMap(item, &module); err3 != nil {
-				log.Printf("UnmarshalMap failed: %v", err3)
-				return nil, err3
+			if moduleMetadata, err := unmarshalModule(item); err != nil {
+				return nil, err
+			} else {
+				grpcResponse.Modules = append(grpcResponse.Modules, moduleMetadata)
 			}
-			moduleAddress := strings.Split(module.Name, "/")
-
-			moduleResponse := ModuleMetadata{
-				Organization: moduleAddress[0],
-				Name:         moduleAddress[1],
-				Provider:     moduleAddress[2],
-				Description:  module.Description,
-				SourceUrl:    module.Source,
-				Maturity:     terrarium.Maturity(terrarium.Maturity_value[module.Maturity]),
-			}
-			grpcResponse.Modules = append(grpcResponse.Modules, &moduleResponse)
 		}
 	}
 

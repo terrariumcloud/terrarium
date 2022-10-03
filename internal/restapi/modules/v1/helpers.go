@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func getModuleNameFromRequest(r *http.Request) string {
+func GetModuleNameFromRequest(r *http.Request) string {
 	params := mux.Vars(r)
 	orgName := params["organization_name"]
 	moduleName := params["name"]

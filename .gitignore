@@ -20,3 +20,4 @@ vendor/
 .env
 .vscode/
 terrarium-grpc-gateway
+/internal/restapi/browse/frontend/

@@ -8,7 +8,7 @@ option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/m
 service Registrar {
   rpc Register(terrarium.module.RegisterModuleRequest) returns (terrarium.module.Response);
   rpc ListModules(ListModulesRequest) returns (ListModulesResponse);
-
+  rpc GetModule(GetModuleRequest) returns (GetModuleResponse);
 }
 
 message ModuleMetadata {
@@ -24,4 +24,12 @@ message ListModulesRequest {}
 
 message ListModulesResponse {
   repeated ModuleMetadata modules = 1;
+}
+
+message GetModuleRequest {
+  string name = 1;
+}
+
+message GetModuleResponse {
+  ModuleMetadata module = 1;
 }
