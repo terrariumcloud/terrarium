@@ -99,7 +99,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 			log.Println(err)
 			return nil, MarshalModuleError
 		}
-		
+
 		in := &dynamodb.PutItemInput{
 			Item:      av,
 			TableName: aws.String(RegistrarTableName),
@@ -119,7 +119,6 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 		if err != nil {
 			log.Println(err)
 			return nil, ExpressionBuildError
-
 		}
 
 		in := &dynamodb.UpdateItemInput{
