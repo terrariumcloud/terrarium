@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"testing"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
@@ -15,7 +16,9 @@ import (
 func TestRegisterModule(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{}
+	db := &mocks.MockDynamoDB{
+		GetItemOut: &dynamodb.GetItemOutput{},
+	}
 
 	svc := &services.RegistrarService{Db: db}
 
@@ -75,6 +78,7 @@ func TestRegisterModuleWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
+		GetItemOut:   &dynamodb.GetItemOutput{},
 		PutItemError: errors.New("some error"),
 	}
 
