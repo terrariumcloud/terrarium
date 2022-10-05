@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"testing"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
@@ -15,7 +16,9 @@ import (
 func TestRegisterModule(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{}
+	db := &mocks.MockDynamoDB{
+		GetItemOut: &dynamodb.GetItemOutput{},
+	}
 
 	svc := &services.RegistrarService{Db: db}
 
@@ -32,6 +35,10 @@ func TestRegisterModule(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %d", db.GetItemInvocations)
+	}
+
 	if db.PutItemInvocations != 1 {
 		t.Errorf("Expected 1 call to PutItem, got %d", db.PutItemInvocations)
 	}
@@ -42,6 +49,95 @@ func TestRegisterModule(t *testing.T) {
 
 	if res != services.ModuleRegistered {
 		t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+	}
+}
+
+func TestRegisterModuleUpdateExisting(t *testing.T) {
+	t.Parallel()
+	name := "test"
+	emptyString := ""
+	db := &mocks.MockDynamoDB{
+		GetItemOut: &dynamodb.GetItemOutput{
+			Item: map[string]*dynamodb.AttributeValue{
+				"name":        {S: &name},
+				"description": {S: &emptyString},
+				"source_url":  {S: &emptyString},
+				"maturity":    {S: &emptyString},
+				"created_on":  {S: &emptyString},
+				"modified_on": {S: &emptyString},
+			},
+		},
+		UpdateItemOut: &dynamodb.UpdateItemOutput{},
+	}
+
+	svc := &services.RegistrarService{Db: db}
+
+	req := terrarium.RegisterModuleRequest{
+		Name:        "test",
+		Description: "test desc",
+		Source:      "http://test.com",
+		Maturity:    terrarium.Maturity_ALPHA,
+	}
+
+	res, err := svc.Register(context.TODO(), &req)
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %d", db.GetItemInvocations)
+	}
+
+	if db.PutItemInvocations != 0 {
+		t.Errorf("Expected 0 calls to PutItem, got %d", db.PutItemInvocations)
+	}
+
+	if db.UpdateItemInvocations != 1 {
+		t.Errorf("Expected 1 call to UpdateItem, got %d", db.UpdateItemInvocations)
+	}
+
+	if db.TableName != services.RegistrarTableName {
+		t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
+	}
+
+	if res != services.ModuleRegistered {
+		t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+	}
+}
+
+func TestRegisterModuleExistingCheckErrored(t *testing.T) {
+	t.Parallel()
+
+	db := &mocks.MockDynamoDB{
+		GetItemError: errors.New("some error"),
+	}
+
+	svc := &services.RegistrarService{Db: db}
+
+	req := terrarium.RegisterModuleRequest{
+		Name:        "test",
+		Description: "test desc",
+		Source:      "http://test.com",
+		Maturity:    terrarium.Maturity_ALPHA,
+	}
+
+	res, err := svc.Register(context.TODO(), &req)
+
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %d", db.GetItemInvocations)
+	}
+
+	if db.PutItemInvocations != 0 {
+		t.Errorf("Expected 0 calls to PutItem, got %d", db.PutItemInvocations)
+	}
+
+	if res != nil {
+		t.Errorf("Expected no response, got %v.", res)
 	}
 }
 
@@ -75,6 +171,7 @@ func TestRegisterModuleWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
+		GetItemOut:   &dynamodb.GetItemOutput{},
 		PutItemError: errors.New("some error"),
 	}
 

@@ -3,10 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 
 	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
@@ -18,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/google/uuid"
 )
 
 const (
@@ -33,7 +33,10 @@ var (
 	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
 	ModuleTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for modules.")
+	ModuleGetError                 = status.Error(codes.Unknown, "Failed to check if module already exists.")
+	ModuleUpdateError              = status.Error(codes.Unknown, "Failed to update module.")
 	ModuleRegisterError            = status.Error(codes.Unknown, "Failed to register module.")
+	ExpressionBuildError           = status.Error(codes.Unknown, "Failed to build update expression.")
 	MarshalModuleError             = status.Error(codes.Unknown, "Failed to marshal module.")
 )
 
@@ -45,12 +48,12 @@ type RegistrarService struct {
 }
 
 type Module struct {
-	ID          interface{} `json:"id" bson:"_id" dynamodbav:"_id"`
-	Name        string      `json:"name" bson:"name" dynamodbav:"name"`
-	Description string      `json:"description" bson:"description" dynamodbav:"description"`
-	Source      string      `json:"source_url" bson:"source_url" dynamodbav:"source"`
-	Maturity    string      `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
-	CreatedOn   string      `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	Name        string `json:"name" bson:"name" dynamodbav:"name"`
+	Description string `json:"description" bson:"description" dynamodbav:"description"`
+	Source      string `json:"source_url" bson:"source_url" dynamodbav:"source"`
+	Maturity    string `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
+	CreatedOn   string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	ModifiedOn  string `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
 }
 
 // Registers RegistrarService with grpc server
@@ -68,30 +71,71 @@ func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) 
 func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Registering new module.")
 
-	ms := Module{
-		ID:          uuid.NewString(),
-		Name:        request.GetName(),
-		Description: request.GetDescription(),
-		Source:      request.GetSource(),
-		Maturity:    request.GetMaturity().String(),
-		CreatedOn:   time.Now().UTC().String(),
-	}
-
-	av, err := dynamodbattribute.MarshalMap(ms)
+	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(RegistrarTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"name": {S: aws.String(request.GetName())},
+		},
+	})
 
 	if err != nil {
 		log.Println(err)
-		return nil, MarshalModuleError
+		return nil, ModuleGetError
 	}
 
-	in := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(RegistrarTableName),
-	}
+	if res.Item == nil {
+		ms := Module{
+			Name:        request.GetName(),
+			Description: request.GetDescription(),
+			Source:      request.GetSource(),
+			Maturity:    request.GetMaturity().String(),
+			CreatedOn:   time.Now().UTC().String(),
+			ModifiedOn:  time.Now().UTC().String(),
+		}
 
-	if _, err = s.Db.PutItem(in); err != nil {
-		log.Println(err)
-		return nil, ModuleRegisterError
+		av, err := dynamodbattribute.MarshalMap(ms)
+
+		if err != nil {
+			log.Println(err)
+			return nil, MarshalModuleError
+		}
+
+		in := &dynamodb.PutItemInput{
+			Item:      av,
+			TableName: aws.String(RegistrarTableName),
+		}
+
+		if _, err = s.Db.PutItem(in); err != nil {
+			log.Println(err)
+			return nil, ModuleRegisterError
+		}
+	} else {
+		update := expression.Set(expression.Name("description"), expression.Value(request.GetDescription()))
+		update.Set(expression.Name("source"), expression.Value(request.GetSource()))
+		update.Set(expression.Name("maturity"), expression.Value(request.GetMaturity().String()))
+		update.Set(expression.Name("modified_on"), expression.Value(time.Now().UTC().String()))
+		expr, err := expression.NewBuilder().WithUpdate(update).Build()
+
+		if err != nil {
+			log.Println(err)
+			return nil, ExpressionBuildError
+		}
+
+		in := &dynamodb.UpdateItemInput{
+			TableName: aws.String(RegistrarTableName),
+			Key: map[string]*dynamodb.AttributeValue{
+				"name": {S: aws.String(request.GetName())}},
+			ExpressionAttributeNames:  expr.Names(),
+			ExpressionAttributeValues: expr.Values(),
+			UpdateExpression:          expr.Update(),
+		}
+
+		_, err = s.Db.UpdateItem(in)
+
+		if err != nil {
+			log.Println(err)
+			return nil, ModuleUpdateError
+		}
 	}
 
 	log.Println("New module registered.")
@@ -184,13 +228,13 @@ func GetModulesSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("_id"),
+				AttributeName: aws.String("name"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("_id"),
+				AttributeName: aws.String("name"),
 				KeyType:       aws.String("HASH"),
 			},
 		},
