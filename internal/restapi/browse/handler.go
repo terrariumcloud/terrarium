@@ -41,7 +41,7 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
-
+	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }
 
