@@ -1,6 +1,6 @@
 import React from 'react';
 import SearchBar from '../../../components/search-bar/SearchBar';
-import { Button, Card, CardContent, CardActions, Stack, Typography} from '@mui/material';
+import {Button, Card, CardContent, CardActions, Stack, Typography, Paper} from '@mui/material';
 import { useFilteredModuleList, ModuleEntry } from '../../../data/useFilteredModuleList'
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -26,7 +26,10 @@ function Browse() {
     return (
         <>
             <SearchBar filterValue={filterText} setFilter={setFilterText} />
-            <Stack spacing={2}>
+            <Stack spacing={2} style={{marginTop: ".8em", marginBottom: ".8em"}}>
+                <Paper>
+                    <Typography variant="h5">Matching modules: {filteredModuleList.length}</Typography>
+                </Paper>
                 {filteredModuleList.map((mod, index) => { return <ModuleCard module={mod} key={index} /> })}
             </Stack>
         </>

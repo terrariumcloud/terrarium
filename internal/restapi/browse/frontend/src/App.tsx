@@ -1,43 +1,34 @@
 
 import React from 'react';
 import './App.css';
-import Main from './layouts/main/Main';
-import Browse from './layouts/modules/browse/Browse';
-import ModuleInfo from './layouts/modules/moduleinfo/ModuleInfo';
-import ModuleDetailDescription from './layouts/modules/moduleinfo/ModuleDetailDescription';
-import ModuleDetailVersions from './layouts/modules/moduleinfo/ModuleDetailVersions';
+import Main from './pages/main/Main';
+import Browse from './pages/modules/browse/Browse';
+import ModuleInfo from './pages/modules/moduleinfo/ModuleInfo';
+import ModuleDetailDescription from './pages/modules/moduleinfo/ModuleDetailDescription';
+import ModuleDetailVersions from './pages/modules/moduleinfo/ModuleDetailVersions';
 
 import {
     createBrowserRouter,
-    RouterProvider,
-    Outlet
+    RouterProvider
 } from "react-router-dom";
-import Header from './components/header/Header';
-import Footer from './components/footer/Footer';
-import { Container } from '@mui/material';
-
-
-const Home = () => {
-    return <>
-        <Header />
-        <Container style={{marginTop: ".3em", marginBottom: ".85em"}}>
-            <Outlet />
-        </Container>
-        <Footer />
-    </>
-}
+import Home from './components/home/Home';
+import NotFound from './pages/notfound/NotFound';
+import ServerError from './pages/servererror/ServerError'
 
 const routes = [
     {
         path: "",
         element: <Home />,
+
         children: [
             {
                 index: true,
                 element: <Main />,
+                errorElement: <ServerError />,
             },
             {
                 path: "terraform-modules",
+                errorElement: <ServerError />,
                 children: [
                     {
                         index: true,
@@ -60,9 +51,14 @@ const routes = [
                                 element: <ModuleDetailVersions />,
                             }
                         ]
-                    }
+                    },
                 ],
             },
+            // Last route...
+            {
+                path: "*",
+                element: <NotFound />,
+            }
         ],
     },
 ]

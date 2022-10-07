@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 export interface ModuleResponseData {
     modules: ModuleEntry[]
@@ -41,7 +41,7 @@ export const useFilteredModuleList = ():[ModuleEntry[], string, ((value: (((prev
         .filter((moduleInfo) => {
             const filterValue = filterText.toLowerCase()
 
-            if (filterText == "") {
+            if (filterText === "") {
                 return true
             }
             const moduleSearchText = moduleInfo.organization + " "
