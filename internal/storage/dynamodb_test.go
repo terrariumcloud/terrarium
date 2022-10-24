@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
+	"github.com/terrariumcloud/terrarium/internal/mocks"
+	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
 // This test checks if table is not recreated when it already exists

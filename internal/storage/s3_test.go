@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
+	"github.com/terrariumcloud/terrarium/internal/mocks"
+	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
 // This test checks if bucket is not recreated when it already exists

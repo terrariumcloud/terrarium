@@ -1,10 +1,9 @@
-module github.com/terrariumcloud/terrarium-grpc-gateway
+module github.com/terrariumcloud/terrarium
 
 go 1.18
 
 require (
 	github.com/aws/aws-sdk-go v1.44.76
-	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/spf13/cobra v1.5.0

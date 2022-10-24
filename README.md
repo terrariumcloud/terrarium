@@ -1,1 +1,3 @@
-# terrarium-grpc-gateway
+# Terrarium
+
+An Open Source implementation of the Terraform registry.

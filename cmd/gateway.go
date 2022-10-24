@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	services "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+	services "github.com/terrariumcloud/terrarium/internal/module/services"
 
 	"github.com/spf13/cobra"
 )

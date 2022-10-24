@@ -3,7 +3,7 @@ package v1
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 	"net/http"
 )

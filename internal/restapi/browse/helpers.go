@@ -1,7 +1,7 @@
 package browse
 
 import (
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 
 	"google.golang.org/grpc"
 )

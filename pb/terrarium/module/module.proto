@@ -1,7 +1,7 @@
 syntax = "proto3";
 package terrarium.module;
 
-option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module";
+option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/module";
 
 // 1 - Create an organisation in terrarium to obtain an api_key
 // 2 - Register API Key with Github Organisation
