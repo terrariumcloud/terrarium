@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	v1 "github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi/modules/v1"
+	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/restapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/storage"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -160,14 +160,13 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 	return nil
 }
 
-// Retrieve Module dependencies from Terrarium
-func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
+func (s *DependencyManagerService) GetDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Println("Retrieving module dependencies.")
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(request.Module.GetName())},
-			"version": {S: aws.String(request.Module.GetVersion())},
+			"name":    {S: aws.String(module.GetName())},
+			"version": {S: aws.String(module.GetVersion())},
 		},
 	}
 
@@ -175,24 +174,49 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 
 	if err != nil {
 		log.Println(err)
-		return GetModuleDependenciesError
+		return nil, GetModuleDependenciesError
 	}
 
 	dependencies := ModuleDependencies{}
 
 	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
-		return UnmarshalModuleDependenciesError
+		return nil, UnmarshalModuleDependenciesError
 	}
+	return dependencies.Modules, nil
+}
 
-	res := &terrarium.ModuleDependenciesResponse{
-		Module:       request.Module,
-		Dependencies: dependencies.Modules,
-	}
+// Retrieve Module dependencies from Terrarium
+func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
+	controlCh := make(chan *terrarium.Module, 250)
+	controlCh <- request.Module
 
-	if err := server.Send(res); err != nil {
-		log.Println(err)
-		return SendModuleDependenciesError
+	moreModulesToProcess := true
+
+	for moreModulesToProcess {
+		select {
+		case moduleToProcess := <-controlCh:
+			dep, err := s.GetDependencies(moduleToProcess)
+			if err != nil {
+				return err
+			}
+			res := &terrarium.ModuleDependenciesResponse{
+				Module:       moduleToProcess,
+				Dependencies: dep,
+			}
+			if err := server.Send(res); err != nil {
+				log.Println(err)
+				return SendModuleDependenciesError
+			}
+
+			for _, dependency := range dep {
+				controlCh <- dependency
+			}
+		default:
+			moreModulesToProcess = false
+			close(controlCh)
+		}
+
 	}
 
 	log.Println("Module dependencies retrieved.")

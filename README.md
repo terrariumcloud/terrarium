@@ -1,1 +1,1 @@
-# terrarium-grpc-gateway
+# terrarium

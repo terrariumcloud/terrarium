@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/mocks"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
 

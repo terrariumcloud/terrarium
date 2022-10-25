@@ -1,4 +1,4 @@
-module github.com/terrariumcloud/terrarium-grpc-gateway
+module github.com/terrariumcloud/terrarium
 
 go 1.18
 
