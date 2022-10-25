@@ -3,7 +3,7 @@ package terrarium.module.services;
 
 import "pb/terrarium/module/module.proto";
 
-option go_package = "github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services";
+option go_package = "github.com/terrariumcloud/terrarium/internal/module/services";
 
 service Registrar {
   rpc Register(terrarium.module.RegisterModuleRequest) returns (terrarium.module.Response);

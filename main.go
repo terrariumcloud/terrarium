@@ -1,6 +1,6 @@
 package main
 
-import "github.com/terrariumcloud/terrarium-grpc-gateway/cmd"
+import "github.com/terrariumcloud/terrarium/cmd"
 
 func main() {
 	cmd.Execute()

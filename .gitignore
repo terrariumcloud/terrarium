@@ -19,4 +19,4 @@ vendor/
 # Misc
 .env
 .vscode/
-terrarium-grpc-gateway
+terrarium

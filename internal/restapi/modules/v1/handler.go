@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi"
-	pb "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/restapi"
+	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

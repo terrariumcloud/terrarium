@@ -3,8 +3,8 @@ package mocks
 import (
 	"io"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 )
 
 type MockUploadSourceZipServer struct {

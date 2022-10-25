@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/restapi/browse"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
 )
 
 var browseCmd = &cobra.Command{

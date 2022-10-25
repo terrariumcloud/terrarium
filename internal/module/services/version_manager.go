@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/storage"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/storage"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

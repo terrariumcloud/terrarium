@@ -3,12 +3,13 @@ package services_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/mocks"
-	"github.com/terrariumcloud/terrarium-grpc-gateway/internal/module/services"
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/internal/mocks"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
 
@@ -36,6 +37,17 @@ func (srv *MockRetrieveModuleDependenciesServer) Send(res *terrarium.ModuleDepen
 	srv.SendInvocations++
 	srv.Response = res
 	return srv.Err
+}
+
+type MockRetrieveGetDependenciesResponse struct {
+	Dependencies []*terrarium.Module
+	Err          error
+}
+
+func (m *MockRetrieveGetDependenciesResponse) GetDependencies(request *terrarium.Module) (deps []*terrarium.Module, err error) {
+	m.Dependencies = deps
+	m.Err = err
+	return m.Dependencies, m.Err
 }
 
 // This test checks if there was no error
@@ -403,5 +415,43 @@ func TestRetrieveModuleDependenciesWhenSendErrors(t *testing.T) {
 
 	if srv.SendInvocations != 1 {
 		t.Errorf("Expected 1 call to Send, got %v.", srv.SendInvocations)
+	}
+}
+
+func TestGetDependencies(t *testing.T) {
+	t.Parallel()
+
+	out := &dynamodb.GetItemOutput{}
+
+	db := &mocks.MockDynamoDB{GetItemOut: out}
+
+	dms := &services.DependencyManagerService{Db: db}
+
+	request := &terrarium.RetrieveModuleDependenciesRequest{
+		Module: &terrarium.Module{Name: "cietest/notify/aws", Version: "1.0.2"},
+	}
+
+	serve := &MockRetrieveGetDependenciesResponse{
+		Dependencies: []*terrarium.Module{{Name: "cietest/lambda/aws", Version: "1.0.0"}},
+		Err:          nil,
+	}
+
+	deps, err := dms.GetDependencies(request.Module)
+
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+
+	if db.GetItemInvocations != 1 {
+		t.Errorf("Expected 1 call to GetItem, got %v.", db.GetItemInvocations)
+	}
+
+	if serve.Dependencies == nil {
+		t.Errorf("Expected response, got nil.")
+	}
+	if !reflect.DeepEqual(deps, serve.Dependencies) {
+		t.Logf("got: %v, wanted: %v", deps, serve.Dependencies)
+	} else {
+		t.Errorf("Expected response %v, got different. %v", serve.Dependencies, deps)
 	}
 }

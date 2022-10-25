@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	terrarium "github.com/terrariumcloud/terrarium-grpc-gateway/pkg/terrarium/module"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
