@@ -42,14 +42,11 @@ var (
 	GetContainerDependenciesError              = status.Error(codes.Unknown, "Failed to get container dependencies.")
 )
 
-//type getDependencies func(terrarium.Module) ([]*terrarium.Module, error)
-
 type DependencyManagerService struct {
 	UnimplementedDependencyManagerServer
 	Db     dynamodbiface.DynamoDBAPI
 	Table  string
 	Schema *dynamodb.CreateTableInput
-	//getDependenciess func(terrarium.Module) ([]*terrarium.Module, error)
 }
 
 type ModuleDependencies struct {
