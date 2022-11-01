@@ -40,6 +40,7 @@ func (srv *MockRetrieveModuleDependenciesServer) Send(res *terrarium.ModuleDepen
 	return srv.Err
 }
 
+
 type MockGetDependenciesResponse struct {
 	Dependencies []*terrarium.Module
 	Err          error
@@ -433,6 +434,7 @@ func TestGetDependencies(t *testing.T) {
 
 	dms := &services.DependencyManagerService{Db: db}
 
+
 	mockRequestModule := &terrarium.Module{Name: "cietest/notify/aws", Version: "1.0.2"}
 	mockResponseModule := &MockGetDependenciesResponse{
 		Dependencies: []*terrarium.Module{{Name: "cietest/lambda/aws", Version: "1.0.1"}},
@@ -440,6 +442,7 @@ func TestGetDependencies(t *testing.T) {
 	}
 
 	deps, err := dms.GetDependencies(mockRequestModule)
+
 	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
