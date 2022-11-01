@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
@@ -71,7 +70,12 @@ func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceReg
 // Registers Module dependencies in Terrarium
 func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Registering module dependencies.")
-	dep, err := json.Marshal(request.Dependencies)
+	dep := []*terrarium.Module{}
+	for _, dependency := range request.Dependencies {
+		dep = append(dep, &terrarium.Module{Name: dependency.Name, Version: dependency.Version})
+	}
+
+	depList, err := dynamodbattribute.Marshal(dep)
 
 	if err != nil {
 		log.Println(err)
@@ -83,7 +87,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 		Item: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(request.Module.GetName())},
 			"version": {S: aws.String(request.Module.GetVersion())},
-			"modules": {S: aws.String(string(dep))},
+			"modules": depList,
 		},
 	}
 
@@ -162,6 +166,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 
 func (s *DependencyManagerService) GetDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Println("Retrieving module dependencies.")
+
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -200,6 +205,7 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 			if err != nil {
 				return err
 			}
+
 			res := &terrarium.ModuleDependenciesResponse{
 				Module:       moduleToProcess,
 				Dependencies: dep,
