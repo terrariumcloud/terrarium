@@ -75,7 +75,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 		dep = append(dep, &terrarium.Module{Name: dependency.Name, Version: dependency.Version})
 	}
 
-	depList, err := dynamodbattribute.Marshal(dep)
+	depList, err := dynamodbattribute.MarshalList(dep)
 
 	if err != nil {
 		log.Println(err)
@@ -87,7 +87,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 		Item: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(request.Module.GetName())},
 			"version": {S: aws.String(request.Module.GetVersion())},
-			"modules": depList,
+			"modules": {L: depList},
 		},
 	}
 
