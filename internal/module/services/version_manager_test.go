@@ -11,228 +11,232 @@ import (
 	"google.golang.org/grpc"
 )
 
-// This test checks if there was no error
-func TestRegisterVersionManagerWithServer(t *testing.T) {
+// Test_RegisterVersionManagerWithServer checks:
+// - if there was no error with table init
+// - if error is returned when Table initialization fails
+func Test_RegisterVersionManagerWithServer(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{}
+	t.Run("when there is no error with table init", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{}
 
-	vms := &services.VersionManagerService{Db: db}
+		vms := &services.VersionManagerService{Db: db}
 
-	s := grpc.NewServer(*new([]grpc.ServerOption)...)
+		s := grpc.NewServer(*new([]grpc.ServerOption)...)
 
-	err := vms.RegisterWithServer(s)
+		err := vms.RegisterWithServer(s)
 
-	if err != nil {
-		t.Errorf("Expected no error, got %v.", err)
-	}
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
 
-	if db.DescribeTableInvocations != 1 {
-		t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
-	}
+		if db.DescribeTableInvocations != 1 {
+			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
+		}
 
-	if db.CreateTableInvocations != 0 {
-		t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
-	}
+		if db.CreateTableInvocations != 0 {
+			t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
+		}
+	})
+
+	t.Run("when Table initialization fails", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+
+		vms := &services.VersionManagerService{Db: db}
+
+		s := grpc.NewServer(*new([]grpc.ServerOption)...)
+
+		err := vms.RegisterWithServer(s)
+
+		if err != services.ModuleVersionsTableInitializationError {
+			t.Errorf("Expected %v, got %v.", services.ModuleVersionsTableInitializationError, err)
+		}
+
+		if db.DescribeTableInvocations != 1 {
+			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
+		}
+
+		if db.CreateTableInvocations != 0 {
+			t.Errorf("Expected 0 calls to CreateTable, got %v.", db.CreateTableInvocations)
+		}
+	})
 }
 
-// This test checks if error is returned when Table initialization fails
-func TestRegisterWithServerWhenVersionsTableInitializationErrors(t *testing.T) {
+// Test_BeginVersion checks:
+// - if correct response is returned when new version is created
+// - if error is returned when PutItem fails
+func Test_BeginVersion(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+	t.Run("when new version is created", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{}
 
-	vms := &services.VersionManagerService{Db: db}
+		svc := &services.VersionManagerService{Db: db}
 
-	s := grpc.NewServer(*new([]grpc.ServerOption)...)
+		req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
 
-	err := vms.RegisterWithServer(s)
+		res, err := svc.BeginVersion(context.TODO(), req)
 
-	if err != services.ModuleVersionsTableInitializationError {
-		t.Errorf("Expected %v, got %v.", services.ModuleVersionsTableInitializationError, err)
-	}
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
 
-	if db.DescribeTableInvocations != 1 {
-		t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
-	}
+		if db.PutItemInvocations != 1 {
+			t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
+		}
 
-	if db.CreateTableInvocations != 0 {
-		t.Errorf("Expected 0 calls to CreateTable, got %v.", db.CreateTableInvocations)
-	}
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
+
+		if res != services.VersionCreated {
+			t.Errorf("Expected %v, got %v.", services.VersionCreated, res)
+		}
+	})
+
+	t.Run("when PutItem fails", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
+
+		svc := &services.VersionManagerService{Db: db}
+
+		req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
+
+		res, err := svc.BeginVersion(context.TODO(), req)
+
+		if res != nil {
+			t.Errorf("Expected no response, got %v", res)
+		}
+
+		if db.PutItemInvocations != 1 {
+			t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
+		}
+
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
+
+		if err != services.CreateModuleVersionError {
+			t.Errorf("Expected %v, got %v.", services.CreateModuleVersionError, err)
+		}
+	})
+
+	// TODO: Test for MarshalModuleVersionError
 }
 
-// This test checks if correct response is returned when new version is created
-func TestBeginVersion(t *testing.T) {
+// Test_AbortVersion checks:
+// - if correct response is returned when version is aborted
+// - if error is returned when DeleteItem fails
+func Test_AbortVersion(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{}
+	t.Run("when version is aborted", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{}
 
-	svc := &services.VersionManagerService{Db: db}
+		svc := &services.VersionManagerService{Db: db}
 
-	req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
+		req := &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
 
-	res, err := svc.BeginVersion(context.TODO(), req)
+		res, err := svc.AbortVersion(context.TODO(), req)
 
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
 
-	if db.PutItemInvocations != 1 {
-		t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
-	}
+		if db.DeleteItemInvocations != 1 {
+			t.Errorf("Expected 1 call to DeleteItem, got %v", db.DeleteItemInvocations)
+		}
 
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
 
-	if res != services.VersionCreated {
-		t.Errorf("Expected %v, got %v.", services.VersionCreated, res)
-	}
+		if res != services.VersionAborted {
+			t.Errorf("Expected %v, got %v.", services.VersionAborted, res)
+		}
+	})
+
+	t.Run("when DeleteItem fails", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{DeleteItemError: errors.New("some error")}
+
+		svc := &services.VersionManagerService{Db: db}
+
+		req := services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
+
+		res, err := svc.AbortVersion(context.TODO(), &req)
+
+		if res != nil {
+			t.Errorf("Expected no response, got %v", res)
+		}
+
+		if db.DeleteItemInvocations != 1 {
+			t.Errorf("Expected 1 call to DeleteItem, got %v", db.DeleteItemInvocations)
+		}
+
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
+
+		if err != services.AbortModuleVersionError {
+			t.Errorf("Expected %v, got %v.", services.AbortModuleVersionError, err)
+		}
+	})
 }
 
-// This test checks if error is returned when PutItem fails
-func TestBeginVersionWhenPutItemErrors(t *testing.T) {
+// Test_PublishVersion checks:
+// - if correct response is returned when version is published
+// - if error is returned when UpdateItem fails
+func Test_PublishVersion(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
+	t.Run("when version is published", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{}
 
-	svc := &services.VersionManagerService{Db: db}
+		svc := &services.VersionManagerService{Db: db}
 
-	req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
+		req := &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
 
-	res, err := svc.BeginVersion(context.TODO(), req)
+		res, err := svc.PublishVersion(context.TODO(), req)
 
-	if res != nil {
-		t.Errorf("Expected no response, got %v", res)
-	}
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
 
-	if db.PutItemInvocations != 1 {
-		t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
-	}
+		if db.UpdateItemInvocations != 1 {
+			t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
+		}
 
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
 
-	if err != services.CreateModuleVersionError {
-		t.Errorf("Expected %v, got %v.", services.CreateModuleVersionError, err)
-	}
-}
+		if res != services.VersionPublished {
+			t.Errorf("Expected %v, got %v.", services.VersionPublished, res)
+		}
+	})
 
-// TODO: Test for MarshalModuleVersionError
+	t.Run("when UpdateItem fails", func(t *testing.T) {
+		db := &mocks.MockDynamoDB{UpdateItemError: errors.New("some error")}
 
-// This test checks if correct response is returned when version is aborted
-func TestAbortVersion(t *testing.T) {
-	t.Parallel()
+		svc := &services.VersionManagerService{Db: db}
 
-	db := &mocks.MockDynamoDB{}
+		req := services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
 
-	svc := &services.VersionManagerService{Db: db}
+		res, err := svc.PublishVersion(context.TODO(), &req)
 
-	req := &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
+		if res != nil {
+			t.Errorf("Expected no response, got %v", res)
+		}
 
-	res, err := svc.AbortVersion(context.TODO(), req)
+		if db.UpdateItemInvocations != 1 {
+			t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
+		}
 
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
+		if db.TableName != services.VersionsTableName {
+			t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
+		}
 
-	if db.DeleteItemInvocations != 1 {
-		t.Errorf("Expected 1 call to DeleteItem, got %v", db.DeleteItemInvocations)
-	}
-
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
-
-	if res != services.VersionAborted {
-		t.Errorf("Expected %v, got %v.", services.VersionAborted, res)
-	}
-}
-
-// This test checks if error is returned when DeleteItem fails
-func TestAbortVersionWhenDeleteItemErrors(t *testing.T) {
-	t.Parallel()
-
-	db := &mocks.MockDynamoDB{DeleteItemError: errors.New("some error")}
-
-	svc := &services.VersionManagerService{Db: db}
-
-	req := services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
-
-	res, err := svc.AbortVersion(context.TODO(), &req)
-
-	if res != nil {
-		t.Errorf("Expected no response, got %v", res)
-	}
-
-	if db.DeleteItemInvocations != 1 {
-		t.Errorf("Expected 1 call to DeleteItem, got %v", db.DeleteItemInvocations)
-	}
-
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
-
-	if err != services.AbortModuleVersionError {
-		t.Errorf("Expected %v, got %v.", services.AbortModuleVersionError, err)
-	}
-}
-
-// This test checks if correct response is returned when version is published
-func TestPublishVersion(t *testing.T) {
-	t.Parallel()
-
-	db := &mocks.MockDynamoDB{}
-
-	svc := &services.VersionManagerService{Db: db}
-
-	req := &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
-
-	res, err := svc.PublishVersion(context.TODO(), req)
-
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-
-	if db.UpdateItemInvocations != 1 {
-		t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
-	}
-
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
-
-	if res != services.VersionPublished {
-		t.Errorf("Expected %v, got %v.", services.VersionPublished, res)
-	}
-}
-
-// This test checks if error is returned when UpdateItem fails
-func TestPublishVersionWhenUpdateItemErrors(t *testing.T) {
-	t.Parallel()
-
-	db := &mocks.MockDynamoDB{UpdateItemError: errors.New("some error")}
-
-	svc := &services.VersionManagerService{Db: db}
-
-	req := services.TerminateVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
-
-	res, err := svc.PublishVersion(context.TODO(), &req)
-
-	if res != nil {
-		t.Errorf("Expected no response, got %v", res)
-	}
-
-	if db.UpdateItemInvocations != 1 {
-		t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
-	}
-
-	if db.TableName != services.VersionsTableName {
-		t.Errorf("Expected tableName to be %v, got %v.", services.VersionsTableName, db.TableName)
-	}
-
-	if err != services.PublishModuleVersionError {
-		t.Errorf("Expected %v, got %v.", services.PublishModuleVersionError, err)
-	}
+		if err != services.PublishModuleVersionError {
+			t.Errorf("Expected %v, got %v.", services.PublishModuleVersionError, err)
+		}
+	})
 }
