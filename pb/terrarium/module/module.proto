@@ -43,15 +43,6 @@ message RegisterModuleRequest {
   Maturity maturity = 5;
 }
 
-message ModuleMetadata {
-  string organization = 1;
-  string name = 2;
-  string provider = 3;
-  string description = 4;
-  string source_url = 5;
-  Maturity maturity = 6;
-}
-
 enum Maturity {
   IDEA = 0;
   PLANNING = 1;
@@ -63,7 +54,6 @@ enum Maturity {
   END_OF_LIFE = 7;
 }
 
-
 message Response {
   string message = 1;
 }
@@ -71,6 +61,17 @@ message Response {
 message Module {
   string name = 1;
   string version = 2;
+}
+
+message ContainerImageRef {
+  string arch = 1;
+  string image_url = 2;
+}
+
+message ContainerImageDetails {
+  string tag = 1;
+  string namespace = 2;
+  repeated ContainerImageRef images = 3;
 }
 
 message BeginVersionRequest {
@@ -84,7 +85,7 @@ message RegisterModuleDependenciesRequest {
 
 message RegisterContainerDependenciesRequest {
   Module module = 1;
-  repeated string dependencies = 2;
+  map<string, ContainerImageDetails> images = 2;
 }
 
 message UploadSourceZipRequest {
@@ -126,5 +127,5 @@ message RetrieveContainerDependenciesRequest {
 
 message ContainerDependenciesResponse {
   Module module = 1;
-  repeated string dependencies = 2;
+  map<string, ContainerImageDetails> dependencies = 2;
 }

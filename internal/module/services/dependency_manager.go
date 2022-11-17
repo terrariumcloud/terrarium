@@ -103,23 +103,24 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 // Registers Container dependencies in Terrarium
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Registering container dependencies.")
-	in := &dynamodb.UpdateItemInput{
-		TableName:        aws.String(ModuleDependenciesTableName),
-		UpdateExpression: aws.String("set images = :images"),
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":images": {SS: aws.StringSlice(request.Dependencies)}},
-		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(request.Module.GetName())},
-			"version": {S: aws.String(request.Module.GetVersion())},
-		},
-	}
+	// TODO: Create an entry in a new table for container images
 
-	_, err := s.Db.UpdateItem(in)
-
-	if err != nil {
-		log.Println(err)
-		return nil, RegisterContainerDependenciesError
-	}
+	//in := &dynamodb.UpdateItemInput{
+	//	TableName:        aws.String(ModuleDependenciesTableName),
+	//	UpdateExpression: aws.String("set images = :images"),
+	//	ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+	//		":images": {SS: aws.StringSlice(request.Dependencies)}},
+	//	Key: map[string]*dynamodb.AttributeValue{
+	//		"name":    {S: aws.String(request.Module.GetName())},
+	//		"version": {S: aws.String(request.Module.GetVersion())},
+	//	},
+	//}
+	//_, err := s.Db.UpdateItem(in)
+	//
+	//if err != nil {
+	//	log.Println(err)
+	//	return nil, RegisterContainerDependenciesError
+	//}
 
 	log.Println("Container dependencies registered.")
 	return ContainerDependenciesRegistered, nil
@@ -128,37 +129,37 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 // Retrieve Container dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieving container dependencies.")
-	in := &dynamodb.GetItemInput{
-		TableName: aws.String(ModuleDependenciesTableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(request.Module.GetName())},
-			"version": {S: aws.String(request.Module.GetVersion())},
-		},
-	}
-
-	out, err := s.Db.GetItem(in)
-
-	if err != nil {
-		log.Println(err)
-		return GetContainerDependenciesError
-	}
-
-	dependencies := ModuleDependencies{}
-
-	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
-		log.Println(err)
-		return UnmarshalContainerDependenciesError
-	}
-
-	res := &terrarium.ContainerDependenciesResponse{
-		Module:       request.Module,
-		Dependencies: dependencies.Images,
-	}
-
-	if err := server.Send(res); err != nil {
-		log.Println(err)
-		return SendContainerDependenciesError
-	}
+	//in := &dynamodb.GetItemInput{
+	//	TableName: aws.String(ModuleDependenciesTableName),
+	//	Key: map[string]*dynamodb.AttributeValue{
+	//		"name":    {S: aws.String(request.Module.GetName())},
+	//		"version": {S: aws.String(request.Module.GetVersion())},
+	//	},
+	//}
+	//
+	//out, err := s.Db.GetItem(in)
+	//
+	//if err != nil {
+	//	log.Println(err)
+	//	return GetContainerDependenciesError
+	//}
+	//
+	//dependencies := ModuleDependencies{}
+	//
+	//if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
+	//	log.Println(err)
+	//	return UnmarshalContainerDependenciesError
+	//}
+	//
+	//res := &terrarium.ContainerDependenciesResponse{
+	//	Module:       request.Module,
+	//	Dependencies: dependencies.Images,
+	//}
+	//
+	//if err := server.Send(res); err != nil {
+	//	log.Println(err)
+	//	return SendContainerDependenciesError
+	//}
 
 	log.Println("Container dependencies retrieved.")
 	return nil
