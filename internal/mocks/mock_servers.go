@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"io"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
@@ -16,6 +17,10 @@ type MockUploadSourceZipServer struct {
 	RecvMaxInvocations      int
 	RecvRequest             *terrarium.UploadSourceZipRequest
 	RecvError               error
+}
+
+func (mus *MockUploadSourceZipServer) Context() context.Context {
+	return context.TODO()
 }
 
 func (mus *MockUploadSourceZipServer) SendAndClose(response *terrarium.Response) error {

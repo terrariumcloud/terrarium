@@ -28,15 +28,15 @@ type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedConsumerServer
 }
 
-// Registers TerrariumGrpcGateway with grpc server
-func (s *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	terrarium.RegisterPublisherServer(grpcServer, s)
-	terrarium.RegisterConsumerServer(grpcServer, s)
+// RegisterWithServer registers TerrariumGrpcGateway with grpc server
+func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
+	terrarium.RegisterPublisherServer(grpcServer, gw)
+	terrarium.RegisterConsumerServer(grpcServer, gw)
 	return nil
 }
 
 // Register new module with Registrar service
-func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Register => Registrar")
 	conn, err := grpc.Dial(RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -49,6 +49,11 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.
 
 	client := NewRegistrarClient(conn)
 
+	return gw.RegisterWithClient(ctx, request, client)
+}
+
+// RegisterWithClient calls Register on Registrar client
+func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request *terrarium.RegisterModuleRequest, client RegistrarClient) (*terrarium.Response, error) {
 	if res, delegateError := client.Register(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
 		return nil, delegateError
@@ -58,8 +63,8 @@ func (s *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.
 	}
 }
 
-// Begin (Create) Version with Version Manager service
-func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
+// BeginVersion creates new version with Version Manager service
+func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Begin version => Version Manager")
 	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -72,6 +77,11 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrar
 
 	client := NewVersionManagerClient(conn)
 
+	return gw.BeginVersionWithClient(ctx, request, client)
+}
+
+// BeginVersionWithClient calls BeginVersion on Version Manager client
+func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrarium.BeginVersionRequest, client VersionManagerClient) (*terrarium.Response, error) {
 	if res, delegateError := client.BeginVersion(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
 		return nil, delegateError
@@ -81,9 +91,8 @@ func (s *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrar
 	}
 }
 
-// End Version with Version Manger service
-// This can mean either abort (remove) or publish Version
-func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.Response, error) {
+// EndVersion publishes/aborts with Version Manger service
+func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.Response, error) {
 	log.Println("End version => Version Manager")
 	conn, err := grpc.Dial(VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -96,6 +105,11 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrariu
 
 	client := NewVersionManagerClient(conn)
 
+	return gw.EndVersionWithClient(ctx, request, client)
+}
+
+// EndVersionWithClient calls AbortVersion/PublishVersion on Version Manager client
+func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, request *terrarium.EndVersionRequest, client VersionManagerClient) (*terrarium.Response, error) {
 	terminateRequest := TerminateVersionRequest{
 		Module: request.GetModule(),
 	}
@@ -124,8 +138,8 @@ func (s *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrariu
 	}
 }
 
-// Upload source zip to Storage service
-func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
+// UploadSourceZip uploads source zip to Storage service
+func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
 	log.Println("Upload source zip => Storage")
 	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -138,6 +152,11 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_Upload
 
 	client := NewStorageClient(conn)
 
+	return gw.UploadSourceZipWithClient(server, client)
+}
+
+// UploadSourceZipWithClient calls UploadSourceZip on Storage client
+func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publisher_UploadSourceZipServer, client StorageClient) error {
 	upstream, upErr := client.UploadSourceZip(server.Context())
 
 	if upErr != nil {
@@ -178,8 +197,8 @@ func (s *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_Upload
 	}
 }
 
-// Download source zip from Storage service
-func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
+// DownloadSourceZip downloads source zip from Storage service
+func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
 	log.Println("Download source zip => Storage")
 	conn, err := grpc.Dial(StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -192,6 +211,11 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSour
 
 	client := NewStorageClient(conn)
 
+	return gw.DownloadSourceZipWithClient(request, server, client)
+}
+
+// DownloadSourceZipWithClient calls DownloadSourceZip on Storage client
+func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer, client StorageClient) error {
 	downstream, downErr := client.DownloadSourceZip(server.Context(), request)
 
 	if downErr != nil {
@@ -212,7 +236,7 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSour
 			return downErr
 		}
 
-		err = server.Send(res)
+		err := server.Send(res)
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
@@ -222,8 +246,8 @@ func (s *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSour
 	}
 }
 
-// Register Module dependencies with Dependency Manager service
-func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
+// RegisterModuleDependencies registers Module dependencies with Dependency Manager service
+func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register module dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -236,6 +260,11 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 
 	client := NewDependencyManagerClient(conn)
 
+	return gw.RegisterModuleDependenciesWithClient(ctx, request, client)
+}
+
+// RegisterModuleDependenciesWithClient calls RegisterModuleDependencies on Dependency Manager client
+func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest, client DependencyManagerClient) (*terrarium.Response, error) {
 	if res, err := client.RegisterModuleDependencies(ctx, request); err != nil {
 		log.Println(err)
 		return nil, err
@@ -245,8 +274,8 @@ func (s *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, r
 	}
 }
 
-// Register Container dependencies with Dependency Manager service
-func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
+// RegisterContainerDependencies registers Container dependencies with Dependency Manager service
+func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register container dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -259,6 +288,11 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 
 	client := NewDependencyManagerClient(conn)
 
+	return gw.RegisterContainerDependenciesWithClient(ctx, request, client)
+}
+
+// RegisterContainerDependenciesWithClient calls RegisterContainerDependencies on Dependency Manager client
+func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest, client DependencyManagerClient) (*terrarium.Response, error) {
 	if res, err := client.RegisterContainerDependencies(ctx, request); err != nil {
 		log.Println(err)
 		return nil, err
@@ -268,8 +302,8 @@ func (s *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context
 	}
 }
 
-// Retrieve Container dependencies from Dependency Manager service
-func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
+// RetrieveContainerDependencies retrieves Container dependencies from Dependency Manager service
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieve container dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -282,6 +316,11 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.
 
 	client := NewDependencyManagerClient(conn)
 
+	return gw.RetrieveContainerDependenciesWithClient(request, server, client)
+}
+
+// RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesWithClient(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer, client DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
 
 	if downErr != nil {
@@ -301,7 +340,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.
 			return downErr
 		}
 
-		err = server.Send(res)
+		err := server.Send(res)
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
@@ -312,7 +351,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.
 }
 
 // Retrieve Module dependences from Dependency Manager service
-func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer) error {
+func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer) error {
 	log.Println("Retrieve module dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -325,6 +364,10 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Ret
 
 	client := NewDependencyManagerClient(conn)
 
+	return gw.RetrieveModuleDependenciesWithClient(request, server, client)
+}
+
+func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer, client DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveModuleDependencies(server.Context(), request)
 
 	if downErr != nil {
@@ -340,11 +383,11 @@ func (s *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Ret
 		}
 
 		if downErr != nil {
-			log.Printf("Failed to recieve: %v", err)
+			log.Printf("Failed to recieve: %v", downErr)
 			return downErr
 		}
 
-		err = server.Send(res)
+		err := server.Send(res)
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
