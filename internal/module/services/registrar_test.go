@@ -17,7 +17,7 @@ func TestRegisterModule(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
-		GetItemOut: &dynamodb.GetItemOutput{},
+		GetItemOuts: []*dynamodb.GetItemOutput{&dynamodb.GetItemOutput{}},
 	}
 
 	svc := &services.RegistrarService{Db: db}
@@ -57,14 +57,16 @@ func TestRegisterModuleUpdateExisting(t *testing.T) {
 	name := "test"
 	emptyString := ""
 	db := &mocks.MockDynamoDB{
-		GetItemOut: &dynamodb.GetItemOutput{
-			Item: map[string]*dynamodb.AttributeValue{
-				"name":        {S: &name},
-				"description": {S: &emptyString},
-				"source_url":  {S: &emptyString},
-				"maturity":    {S: &emptyString},
-				"created_on":  {S: &emptyString},
-				"modified_on": {S: &emptyString},
+		GetItemOuts: []*dynamodb.GetItemOutput{
+			{
+				Item: map[string]*dynamodb.AttributeValue{
+					"name":        {S: &name},
+					"description": {S: &emptyString},
+					"source_url":  {S: &emptyString},
+					"maturity":    {S: &emptyString},
+					"created_on":  {S: &emptyString},
+					"modified_on": {S: &emptyString},
+				},
 			},
 		},
 		UpdateItemOut: &dynamodb.UpdateItemOutput{},
@@ -110,7 +112,7 @@ func TestRegisterModuleExistingCheckErrored(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
-		GetItemError: errors.New("some error"),
+		GetItemErrors: []error{errors.New("some error")},
 	}
 
 	svc := &services.RegistrarService{Db: db}
@@ -171,7 +173,7 @@ func TestRegisterModuleWhenPutItemErrors(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
-		GetItemOut:   &dynamodb.GetItemOutput{},
+		GetItemOuts:  []*dynamodb.GetItemOutput{{}},
 		PutItemError: errors.New("some error"),
 	}
 
@@ -230,12 +232,12 @@ func TestRegisterWithServer(t *testing.T) {
 	}
 }
 
-// This test checks if error is returned when Table initialization fails
+// This test checks if error is returned when ModuleTable initialization fails
 func TestRegisterWithServerWhenModuleTableInitializationErrors(t *testing.T) {
 	t.Parallel()
 
 	db := &mocks.MockDynamoDB{
-		DescribeTableError: errors.New("some error"),
+		DescribeTableErrors: []error{errors.New("some error")},
 	}
 
 	rs := &services.RegistrarService{

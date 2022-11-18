@@ -17,49 +17,63 @@ import (
 )
 
 const (
-	DefaultModuleDependenciesTableName = "terrarium-module-dependencies"
-	DefaultDependencyManagerEndpoint   = "dependency_manager:3001"
+	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies"
+	DefaultContainerDependenciesTableName = "terrarium-container-dependencies"
+	DefaultDependencyManagerEndpoint      = "dependency_manager:3001"
 )
 
 var (
-	ModuleDependenciesTableName string = DefaultModuleDependenciesTableName
-	DependencyManagerEndpoint   string = DefaultDependencyManagerEndpoint
+	ModuleDependenciesTableName    string = DefaultModuleDependenciesTableName
+	ContainerDependenciesTableName string = DefaultContainerDependenciesTableName
+	DependencyManagerEndpoint      string = DefaultDependencyManagerEndpoint
 
 	ModuleDependenciesRegistered    = &terrarium.Response{Message: "Module dependencies successfully registered."}
 	ContainerDependenciesRegistered = &terrarium.Response{Message: "Container dependencies successfully registered."}
 
-	ModuleDependenciesTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for module dependencies.")
-	RegisterModuleDependenciesError            = status.Error(codes.Unknown, "Failed to register module dependencies.")
-	RegisterContainerDependenciesError         = status.Error(codes.Unknown, "Failed to register container dependencies.")
-	MarshalModuleDependenciesError             = status.Error(codes.Unknown, "Failed to marshal module dependencies.")
-	MarshalContainerDependenciesError          = status.Error(codes.Unknown, "Failed to marshal container dependencies.")
-	SendModuleDependenciesError                = status.Error(codes.Unknown, "Failed to send module dependencies.")
-	SendContainerDependenciesError             = status.Error(codes.Unknown, "Failed to send container dependencies.")
-	UnmarshalModuleDependenciesError           = status.Error(codes.Unknown, "Failed to unmarshal module dependencies.")
-	UnmarshalContainerDependenciesError        = status.Error(codes.Unknown, "Failed to unmarshal container dependencies.")
-	GetModuleDependenciesError                 = status.Error(codes.Unknown, "Failed to get module dependencies.")
-	GetContainerDependenciesError              = status.Error(codes.Unknown, "Failed to get container dependencies.")
+	ModuleDependenciesTableInitializationError    = status.Error(codes.Unavailable, "Failed to initialize table for module dependencies.")
+	ContainerDependenciesTableInitializationError = status.Error(codes.Unavailable, "Failed to initialize table for container dependencies.")
+	RegisterModuleDependenciesError               = status.Error(codes.Unknown, "Failed to register module dependencies.")
+	RegisterContainerDependenciesError            = status.Error(codes.Unknown, "Failed to register container dependencies.")
+	MarshalModuleDependenciesError                = status.Error(codes.Unknown, "Failed to marshal module dependencies.")
+	MarshalContainerDependenciesError             = status.Error(codes.Unknown, "Failed to marshal container dependencies.")
+	SendModuleDependenciesError                   = status.Error(codes.Unknown, "Failed to send module dependencies.")
+	SendContainerDependenciesError                = status.Error(codes.Unknown, "Failed to send container dependencies.")
+	UnmarshalModuleDependenciesError              = status.Error(codes.Unknown, "Failed to unmarshal module dependencies.")
+	UnmarshalContainerDependenciesError           = status.Error(codes.Unknown, "Failed to unmarshal container dependencies.")
+	GetModuleDependenciesError                    = status.Error(codes.Unknown, "Failed to get module dependencies.")
+	GetContainerDependenciesError                 = status.Error(codes.Unknown, "Failed to get container dependencies.")
 )
 
 type DependencyManagerService struct {
 	UnimplementedDependencyManagerServer
-	Db     dynamodbiface.DynamoDBAPI
-	Table  string
-	Schema *dynamodb.CreateTableInput
+	Db              dynamodbiface.DynamoDBAPI
+	ModuleTable     string
+	ModuleSchema    *dynamodb.CreateTableInput
+	ContainerTable  string
+	ContainerSchema *dynamodb.CreateTableInput
 }
 
 type ModuleDependencies struct {
 	Name    string              `json:"name" bson:"name" dynamodbav:"name"`
 	Version string              `json:"version" bson:"version" dynamodbav:"version"`
 	Modules []*terrarium.Module `json:"modules" bson:"modules" dynamodbav:"modules"`
-	Images  []string            `json:"images" bson:"images" dynamodbav:"images"`
+}
+type ContainerDependencies struct {
+	Name    string                                      `json:"name" bson:"name" dynamodbav:"name"`
+	Version string                                      `json:"version" bson:"version" dynamodbav:"version"`
+	Images  map[string]*terrarium.ContainerImageDetails `json:"images" bson:"images" dynamodbav:"images"`
 }
 
 // Registers DependencyManagerService with grpc server
 func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
+	if err := storage.InitializeDynamoDb(s.ModuleTable, s.ModuleSchema, s.Db); err != nil {
 		log.Println(err)
 		return ModuleDependenciesTableInitializationError
+	}
+
+	if err := storage.InitializeDynamoDb(s.ContainerTable, s.ContainerSchema, s.Db); err != nil {
+		log.Println(err)
+		return ContainerDependenciesTableInitializationError
 	}
 
 	RegisterDependencyManagerServer(grpcServer, s)
@@ -103,24 +117,26 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 // Registers Container dependencies in Terrarium
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Registering container dependencies.")
-	// TODO: Create an entry in a new table for container images
 
-	//in := &dynamodb.UpdateItemInput{
-	//	TableName:        aws.String(ModuleDependenciesTableName),
-	//	UpdateExpression: aws.String("set images = :images"),
-	//	ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-	//		":images": {SS: aws.StringSlice(request.Dependencies)}},
-	//	Key: map[string]*dynamodb.AttributeValue{
-	//		"name":    {S: aws.String(request.Module.GetName())},
-	//		"version": {S: aws.String(request.Module.GetVersion())},
-	//	},
-	//}
-	//_, err := s.Db.UpdateItem(in)
-	//
-	//if err != nil {
-	//	log.Println(err)
-	//	return nil, RegisterContainerDependenciesError
-	//}
+	imageMarshalledMap, err := dynamodbattribute.MarshalMap(request.Images)
+	if err != nil {
+		log.Println(err)
+		return nil, MarshalContainerDependenciesError
+	}
+
+	in := &dynamodb.PutItemInput{
+		TableName: aws.String(ContainerDependenciesTableName),
+		Item: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(request.Module.GetName())},
+			"version": {S: aws.String(request.Module.GetVersion())},
+			"images":  {M: imageMarshalledMap},
+		},
+	}
+
+	if _, err = s.Db.PutItem(in); err != nil {
+		log.Println(err)
+		return nil, RegisterContainerDependenciesError
+	}
 
 	log.Println("Container dependencies registered.")
 	return ContainerDependenciesRegistered, nil
@@ -129,43 +145,48 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 // Retrieve Container dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieving container dependencies.")
-	//in := &dynamodb.GetItemInput{
-	//	TableName: aws.String(ModuleDependenciesTableName),
-	//	Key: map[string]*dynamodb.AttributeValue{
-	//		"name":    {S: aws.String(request.Module.GetName())},
-	//		"version": {S: aws.String(request.Module.GetVersion())},
-	//	},
-	//}
-	//
-	//out, err := s.Db.GetItem(in)
-	//
-	//if err != nil {
-	//	log.Println(err)
-	//	return GetContainerDependenciesError
-	//}
-	//
-	//dependencies := ModuleDependencies{}
-	//
-	//if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
-	//	log.Println(err)
-	//	return UnmarshalContainerDependenciesError
-	//}
-	//
-	//res := &terrarium.ContainerDependenciesResponse{
-	//	Module:       request.Module,
-	//	Dependencies: dependencies.Images,
-	//}
-	//
-	//if err := server.Send(res); err != nil {
-	//	log.Println(err)
-	//	return SendContainerDependenciesError
-	//}
+	controlCh := make(chan *terrarium.Module, 250)
+	controlCh <- request.Module
+
+	moreModulesToProcess := true
+
+	for moreModulesToProcess {
+		select {
+		case moduleToProcess := <-controlCh:
+			dep, err := s.GetModuleDependencies(moduleToProcess)
+			if err != nil {
+				return err
+			}
+
+			images, err := s.GetContainerDependencies(moduleToProcess)
+			if err != nil {
+				return err
+			}
+
+			res := &terrarium.ContainerDependenciesResponse{
+				Module:       moduleToProcess,
+				Dependencies: images,
+			}
+			if err := server.Send(res); err != nil {
+				log.Println(err)
+				return SendContainerDependenciesError
+			}
+
+			for _, dependency := range dep {
+				controlCh <- dependency
+			}
+		default:
+			moreModulesToProcess = false
+			close(controlCh)
+		}
+
+	}
 
 	log.Println("Container dependencies retrieved.")
 	return nil
 }
 
-func (s *DependencyManagerService) GetDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
+func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Println("Retrieving module dependencies.")
 
 	in := &dynamodb.GetItemInput{
@@ -192,6 +213,30 @@ func (s *DependencyManagerService) GetDependencies(module *terrarium.Module) ([]
 	return dependencies.Modules, nil
 }
 
+func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
+	in := &dynamodb.GetItemInput{
+		TableName: aws.String(ContainerDependenciesTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(module.GetName())},
+			"version": {S: aws.String(module.GetVersion())},
+		},
+	}
+
+	out, err := s.Db.GetItem(in)
+	if err != nil {
+		log.Println(err)
+		return nil, GetContainerDependenciesError
+	}
+
+	dependencies := ContainerDependencies{}
+	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
+		log.Println(err)
+		return nil, UnmarshalContainerDependenciesError
+	}
+
+	return dependencies.Images, nil
+}
+
 // Retrieve Module dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
 	controlCh := make(chan *terrarium.Module, 250)
@@ -202,7 +247,7 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 	for moreModulesToProcess {
 		select {
 		case moduleToProcess := <-controlCh:
-			dep, err := s.GetDependencies(moduleToProcess)
+			dep, err := s.GetModuleDependencies(moduleToProcess)
 			if err != nil {
 				return err
 			}
@@ -230,9 +275,9 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 	return nil
 }
 
-// GetModuleDependenciesSchema returns CreateTableInput
+// GetDependenciesSchema returns CreateTableInput
 // that can be used to create table if it does not exist
-func GetModuleDependenciesSchema(table string) *dynamodb.CreateTableInput {
+func GetDependenciesSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{

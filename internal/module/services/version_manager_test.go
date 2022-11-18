@@ -36,11 +36,11 @@ func TestRegisterVersionManagerWithServer(t *testing.T) {
 	}
 }
 
-// This test checks if error is returned when Table initialization fails
+// This test checks if error is returned when ModuleTable initialization fails
 func TestRegisterWithServerWhenVersionsTableInitializationErrors(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+	db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
 
 	vms := &services.VersionManagerService{Db: db}
 
