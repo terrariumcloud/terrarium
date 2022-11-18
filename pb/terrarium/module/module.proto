@@ -33,6 +33,7 @@ service Consumer {
   rpc DownloadSourceZip(DownloadSourceZipRequest) returns (stream SourceZipResponse) {}
   rpc RetrieveContainerDependencies(RetrieveContainerDependenciesRequest) returns (stream ContainerDependenciesResponse) {}
   rpc RetrieveModuleDependencies(RetrieveModuleDependenciesRequest) returns (stream ModuleDependenciesResponse) {}
+  rpc RetrieveContainerDependenciesV2(RetrieveContainerDependenciesRequestV2) returns (stream ContainerDependenciesResponseV2) {}
 }
 
 message RegisterModuleRequest {
@@ -112,6 +113,7 @@ message SourceZipResponse {
 
 message RetrieveModuleDependenciesRequest {
   Module module = 1;
+  bool recursive = 2;
 }
 
 message ModuleDependenciesResponse {
@@ -121,9 +123,19 @@ message ModuleDependenciesResponse {
 
 message RetrieveContainerDependenciesRequest {
   Module module = 1;
+  bool recursive = 2;
 }
 
 message ContainerDependenciesResponse {
+  Module module = 1;
+  repeated string dependencies = 2;
+}
+
+message RetrieveContainerDependenciesRequestV2 {
+  Module module = 1;
+}
+
+message ContainerDependenciesResponseV2 {
   Module module = 1;
   map<string, ContainerImageDetails> dependencies = 2;
 }

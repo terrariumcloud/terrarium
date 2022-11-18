@@ -8,6 +8,6 @@ option go_package = "github.com/terrariumcloud/terrarium/internal/module/service
 service DependencyManager {
   rpc RegisterModuleDependencies(terrarium.module.RegisterModuleDependenciesRequest) returns (terrarium.module.Response) {}
   rpc RegisterContainerDependencies(terrarium.module.RegisterContainerDependenciesRequest) returns (terrarium.module.Response) {}
-  rpc RetrieveContainerDependencies(terrarium.module.RetrieveContainerDependenciesRequest) returns (stream terrarium.module.ContainerDependenciesResponse) {}
+  rpc RetrieveContainerDependencies(terrarium.module.RetrieveContainerDependenciesRequestV2) returns (stream terrarium.module.ContainerDependenciesResponseV2) {}
   rpc RetrieveModuleDependencies(terrarium.module.RetrieveModuleDependenciesRequest) returns (stream terrarium.module.ModuleDependenciesResponse) {}
 }
