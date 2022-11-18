@@ -33,7 +33,7 @@ var (
 	ModuleDependenciesTableInitializationError    = status.Error(codes.Unavailable, "Failed to initialize table for module dependencies.")
 	ContainerDependenciesTableInitializationError = status.Error(codes.Unavailable, "Failed to initialize table for container dependencies.")
 	RegisterDependenciesError                     = status.Error(codes.Unknown, "Failed to register dependencies.")
-	MarshalDependenciesError                      = status.Error(codes.Unknown, "Failed to register dependencies.")
+	MarshalDependenciesError                      = status.Error(codes.Unknown, "Failed to marshal dependencies.")
 	SendModuleDependenciesError                   = status.Error(codes.Unknown, "Failed to send module dependencies.")
 	SendContainerDependenciesError                = status.Error(codes.Unknown, "Failed to send container dependencies.")
 	UnmarshalModuleDependenciesError              = status.Error(codes.Unknown, "Failed to unmarshal module dependencies.")

@@ -36,7 +36,7 @@ func TestRegisterVersionManagerWithServer(t *testing.T) {
 	}
 }
 
-// This test checks if error is returned when ModuleTable initialization fails
+// This test checks if error is returned when Table initialization fails
 func TestRegisterWithServerWhenVersionsTableInitializationErrors(t *testing.T) {
 	t.Parallel()
 
