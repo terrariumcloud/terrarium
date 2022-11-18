@@ -15,6 +15,36 @@ import (
 	"google.golang.org/grpc"
 )
 
+var registerContainerDependenciesTestData = terrarium.RegisterContainerDependenciesRequest{
+	Module: &terrarium.Module{Name: "test", Version: "v1"},
+	Images: map[string]*terrarium.ContainerImageDetails{
+		"grafana": {
+			Tag:       "0.1.1",
+			Namespace: "cie",
+			Images: []*terrarium.ContainerImageRef{
+				{
+					Arch:     "amd64",
+					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
+				},
+			},
+		},
+		"kubescaler": {
+			Tag:       "0.2.2",
+			Namespace: "cie",
+			Images: []*terrarium.ContainerImageRef{
+				{
+					Arch:     "amd64",
+					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
+				},
+				{
+					Arch:     "arm64",
+					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
+				},
+			},
+		},
+	},
+}
+
 type MockRetrieveContainerDependenciesServer struct {
 	grpc.ServerStream
 	SendInvocations int
@@ -221,35 +251,7 @@ func TestRegisterContainerDependencies(t *testing.T) {
 
 	db := &mocks.MockDynamoDB{}
 	svc := &services.DependencyManagerService{Db: db}
-	req := &terrarium.RegisterContainerDependenciesRequest{
-		Module: &terrarium.Module{Name: "test", Version: "v1"},
-		Images: map[string]*terrarium.ContainerImageDetails{
-			"grafana": {
-				Tag:       "0.1.1",
-				Namespace: "cie",
-				Images: []*terrarium.ContainerImageRef{
-					{
-						Arch:     "amd64",
-						ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
-					},
-				},
-			},
-			"kubescaler": {
-				Tag:       "0.2.2",
-				Namespace: "cie",
-				Images: []*terrarium.ContainerImageRef{
-					{
-						Arch:     "amd64",
-						ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
-					},
-					{
-						Arch:     "arm64",
-						ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
-					},
-				},
-			},
-		},
-	}
+	req := &registerContainerDependenciesTestData
 	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
 	if err != expectedError {
@@ -280,35 +282,7 @@ func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 
 	db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
 	svc := &services.DependencyManagerService{Db: db}
-	req := &terrarium.RegisterContainerDependenciesRequest{
-		Module: &terrarium.Module{Name: "test", Version: "v1"},
-		Images: map[string]*terrarium.ContainerImageDetails{
-			"grafana": {
-				Tag:       "0.1.1",
-				Namespace: "cie",
-				Images: []*terrarium.ContainerImageRef{
-					{
-						Arch:     "amd64",
-						ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
-					},
-				},
-			},
-			"kubescaler": {
-				Tag:       "0.2.2",
-				Namespace: "cie",
-				Images: []*terrarium.ContainerImageRef{
-					{
-						Arch:     "amd64",
-						ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
-					},
-					{
-						Arch:     "arm64",
-						ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
-					},
-				},
-			},
-		},
-	}
+	req := &registerContainerDependenciesTestData
 	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
 	if err != expectedError {
@@ -332,83 +306,40 @@ func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 func TestRetrieveContainerDependencies(t *testing.T) {
 	t.Parallel()
 
-	var expectedError error = nil
-	var expectedModule = terrarium.Module{
-		Name:    "test/test/aws",
-		Version: "1.0.0",
+	items := []*dynamodb.GetItemOutput{
+		makeGetItemOutput(
+			services.ModuleDependencies{
+				Name:    registerContainerDependenciesTestData.Module.Name,
+				Version: registerContainerDependenciesTestData.Module.Version,
+			}, t),
+		makeGetItemOutput(
+			services.ContainerDependencies{
+				Name:    registerContainerDependenciesTestData.Module.Name,
+				Version: registerContainerDependenciesTestData.Module.Version,
+				Images:  registerContainerDependenciesTestData.Images,
+			}, t),
 	}
-	var containerDependencies = map[string]*terrarium.ContainerImageDetails{
-		"grafana": {
-			Tag:       "0.1.1",
-			Namespace: "cie",
-			Images: []*terrarium.ContainerImageRef{
-				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
-				},
-			},
-		},
-		"kubescaler": {
-			Tag:       "0.2.2",
-			Namespace: "cie",
-			Images: []*terrarium.ContainerImageRef{
-				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
-				},
-				{
-					Arch:     "arm64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
-				},
-			},
-		},
-	}
-	var expectedServerResponse = &terrarium.ContainerDependenciesResponse{
-		Module:       &expectedModule,
-		Dependencies: containerDependencies,
-	}
-	var expectedGetItemInvocations = 2
-	var moduleDependencies []*terrarium.Module
-
-	dependencyModuleList, err := dynamodbattribute.MarshalList(moduleDependencies)
-	if err != nil {
-		t.Errorf("Failed to marshal test data as a list %s", err)
-	}
-	var moduleGetItemOutput = &dynamodb.GetItemOutput{
-		ConsumedCapacity: nil,
-		Item: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(expectedModule.Name)},
-			"version": {S: aws.String(expectedModule.Version)},
-			"modules": {L: dependencyModuleList},
-		},
-	}
-
-	dependencyContainerMap, err := dynamodbattribute.MarshalMap(containerDependencies)
-	if err != nil {
-		t.Errorf("Failed to marshal test data as a list %s", err)
-	}
-	var containerGetItemOutput = &dynamodb.GetItemOutput{
-		ConsumedCapacity: nil,
-		Item: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(expectedModule.Name)},
-			"version": {S: aws.String(expectedModule.Version)},
-			"images":  {M: dependencyContainerMap},
-		},
-	}
-	db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{moduleGetItemOutput, containerGetItemOutput}}
+	db := &mocks.MockDynamoDB{GetItemOuts: items}
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequest{
-		Module:    &expectedModule,
-		Recursive: false,
+		Module: registerContainerDependenciesTestData.Module,
 	}
+
+	var expectedError error = nil
+	var expectedServerResponse = &terrarium.ContainerDependenciesResponse{
+		Module:       registerContainerDependenciesTestData.Module,
+		Dependencies: registerContainerDependenciesTestData.Images,
+	}
+	var expectedGetItemInvocations = 2
+
 	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
 		{
-			Module:       &expectedModule,
-			Dependencies: containerDependencies,
+			Module:       registerContainerDependenciesTestData.Module,
+			Dependencies: registerContainerDependenciesTestData.Images,
 		},
 	}
-	err = dms.RetrieveContainerDependencies(req, srv)
+	err := dms.RetrieveContainerDependencies(req, srv)
 
 	if err != expectedError {
 		t.Errorf("Expected %v, got %v", expectedError, err)
@@ -437,41 +368,11 @@ func makeGetItemOutput(in interface{}, t *testing.T) *dynamodb.GetItemOutput {
 func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 	t.Parallel()
 
-	mainModule := terrarium.Module{
-		Name:    "test/test/aws",
-		Version: "1.0.0",
-	}
 	subModule := terrarium.Module{
 		Name:    "test/test-submodule/all",
 		Version: "2.0.2",
 	}
 
-	containerDependencies := map[string]*terrarium.ContainerImageDetails{
-		"grafana": {
-			Tag:       "0.1.1",
-			Namespace: "cie",
-			Images: []*terrarium.ContainerImageRef{
-				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
-				},
-			},
-		},
-		"kubescaler": {
-			Tag:       "0.2.2",
-			Namespace: "cie",
-			Images: []*terrarium.ContainerImageRef{
-				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
-				},
-				{
-					Arch:     "arm64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
-				},
-			},
-		},
-	}
 	submoduleContainerDependencies := map[string]*terrarium.ContainerImageDetails{
 		"lighstep-micro-satellite": {
 			Tag:       "0.1.3",
@@ -489,15 +390,15 @@ func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 
 		makeGetItemOutput(
 			services.ModuleDependencies{
-				Name:    mainModule.Name,
-				Version: mainModule.Version,
+				Name:    registerContainerDependenciesTestData.Module.Name,
+				Version: registerContainerDependenciesTestData.Module.Version,
 				Modules: []*terrarium.Module{&subModule},
 			}, t),
 		makeGetItemOutput(
 			services.ContainerDependencies{
-				Name:    mainModule.Name,
-				Version: mainModule.Version,
-				Images:  containerDependencies,
+				Name:    registerContainerDependenciesTestData.Module.Name,
+				Version: registerContainerDependenciesTestData.Module.Version,
+				Images:  registerContainerDependenciesTestData.Images,
 			}, t),
 		makeGetItemOutput(
 			services.ModuleDependencies{
@@ -516,14 +417,14 @@ func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequest{
-		Module: &mainModule,
+		Module: registerContainerDependenciesTestData.Module,
 	}
 
 	var expectedError error = nil
 	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
 		{
-			Module:       &mainModule,
-			Dependencies: containerDependencies,
+			Module:       registerContainerDependenciesTestData.Module,
+			Dependencies: registerContainerDependenciesTestData.Images,
 		},
 		{
 			Module:       &subModule,
