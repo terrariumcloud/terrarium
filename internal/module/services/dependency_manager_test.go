@@ -203,8 +203,8 @@ func TestRegisterModuleDependenciesWhenPutItemErrors(t *testing.T) {
 		t.Errorf("Expected tableName to be %v, got %v.", services.ModuleDependenciesTableName, db.TableName)
 	}
 
-	if err != services.RegisterModuleDependenciesError {
-		t.Errorf("Expected %v, got %v.", services.RegisterModuleDependenciesError, err)
+	if err != services.RegisterDependenciesError {
+		t.Errorf("Expected %v, got %v.", services.RegisterDependenciesError, err)
 	}
 }
 
@@ -276,7 +276,7 @@ func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 	var expectedPutItemInvocations = 1
 	var expectedTableName = services.ContainerDependenciesTableName
 	var expectedResponse *terrarium.Response = nil
-	var expectedError = services.RegisterContainerDependenciesError
+	var expectedError = services.RegisterDependenciesError
 
 	db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
 	svc := &services.DependencyManagerService{Db: db}
