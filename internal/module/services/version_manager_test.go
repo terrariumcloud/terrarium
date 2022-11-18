@@ -40,7 +40,7 @@ func TestRegisterVersionManagerWithServer(t *testing.T) {
 func TestRegisterWithServerWhenVersionsTableInitializationErrors(t *testing.T) {
 	t.Parallel()
 
-	db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+	db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
 
 	vms := &services.VersionManagerService{Db: db}
 
