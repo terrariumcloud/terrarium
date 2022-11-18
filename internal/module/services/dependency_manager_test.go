@@ -586,8 +586,7 @@ func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
 
 	srv := &MockRetrieveContainerDependenciesServer{Err: errors.New("some error")}
 	req := &terrarium.RetrieveContainerDependenciesRequest{
-		Module:    &expectedModule,
-		Recursive: false,
+		Module: &expectedModule,
 	}
 	err = dms.RetrieveContainerDependencies(req, srv)
 
