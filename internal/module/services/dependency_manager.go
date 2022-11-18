@@ -134,7 +134,7 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 }
 
 // Retrieve Container dependencies from Terrarium
-func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server DependencyManager_RetrieveContainerDependenciesServer) error {
+func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequestV2, server DependencyManager_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieving container dependencies.")
 	controlCh := make(chan *terrarium.Module, 250)
 	controlCh <- request.Module
@@ -154,7 +154,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 				return err
 			}
 
-			res := &terrarium.ContainerDependenciesResponse{
+			res := &terrarium.ContainerDependenciesResponseV2{
 				Module:       moduleToProcess,
 				Dependencies: images,
 			}

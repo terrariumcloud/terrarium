@@ -48,11 +48,11 @@ var registerContainerDependenciesTestData = terrarium.RegisterContainerDependenc
 type MockRetrieveContainerDependenciesServer struct {
 	grpc.ServerStream
 	SendInvocations int
-	Responses       []*terrarium.ContainerDependenciesResponse
+	Responses       []*terrarium.ContainerDependenciesResponseV2
 	Err             error
 }
 
-func (srv *MockRetrieveContainerDependenciesServer) Send(res *terrarium.ContainerDependenciesResponse) error {
+func (srv *MockRetrieveContainerDependenciesServer) Send(res *terrarium.ContainerDependenciesResponseV2) error {
 	srv.SendInvocations++
 	srv.Responses = append(srv.Responses, res)
 	return srv.Err
@@ -322,18 +322,18 @@ func TestRetrieveContainerDependencies(t *testing.T) {
 	db := &mocks.MockDynamoDB{GetItemOuts: items}
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
-	req := &terrarium.RetrieveContainerDependenciesRequest{
+	req := &terrarium.RetrieveContainerDependenciesRequestV2{
 		Module: registerContainerDependenciesTestData.Module,
 	}
 
 	var expectedError error = nil
-	var expectedServerResponse = &terrarium.ContainerDependenciesResponse{
+	var expectedServerResponse = &terrarium.ContainerDependenciesResponseV2{
 		Module:       registerContainerDependenciesTestData.Module,
 		Dependencies: registerContainerDependenciesTestData.Images,
 	}
 	var expectedGetItemInvocations = 2
 
-	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
+	var expectedServerResponses = []*terrarium.ContainerDependenciesResponseV2{
 		{
 			Module:       registerContainerDependenciesTestData.Module,
 			Dependencies: registerContainerDependenciesTestData.Images,
@@ -416,12 +416,12 @@ func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 	db := &mocks.MockDynamoDB{GetItemOuts: items}
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
-	req := &terrarium.RetrieveContainerDependenciesRequest{
+	req := &terrarium.RetrieveContainerDependenciesRequestV2{
 		Module: registerContainerDependenciesTestData.Module,
 	}
 
 	var expectedError error = nil
-	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
+	var expectedServerResponses = []*terrarium.ContainerDependenciesResponseV2{
 		{
 			Module:       registerContainerDependenciesTestData.Module,
 			Dependencies: registerContainerDependenciesTestData.Images,
@@ -452,7 +452,7 @@ func TestRetrieveContainerDependenciesWhenModuleGetItemErrors(t *testing.T) {
 	db := &mocks.MockDynamoDB{GetItemErrors: []error{errors.New("some error")}}
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
-	req := &terrarium.RetrieveContainerDependenciesRequest{}
+	req := &terrarium.RetrieveContainerDependenciesRequestV2{}
 	err := dms.RetrieveContainerDependencies(req, srv)
 
 	if err != expectedError {
@@ -499,7 +499,7 @@ func TestRetrieveContainerDependenciesWhenContainerGetItemErrors(t *testing.T) {
 	}
 	dms := &services.DependencyManagerService{Db: db}
 	srv := &MockRetrieveContainerDependenciesServer{}
-	req := &terrarium.RetrieveContainerDependenciesRequest{}
+	req := &terrarium.RetrieveContainerDependenciesRequestV2{}
 	err = dms.RetrieveContainerDependencies(req, srv)
 
 	if err != expectedError {
@@ -585,7 +585,7 @@ func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
 	dms := &services.DependencyManagerService{Db: db}
 
 	srv := &MockRetrieveContainerDependenciesServer{Err: errors.New("some error")}
-	req := &terrarium.RetrieveContainerDependenciesRequest{
+	req := &terrarium.RetrieveContainerDependenciesRequestV2{
 		Module: &expectedModule,
 	}
 	err = dms.RetrieveContainerDependencies(req, srv)
