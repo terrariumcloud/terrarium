@@ -18,13 +18,13 @@ import (
 type MockRetrieveContainerDependenciesServer struct {
 	grpc.ServerStream
 	SendInvocations int
-	Response        *terrarium.ContainerDependenciesResponse
+	Responses       []*terrarium.ContainerDependenciesResponse
 	Err             error
 }
 
 func (srv *MockRetrieveContainerDependenciesServer) Send(res *terrarium.ContainerDependenciesResponse) error {
 	srv.SendInvocations++
-	srv.Response = res
+	srv.Responses = append(srv.Responses, res)
 	return srv.Err
 }
 
@@ -368,7 +368,6 @@ func TestRetrieveContainerDependencies(t *testing.T) {
 		Dependencies: containerDependencies,
 	}
 	var expectedGetItemInvocations = 2
-	var expectedServerSendInvocations = 1
 	var moduleDependencies []*terrarium.Module
 
 	dependencyModuleList, err := dynamodbattribute.MarshalList(moduleDependencies)
@@ -403,22 +402,142 @@ func TestRetrieveContainerDependencies(t *testing.T) {
 		Module:    &expectedModule,
 		Recursive: false,
 	}
+	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
+		{
+			Module:       &expectedModule,
+			Dependencies: containerDependencies,
+		},
+	}
 	err = dms.RetrieveContainerDependencies(req, srv)
 
 	if err != expectedError {
 		t.Errorf("Expected %v, got %v", expectedError, err)
-	}
-
-	if !reflect.DeepEqual(srv.Response, expectedServerResponse) {
-		t.Errorf("Expected server response %v, got %v.", expectedServerResponse, srv.Response)
+	} else {
+		if !reflect.DeepEqual(srv.Responses, expectedServerResponses) {
+			t.Errorf("Expected server response %v, got %v.", expectedServerResponse, srv.Responses)
+		}
 	}
 
 	if db.GetItemInvocations != expectedGetItemInvocations {
 		t.Errorf("Expected %v call to GetItem, got %v.", expectedGetItemInvocations, db.GetItemInvocations)
 	}
+}
 
-	if srv.SendInvocations != expectedServerSendInvocations {
-		t.Errorf("Expected %v calls to Send, got %v.", expectedServerSendInvocations, srv.SendInvocations)
+func makeGetItemOutput(in interface{}, t *testing.T) *dynamodb.GetItemOutput {
+	t.Helper()
+	marshalledItem, err := dynamodbattribute.MarshalMap(in)
+	if err != nil {
+		t.Errorf("Failed to marshal test data as a list %s", err)
+	}
+	return &dynamodb.GetItemOutput{Item: marshalledItem}
+
+}
+
+// This test checks if correct response is returned when container dependencies are retrieved
+func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
+	t.Parallel()
+
+	mainModule := terrarium.Module{
+		Name:    "test/test/aws",
+		Version: "1.0.0",
+	}
+	subModule := terrarium.Module{
+		Name:    "test/test-submodule/all",
+		Version: "2.0.2",
+	}
+
+	containerDependencies := map[string]*terrarium.ContainerImageDetails{
+		"grafana": {
+			Tag:       "0.1.1",
+			Namespace: "cie",
+			Images: []*terrarium.ContainerImageRef{
+				{
+					Arch:     "amd64",
+					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
+				},
+			},
+		},
+		"kubescaler": {
+			Tag:       "0.2.2",
+			Namespace: "cie",
+			Images: []*terrarium.ContainerImageRef{
+				{
+					Arch:     "amd64",
+					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
+				},
+				{
+					Arch:     "arm64",
+					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
+				},
+			},
+		},
+	}
+	submoduleContainerDependencies := map[string]*terrarium.ContainerImageDetails{
+		"lighstep-micro-satellite": {
+			Tag:       "0.1.3",
+			Namespace: "cie",
+			Images: []*terrarium.ContainerImageRef{
+				{
+					Arch:     "amd64",
+					ImageUrl: "random.server.com/my-satellite-image-for-linux-amd64:tag25",
+				},
+			},
+		},
+	}
+
+	items := []*dynamodb.GetItemOutput{
+
+		makeGetItemOutput(
+			services.ModuleDependencies{
+				Name:    mainModule.Name,
+				Version: mainModule.Version,
+				Modules: []*terrarium.Module{&subModule},
+			}, t),
+		makeGetItemOutput(
+			services.ContainerDependencies{
+				Name:    mainModule.Name,
+				Version: mainModule.Version,
+				Images:  containerDependencies,
+			}, t),
+		makeGetItemOutput(
+			services.ModuleDependencies{
+				Name:    subModule.Name,
+				Version: subModule.Version,
+			}, t),
+		makeGetItemOutput(
+			services.ContainerDependencies{
+				Name:    subModule.Name,
+				Version: subModule.Version,
+				Images:  submoduleContainerDependencies,
+			}, t),
+	}
+
+	db := &mocks.MockDynamoDB{GetItemOuts: items}
+	dms := &services.DependencyManagerService{Db: db}
+	srv := &MockRetrieveContainerDependenciesServer{}
+	req := &terrarium.RetrieveContainerDependenciesRequest{
+		Module: &mainModule,
+	}
+
+	var expectedError error = nil
+	var expectedServerResponses = []*terrarium.ContainerDependenciesResponse{
+		{
+			Module:       &mainModule,
+			Dependencies: containerDependencies,
+		},
+		{
+			Module:       &subModule,
+			Dependencies: submoduleContainerDependencies,
+		},
+	}
+	err := dms.RetrieveContainerDependencies(req, srv)
+
+	if err != expectedError {
+		t.Errorf("Expected %v, got %v", expectedError, err)
+	} else {
+		if !reflect.DeepEqual(srv.Responses, expectedServerResponses) {
+			t.Errorf("Expected server response %v, got %v.", expectedServerResponses, srv.Responses)
+		}
 	}
 }
 
@@ -426,7 +545,6 @@ func TestRetrieveContainerDependencies(t *testing.T) {
 func TestRetrieveContainerDependenciesWhenModuleGetItemErrors(t *testing.T) {
 	t.Parallel()
 	var expectedError = services.GetModuleDependenciesError
-	var expectedServerResponse *terrarium.ContainerDependenciesResponse = nil
 	var expectedGetItemInvocations = 1
 	var expectedServerSendInvocations = 0
 
@@ -438,10 +556,6 @@ func TestRetrieveContainerDependenciesWhenModuleGetItemErrors(t *testing.T) {
 
 	if err != expectedError {
 		t.Errorf("Expected %v, got %v", expectedError, err)
-	}
-
-	if srv.Response != expectedServerResponse {
-		t.Errorf("Expected server response %v, got %v.", expectedServerResponse, srv.Response)
 	}
 
 	if db.GetItemInvocations != expectedGetItemInvocations {
@@ -458,7 +572,6 @@ func TestRetrieveContainerDependenciesWhenContainerGetItemErrors(t *testing.T) {
 	t.Parallel()
 
 	var expectedError = services.GetContainerDependenciesError
-	var expectedServerResponse *terrarium.ContainerDependenciesResponse = nil
 	var expectedGetItemInvocations = 2
 	var expectedServerSendInvocations = 0
 
@@ -490,10 +603,6 @@ func TestRetrieveContainerDependenciesWhenContainerGetItemErrors(t *testing.T) {
 
 	if err != expectedError {
 		t.Errorf("Expected %v, got %v", expectedError, err)
-	}
-
-	if srv.Response != expectedServerResponse {
-		t.Errorf("Expected server response %v, got %v.", expectedServerResponse, srv.Response)
 	}
 
 	if db.GetItemInvocations != expectedGetItemInvocations {
