@@ -392,7 +392,7 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
 			downStream.CloseSend()
-			return ForwardContainerDependenciesError
+			return ForwardModuleDependenciesError
 		}
 	}
 }
