@@ -178,8 +178,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 }
 
 func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
-	log.Println("Retrieving module dependencies.")
-
+	log.Printf("GetModuleDependencies for module: %s/%s", module.GetName(), module.GetVersion())
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ModuleDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -201,10 +200,12 @@ func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Modul
 		log.Println(err)
 		return nil, UnmarshalModuleDependenciesError
 	}
+	log.Printf("GetModuleDependencies returned %d entries\n", len(dependencies.Modules))
 	return dependencies.Modules, nil
 }
 
 func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
+	log.Printf("GetContainerDependencies for module: %s/%s\n", module.GetName(), module.GetVersion())
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(ContainerDependenciesTableName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -224,7 +225,7 @@ func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Mo
 		log.Println(err)
 		return nil, UnmarshalContainerDependenciesError
 	}
-
+	log.Printf("GetContainerDependencies returned %d entries\n", len(dependencies.Images))
 	return dependencies.Images, nil
 }
 
