@@ -17,7 +17,7 @@ var dependencyManagerCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(dependencyManagerCmd)
 	dependencyManagerCmd.Flags().StringVarP(&services.ModuleDependenciesTableName, "module-table", "m", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
-	dependencyManagerCmd.Flags().StringVarP(&services.ContainerDependenciesTableName, "container-table", "c", services.DefaultModuleDependenciesTableName, "Module dependencies table name")
+	dependencyManagerCmd.Flags().StringVarP(&services.ContainerDependenciesTableName, "container-table", "c", services.DefaultContainerDependenciesTableName, "Module dependencies table name")
 }
 
 func runDependencyManager(cmd *cobra.Command, args []string) {
