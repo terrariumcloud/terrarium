@@ -23,7 +23,7 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when new version is created", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
-			GetItemOuts: []*dynamodb.GetItemOutput{},
+			GetItemOuts: []*dynamodb.GetItemOutput{{}},
 		}
 
 		svc := &services.RegistrarService{Db: db}

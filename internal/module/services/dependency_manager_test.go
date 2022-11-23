@@ -185,7 +185,7 @@ func Test_RegisterModuleDependencies(t *testing.T) {
 	t.Run("when module dependencies are registered", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{}
 
-		svc := &services.DependencyManagerService{Db: db}
+		svc := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		req := &terrarium.RegisterModuleDependenciesRequest{
 			Module: &terrarium.Module{Name: "test", Version: "v1"},
@@ -219,7 +219,7 @@ func Test_RegisterModuleDependencies(t *testing.T) {
 	t.Run("when PutItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
 
-		svc := &services.DependencyManagerService{Db: db}
+		svc := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		req := &terrarium.RegisterModuleDependenciesRequest{
 			Module: &terrarium.Module{Name: "test", Version: "v1"},
@@ -261,7 +261,7 @@ func Test_RegisterContainerDependencies(t *testing.T) {
 	var expectedError error = nil
 
 	db := &mocks.MockDynamoDB{}
-	svc := &services.DependencyManagerService{Db: db}
+	svc := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	req := &registerContainerDependenciesTestData
 	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
@@ -292,7 +292,7 @@ func TestRegisterContainerDependenciesWhenPutItemErrors(t *testing.T) {
 	var expectedError = services.RegisterDependenciesError
 
 	db := &mocks.MockDynamoDB{PutItemError: errors.New("some error")}
-	svc := &services.DependencyManagerService{Db: db}
+	svc := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	req := &registerContainerDependenciesTestData
 	res, err := svc.RegisterContainerDependencies(context.TODO(), req)
 
@@ -334,7 +334,7 @@ func Test_RetrieveContainerDependencies(t *testing.T) {
 			}, t),
 	}
 	db := &mocks.MockDynamoDB{GetItemOuts: items}
-	dms := &services.DependencyManagerService{Db: db}
+	dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequestV2{
 		Module: registerContainerDependenciesTestData.Module,
@@ -428,7 +428,7 @@ func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 	}
 
 	db := &mocks.MockDynamoDB{GetItemOuts: items}
-	dms := &services.DependencyManagerService{Db: db}
+	dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequestV2{
 		Module: registerContainerDependenciesTestData.Module,
@@ -464,7 +464,7 @@ func TestRetrieveContainerDependenciesWhenModuleGetItemErrors(t *testing.T) {
 	var expectedServerSendInvocations = 0
 
 	db := &mocks.MockDynamoDB{GetItemErrors: []error{errors.New("some error")}}
-	dms := &services.DependencyManagerService{Db: db}
+	dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequestV2{}
 	err := dms.RetrieveContainerDependencies(req, srv)
@@ -511,7 +511,7 @@ func TestRetrieveContainerDependenciesWhenContainerGetItemErrors(t *testing.T) {
 		GetItemErrors: []error{nil, errors.New("some error")},
 		GetItemOuts:   []*dynamodb.GetItemOutput{moduleGetItemOutput, nil},
 	}
-	dms := &services.DependencyManagerService{Db: db}
+	dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 	srv := &MockRetrieveContainerDependenciesServer{}
 	req := &terrarium.RetrieveContainerDependenciesRequestV2{}
 	err = dms.RetrieveContainerDependencies(req, srv)
@@ -595,7 +595,7 @@ func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
 		},
 	}
 	db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{moduleGetItemOutput, containerGetItemOutput}}
-	dms := &services.DependencyManagerService{Db: db}
+	dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 	srv := &MockRetrieveContainerDependenciesServer{Err: errors.New("some error")}
 	req := &terrarium.RetrieveContainerDependenciesRequestV2{
@@ -628,7 +628,7 @@ func Test_RetrieveModuleDependencies(t *testing.T) {
 
 		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
-		dms := &services.DependencyManagerService{Db: db}
+		dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		srv := &MockRetrieveModuleDependenciesServer{}
 
@@ -656,7 +656,7 @@ func Test_RetrieveModuleDependencies(t *testing.T) {
 	t.Run("when GetItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{GetItemErrors: []error{errors.New("some error")}}
 
-		dms := &services.DependencyManagerService{Db: db}
+		dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		srv := &MockRetrieveModuleDependenciesServer{}
 
@@ -684,7 +684,7 @@ func Test_RetrieveModuleDependencies(t *testing.T) {
 
 		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
-		dms := &services.DependencyManagerService{Db: db}
+		dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		srv := &MockRetrieveModuleDependenciesServer{Err: errors.New("some error")}
 
@@ -722,7 +722,7 @@ func Test_GetDependencies(t *testing.T) {
 
 		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
-		dms := &services.DependencyManagerService{Db: db}
+		dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		m := &terrarium.Module{Name: "cietest/notify/aws", Version: "1.0.2"}
 		res := &MockGetDependenciesResponse{
@@ -754,7 +754,7 @@ func Test_GetDependencies(t *testing.T) {
 	t.Run("when GetItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{GetItemErrors: []error{errors.New("some error")}}
 
-		dms := &services.DependencyManagerService{Db: db}
+		dms := &services.DependencyManagerService{Db: db, ModuleTable: services.ModuleDependenciesTableName, ContainerTable: services.ContainerDependenciesTableName}
 
 		m := &terrarium.Module{Name: "cietest/notify/aws", Version: "1.0.2"}
 
