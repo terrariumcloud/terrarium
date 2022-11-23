@@ -618,7 +618,7 @@ func Test_RetrieveContainerDependenciesWithClient(t *testing.T) {
 	t.Run("when client RetrieveContainerDependencies fails", func(t *testing.T) {
 		gw := &services.TerrariumGrpcGateway{}
 
-		request := &module.RetrieveContainerDependenciesRequest{}
+		request := &module.RetrieveContainerDependenciesRequestV2{}
 
 		server := &mocks.MockConsumer_RetrieveContainerDependenciesServer{}
 
@@ -638,7 +638,7 @@ func Test_RetrieveContainerDependenciesWithClient(t *testing.T) {
 	t.Run("when client Recv returns EOF", func(t *testing.T) {
 		gw := &services.TerrariumGrpcGateway{}
 
-		request := &module.RetrieveContainerDependenciesRequest{}
+		request := &module.RetrieveContainerDependenciesRequestV2{}
 
 		server := &mocks.MockConsumer_RetrieveContainerDependenciesServer{}
 
@@ -664,7 +664,7 @@ func Test_RetrieveContainerDependenciesWithClient(t *testing.T) {
 	t.Run("when Recv fails", func(t *testing.T) {
 		gw := &services.TerrariumGrpcGateway{}
 
-		request := &module.RetrieveContainerDependenciesRequest{}
+		request := &module.RetrieveContainerDependenciesRequestV2{}
 
 		server := &mocks.MockConsumer_RetrieveContainerDependenciesServer{}
 
@@ -690,7 +690,7 @@ func Test_RetrieveContainerDependenciesWithClient(t *testing.T) {
 	t.Run("when Send fails", func(t *testing.T) {
 		gw := &services.TerrariumGrpcGateway{}
 
-		request := &module.RetrieveContainerDependenciesRequest{}
+		request := &module.RetrieveContainerDependenciesRequestV2{}
 
 		server := &mocks.MockConsumer_RetrieveContainerDependenciesServer{SendError: errors.New("some error")}
 

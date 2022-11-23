@@ -23,8 +23,8 @@ var registerContainerDependenciesTestData = terrarium.RegisterContainerDependenc
 			Namespace: "cie",
 			Images: []*terrarium.ContainerImageRef{
 				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
+					Arch:  "amd64",
+					Image: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
 				},
 			},
 		},
@@ -33,12 +33,12 @@ var registerContainerDependenciesTestData = terrarium.RegisterContainerDependenc
 			Namespace: "cie",
 			Images: []*terrarium.ContainerImageRef{
 				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
+					Arch:  "amd64",
+					Image: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
 				},
 				{
-					Arch:     "arm64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
+					Arch:  "arm64",
+					Image: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
 				},
 			},
 		},
@@ -105,25 +105,25 @@ func Test_RegisterDependencyManagerWithServer(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, got %v.", err)
 		}
-  
-    if db.DescribeTableInvocations != expectedDescribeTableInvocations {
-		t.Errorf("Expected %d call to DescribeTable, got %v.", expectedDescribeTableInvocations, db.DescribeTableInvocations)
-	}
 
-	if db.CreateTableInvocations != expectedCreateTableInvocations {
-		t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
-	}
+		if db.DescribeTableInvocations != expectedDescribeTableInvocations {
+			t.Errorf("Expected %d call to DescribeTable, got %v.", expectedDescribeTableInvocations, db.DescribeTableInvocations)
+		}
+
+		if db.CreateTableInvocations != expectedCreateTableInvocations {
+			t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
+		}
 	})
 
 	t.Run("when Table initialization fails", func(t *testing.T) {
-	// The dependencies are to be stored in two tables at this stage:
-	// - Module dependencies will fail...
-	// - Container dependencies
-	expectedDescribeTableInvocations := 1
-	expectedCreateTableInvocations := 0
-	expectedError := services.ModuleDependenciesTableInitializationError
+		// The dependencies are to be stored in two tables at this stage:
+		// - Module dependencies will fail...
+		// - Container dependencies
+		expectedDescribeTableInvocations := 1
+		expectedCreateTableInvocations := 0
+		expectedError := services.ModuleDependenciesTableInitializationError
 
-	db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
+		db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
 
 		dms := &services.DependencyManagerService{Db: db}
 
@@ -132,16 +132,16 @@ func Test_RegisterDependencyManagerWithServer(t *testing.T) {
 		err := dms.RegisterWithServer(s)
 
 		if err != expectedError {
-		t.Errorf("Expected '%s', got '%s'.", expectedError, err)
-	}
+			t.Errorf("Expected '%s', got '%s'.", expectedError, err)
+		}
 
-	if db.DescribeTableInvocations != expectedDescribeTableInvocations {
-		t.Errorf("Expected %d call to DescribeTable, got %v.", expectedDescribeTableInvocations, db.DescribeTableInvocations)
-	}
+		if db.DescribeTableInvocations != expectedDescribeTableInvocations {
+			t.Errorf("Expected %d call to DescribeTable, got %v.", expectedDescribeTableInvocations, db.DescribeTableInvocations)
+		}
 
-	if db.CreateTableInvocations != expectedCreateTableInvocations {
-		t.Errorf("Expected %d calls to CreateTable, got %v.", expectedCreateTableInvocations, db.CreateTableInvocations)
-	}
+		if db.CreateTableInvocations != expectedCreateTableInvocations {
+			t.Errorf("Expected %d calls to CreateTable, got %v.", expectedCreateTableInvocations, db.CreateTableInvocations)
+		}
 	})
 }
 
@@ -393,8 +393,8 @@ func TestRetrieveRecursiveContainerDependencies(t *testing.T) {
 			Namespace: "cie",
 			Images: []*terrarium.ContainerImageRef{
 				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-satellite-image-for-linux-amd64:tag25",
+					Arch:  "amd64",
+					Image: "random.server.com/my-satellite-image-for-linux-amd64:tag25",
 				},
 			},
 		},
@@ -529,11 +529,11 @@ func TestRetrieveContainerDependenciesWhenContainerGetItemErrors(t *testing.T) {
 	}
 }
 
-	// TODO: Test for UnmarshalContainerDependenciesError
+// TODO: Test for UnmarshalContainerDependenciesError
 
 // This test checks if error is returned when Send fails
 func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
-   t.Parallel()
+	t.Parallel()
 	var expectedError = services.SendContainerDependenciesError
 	var expectedModule = terrarium.Module{
 		Name:    "test/test/aws",
@@ -545,8 +545,8 @@ func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
 			Namespace: "cie",
 			Images: []*terrarium.ContainerImageRef{
 				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
+					Arch:  "amd64",
+					Image: "random.server.com/my-grafana-image-for-linux-amd64:tag23",
 				},
 			},
 		},
@@ -555,12 +555,12 @@ func TestRetrieveContainerDependenciesWhenSendErrors(t *testing.T) {
 			Namespace: "cie",
 			Images: []*terrarium.ContainerImageRef{
 				{
-					Arch:     "amd64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
+					Arch:  "amd64",
+					Image: "random.server.com/my-kubescaler-image-for-linux-amd64:tag25",
 				},
 				{
-					Arch:     "arm64",
-					ImageUrl: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
+					Arch:  "arm64",
+					Image: "random.server.com/my-kubescaler-image-for-linux-arm64:graviton2",
 				},
 			},
 		},
@@ -626,7 +626,7 @@ func Test_RetrieveModuleDependencies(t *testing.T) {
 	t.Run("when module dependencies are retrieved", func(t *testing.T) {
 		out := &dynamodb.GetItemOutput{}
 
-	  db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
+		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
 		dms := &services.DependencyManagerService{Db: db}
 
@@ -682,7 +682,7 @@ func Test_RetrieveModuleDependencies(t *testing.T) {
 	t.Run("when Send fails", func(t *testing.T) {
 		out := &dynamodb.GetItemOutput{}
 
-	  db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
+		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
 		dms := &services.DependencyManagerService{Db: db}
 
@@ -720,7 +720,7 @@ func Test_GetDependencies(t *testing.T) {
 			"images":  {SS: aws.StringSlice([]string{"slice", "slicee"})},
 		}}
 
-		db := &mocks.MockDynamoDB{GetItemOut: out}
+		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
 
 		dms := &services.DependencyManagerService{Db: db}
 
@@ -730,7 +730,7 @@ func Test_GetDependencies(t *testing.T) {
 			Err:          nil,
 		}
 
-		deps, err := dms.GetDependencies(m)
+		deps, err := dms.GetModuleDependencies(m)
 
 		if err != nil {
 			t.Errorf("Expected nil, got %v", err)
@@ -752,13 +752,13 @@ func Test_GetDependencies(t *testing.T) {
 	// Test for UnmarshalModuleDependenciesError
 
 	t.Run("when GetItem fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{GetItemOuts: []*dynamodb.GetItemOutput{out}}
+		db := &mocks.MockDynamoDB{GetItemErrors: []error{errors.New("some error")}}
 
 		dms := &services.DependencyManagerService{Db: db}
 
 		m := &terrarium.Module{Name: "cietest/notify/aws", Version: "1.0.2"}
 
-		deps, err := dms.GetDependencies(m)
+		deps, err := dms.GetModuleDependencies(m)
 
 		if deps != nil {
 			t.Errorf("Expected nil, got %v", deps)

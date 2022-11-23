@@ -303,13 +303,13 @@ func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx cont
 }
 
 // RetrieveContainerDependencies retrieves Container dependencies from Dependency Manager service
-func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieve container dependencies => NOOP")
 	return nil
 }
 
 // RetrieveContainerDependenciesV2 retrieves Container dependencies from Dependency Manager service
-func (s *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
 	log.Println("Retrieve container dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -326,7 +326,7 @@ func (s *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrariu
 }
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesWithClient(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer, client DependencyManagerClient) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesWithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
 
 	if downErr != nil {

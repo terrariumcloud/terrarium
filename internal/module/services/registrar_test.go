@@ -23,7 +23,7 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when new version is created", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
-			GetItemOut: &dynamodb.GetItemOutput{},
+			GetItemOuts: []*dynamodb.GetItemOutput{},
 		}
 
 		svc := &services.RegistrarService{Db: db}
@@ -62,7 +62,7 @@ func Test_RegisterModule(t *testing.T) {
 		name := "test"
 		emptyString := ""
 		db := &mocks.MockDynamoDB{
-			GetItemOut: &dynamodb.GetItemOutput{
+			GetItemOuts: []*dynamodb.GetItemOutput{{
 				Item: map[string]*dynamodb.AttributeValue{
 					"name":        {S: &name},
 					"description": {S: &emptyString},
@@ -71,6 +71,7 @@ func Test_RegisterModule(t *testing.T) {
 					"created_on":  {S: &emptyString},
 					"modified_on": {S: &emptyString},
 				},
+			},
 			},
 			UpdateItemOut: &dynamodb.UpdateItemOutput{},
 		}
@@ -168,7 +169,7 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when PutItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
-			GetItemOuts:   []*dynamodb.GetItemOutput{{}},
+			GetItemOuts:  []*dynamodb.GetItemOutput{{}},
 			PutItemError: errors.New("some error"),
 		}
 

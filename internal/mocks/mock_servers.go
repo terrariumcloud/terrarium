@@ -61,9 +61,9 @@ func (mds *MockDownloadSourceZipServer) Send(res *module.SourceZipResponse) erro
 }
 
 type MockConsumer_RetrieveContainerDependenciesServer struct {
-	module.Consumer_RetrieveContainerDependenciesServer
+	module.Consumer_RetrieveContainerDependenciesV2Server
 	SendInvocations int
-	SendResponse    *module.ContainerDependenciesResponse
+	SendResponse    *module.ContainerDependenciesResponseV2
 	SendError       error
 }
 
@@ -71,7 +71,7 @@ func (m *MockConsumer_RetrieveContainerDependenciesServer) Context() context.Con
 	return context.TODO()
 }
 
-func (m *MockConsumer_RetrieveContainerDependenciesServer) Send(res *module.ContainerDependenciesResponse) error {
+func (m *MockConsumer_RetrieveContainerDependenciesServer) Send(res *module.ContainerDependenciesResponseV2) error {
 	m.SendInvocations++
 	m.SendResponse = res
 	return m.SendError

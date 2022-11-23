@@ -41,7 +41,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
 		db := &mocks.MockDynamoDB{
-			DescribeTableError: &dynamodb.ResourceNotFoundException{},
+			DescribeTableErrors: []error{&dynamodb.ResourceNotFoundException{}},
 		}
 
 		err := storage.InitializeDynamoDb(table, schema, db)
@@ -72,7 +72,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		schema := &dynamodb.CreateTableInput{}
 		someError := errors.New("some error")
 		db := &mocks.MockDynamoDB{
-			DescribeTableError: someError,
+			DescribeTableErrors: []error{errors.New("some error")},
 		}
 
 		err := storage.InitializeDynamoDb(table, schema, db)
@@ -99,8 +99,8 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		schema := &dynamodb.CreateTableInput{}
 		someError := errors.New("some error")
 		db := &mocks.MockDynamoDB{
-			DescribeTableError: &dynamodb.ResourceNotFoundException{},
-			CreateTableError:   someError,
+			DescribeTableErrors: []error{&dynamodb.ResourceNotFoundException{}},
+			CreateTableError:    someError,
 		}
 
 		err := storage.InitializeDynamoDb(table, schema, db)

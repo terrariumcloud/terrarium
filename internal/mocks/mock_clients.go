@@ -139,7 +139,7 @@ func (m *MockDependencyManagerClient) RegisterContainerDependencies(ctx context.
 	return m.RegisterContainerDependenciesResponse, m.RegisterContainerDependenciesError
 }
 
-func (m *MockDependencyManagerClient) RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequest, opts ...grpc.CallOption) (services.DependencyManager_RetrieveContainerDependenciesClient, error) {
+func (m *MockDependencyManagerClient) RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequestV2, opts ...grpc.CallOption) (services.DependencyManager_RetrieveContainerDependenciesClient, error) {
 	m.RetrieveContainerDependenciesInvocations++
 	return m.RetrieveContainerDependenciesClient, m.RetrieveContainerDependenciesError
 }
@@ -151,13 +151,13 @@ func (m *MockDependencyManagerClient) RetrieveModuleDependencies(ctx context.Con
 type MockDependencyManager_RetrieveContainerDependenciesClient struct {
 	services.DependencyManager_RetrieveContainerDependenciesClient
 	RecvInvocations      int
-	RecvResponse         *module.ContainerDependenciesResponse
+	RecvResponse         *module.ContainerDependenciesResponseV2
 	RecvError            error
 	CloseSendInvocations int
 	CloseSendError       error
 }
 
-func (m *MockDependencyManager_RetrieveContainerDependenciesClient) Recv() (*module.ContainerDependenciesResponse, error) {
+func (m *MockDependencyManager_RetrieveContainerDependenciesClient) Recv() (*module.ContainerDependenciesResponseV2, error) {
 	m.RecvInvocations++
 	return m.RecvResponse, m.RecvError
 }
