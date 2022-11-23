@@ -107,7 +107,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 		Version: request.Module.GetVersion(),
 		Modules: request.GetDependencies(),
 	}
-	err := s.registerDependencies(ModuleDependenciesTableName, item)
+	err := s.registerDependencies(s.ModuleTable, item)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 		Images:  request.Images,
 	}
 
-	err := s.registerDependencies(ContainerDependenciesTableName, item)
+	err := s.registerDependencies(s.ContainerTable, item)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Printf("GetModuleDependencies for module: %s/%s", module.GetName(), module.GetVersion())
 	in := &dynamodb.GetItemInput{
-		TableName: aws.String(ModuleDependenciesTableName),
+		TableName: aws.String(s.ModuleTable),
 		Key: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(module.GetName())},
 			"version": {S: aws.String(module.GetVersion())},
@@ -207,7 +207,7 @@ func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Modul
 func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
 	log.Printf("GetContainerDependencies for module: %s/%s\n", module.GetName(), module.GetVersion())
 	in := &dynamodb.GetItemInput{
-		TableName: aws.String(ContainerDependenciesTableName),
+		TableName: aws.String(s.ContainerTable),
 		Key: map[string]*dynamodb.AttributeValue{
 			"name":    {S: aws.String(module.GetName())},
 			"version": {S: aws.String(module.GetVersion())},
