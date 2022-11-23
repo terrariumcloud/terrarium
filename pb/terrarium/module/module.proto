@@ -33,6 +33,7 @@ service Consumer {
   rpc DownloadSourceZip(DownloadSourceZipRequest) returns (stream SourceZipResponse) {}
   rpc RetrieveContainerDependencies(RetrieveContainerDependenciesRequest) returns (stream ContainerDependenciesResponse) {}
   rpc RetrieveModuleDependencies(RetrieveModuleDependenciesRequest) returns (stream ModuleDependenciesResponse) {}
+  rpc RetrieveContainerDependenciesV2(RetrieveContainerDependenciesRequestV2) returns (stream ContainerDependenciesResponseV2) {}
 }
 
 message RegisterModuleRequest {
@@ -41,15 +42,6 @@ message RegisterModuleRequest {
   string description = 3;
   string source = 4;
   Maturity maturity = 5;
-}
-
-message ModuleMetadata {
-  string organization = 1;
-  string name = 2;
-  string provider = 3;
-  string description = 4;
-  string source_url = 5;
-  Maturity maturity = 6;
 }
 
 enum Maturity {
@@ -63,7 +55,6 @@ enum Maturity {
   END_OF_LIFE = 7;
 }
 
-
 message Response {
   string message = 1;
 }
@@ -71,6 +62,17 @@ message Response {
 message Module {
   string name = 1;
   string version = 2;
+}
+
+message ContainerImageRef {
+  string arch = 1;
+  string image = 2;
+}
+
+message ContainerImageDetails {
+  string tag = 1;
+  string namespace = 2;
+  repeated ContainerImageRef images = 3;
 }
 
 message BeginVersionRequest {
@@ -84,7 +86,7 @@ message RegisterModuleDependenciesRequest {
 
 message RegisterContainerDependenciesRequest {
   Module module = 1;
-  repeated string dependencies = 2;
+  map<string, ContainerImageDetails> images = 2;
 }
 
 message UploadSourceZipRequest {
@@ -127,4 +129,13 @@ message RetrieveContainerDependenciesRequest {
 message ContainerDependenciesResponse {
   Module module = 1;
   repeated string dependencies = 2;
+}
+
+message RetrieveContainerDependenciesRequestV2 {
+  Module module = 1;
+}
+
+message ContainerDependenciesResponseV2 {
+  Module module = 1;
+  map<string, ContainerImageDetails> dependencies = 2;
 }

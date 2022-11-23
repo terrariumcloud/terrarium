@@ -113,7 +113,7 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when GetItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
-			GetItemError: errors.New("some error"),
+			GetItemErrors: []error{errors.New("some error")},
 		}
 
 		svc := &services.RegistrarService{Db: db}
@@ -168,7 +168,7 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when PutItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
-			GetItemOut:   &dynamodb.GetItemOutput{},
+			GetItemOuts:   []*dynamodb.GetItemOutput{{}},
 			PutItemError: errors.New("some error"),
 		}
 
@@ -234,7 +234,7 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 	t.Run("when Table initialization fails", func(t *testing.T) {
 
 		db := &mocks.MockDynamoDB{
-			DescribeTableError: errors.New("some error"),
+			DescribeTableErrors: []error{errors.New("some error")},
 		}
 
 		rs := &services.RegistrarService{

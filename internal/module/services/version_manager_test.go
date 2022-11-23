@@ -40,7 +40,7 @@ func Test_RegisterVersionManagerWithServer(t *testing.T) {
 	})
 
 	t.Run("when Table initialization fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{DescribeTableError: errors.New("some error")}
+	db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
 
 		vms := &services.VersionManagerService{Db: db}
 

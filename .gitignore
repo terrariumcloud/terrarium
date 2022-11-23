@@ -20,3 +20,4 @@ vendor/
 .env
 .vscode/
 terrarium
+.DS_Store

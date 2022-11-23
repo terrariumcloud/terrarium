@@ -303,7 +303,13 @@ func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx cont
 }
 
 // RetrieveContainerDependencies retrieves Container dependencies from Dependency Manager service
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
+func (s *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
+	log.Println("Retrieve container dependencies => NOOP")
+	return nil
+}
+
+// RetrieveContainerDependenciesV2 retrieves Container dependencies from Dependency Manager service
+func (s *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
 	log.Println("Retrieve container dependencies => Dependency Manager")
 	conn, err := grpc.Dial(DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
