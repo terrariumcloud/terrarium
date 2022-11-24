@@ -9,7 +9,7 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
-// TestInitializeDynamoDb checks:
+// Test_InitializeDynamoDb checks:
 // - if table is not recreated when it already exists
 // - if table is created when it does not exist
 // - if error is returned when checking for table existence fails

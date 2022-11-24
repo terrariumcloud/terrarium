@@ -6,7 +6,7 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
-//TestNewAwsSession checks:
+//Test_NewAwsSession checks:
 // - if it returns AWS session with provided API key, Secret and Region
 func Test_NewAwsSession(t *testing.T) {
 

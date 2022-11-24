@@ -8,7 +8,7 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
-// TestInitializeS3Bucket checks:
+// Test_InitializeS3Bucket checks:
 // - if bucket is not recreated when it already exists
 // - if bucket is created when it does not exist
 // - if error is returned when create bucket fails
