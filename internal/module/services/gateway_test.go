@@ -612,7 +612,7 @@ func Test_RegisterContainerDependenciesWithClient(t *testing.T) {
 // - if no error is returned when Recv returns EOF
 // - if error is returned when Recv fails
 // - if error is returned when Send fails
-func Test_RetrieveContainerDependenciesWithClient(t *testing.T) {
+func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client RetrieveContainerDependencies fails", func(t *testing.T) {
