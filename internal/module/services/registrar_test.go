@@ -145,28 +145,6 @@ func Test_RegisterModule(t *testing.T) {
 		}
 	})
 
-	// t.Run("when marshal fails", func(t *testing.T) {
-	// 	db := &mocks.MockDynamoDB{}
-
-	// 	svc := &services.RegistrarService{Db: db}
-
-	// 	req := &terrarium.RegisterModuleRequest{} // TODO: need to make MarshalMap return error
-
-	// 	res, err := svc.Register(context.TODO(), req)
-
-	// 	if err != services.MarshalModuleError {
-	// 		t.Errorf("Expected %v, got %v.", services.MarshalModuleError, err)
-	// 	}
-
-	// 	if db.PutItemInvocations == 0 {
-	// 		t.Errorf("Expected 0 calls to PutItem, got %d", db.PutItemInvocations)
-	// 	}
-
-	// 	if res != nil {
-	// 		t.Errorf("Expected no response, got %v.", res)
-	// 	}
-	// })
-
 	t.Run("when PutItem fails", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{
 			GetItemOuts:  []*dynamodb.GetItemOutput{{}},
