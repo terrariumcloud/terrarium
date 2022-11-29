@@ -17,7 +17,7 @@ import (
 func Test_RegisterVersionManagerWithServer(t *testing.T) {
 	t.Parallel()
 
-	t.Run("when there is no error with table init", func(t *testing.T) {
+	t.Run("when table init is successful", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{}
 
 		vms := &services.VersionManagerService{Db: db}
