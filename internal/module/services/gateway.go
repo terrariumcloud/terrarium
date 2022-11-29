@@ -326,7 +326,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrari
 }
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesWithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client DependencyManagerClient) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
 
 	if downErr != nil {
