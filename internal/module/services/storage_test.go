@@ -26,7 +26,7 @@ func (cb *ClosingBuffer) Close() error {
 func Test_RegisterStorageWithServer(t *testing.T) {
 	t.Parallel()
 
-	t.Run("when there is no error with bucket init", func(t *testing.T) {
+	t.Run("when bucket init is successful", func(t *testing.T) {
 		s3 := &mocks.MockS3{}
 
 		ss := &services.StorageService{S3: s3}
