@@ -624,7 +624,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 
 		client := &mocks.MockDependencyManagerClient{RetrieveContainerDependenciesError: errors.New("some error")}
 
-		err := gw.RetrieveContainerDependenciesWithClient(request, server, client)
+		err := gw.RetrieveContainerDependenciesV2WithClient(request, server, client)
 
 		if client.RetrieveContainerDependenciesInvocations != 1 {
 			t.Errorf("Expected 1 call to RetrieveContainerDependencies, got %v", client.RetrieveContainerDependenciesInvocations)
@@ -646,7 +646,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 
 		client := &mocks.MockDependencyManagerClient{RetrieveContainerDependenciesClient: c}
 
-		err := gw.RetrieveContainerDependenciesWithClient(request, server, client)
+		err := gw.RetrieveContainerDependenciesV2WithClient(request, server, client)
 
 		if c.RecvInvocations != 1 {
 			t.Errorf("Expected 1 call to Recv, got %v", c.RecvInvocations)
@@ -672,7 +672,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 
 		client := &mocks.MockDependencyManagerClient{RetrieveContainerDependenciesClient: c}
 
-		err := gw.RetrieveContainerDependenciesWithClient(request, server, client)
+		err := gw.RetrieveContainerDependenciesV2WithClient(request, server, client)
 
 		if c.RecvInvocations != 1 {
 			t.Errorf("Expected 1 call to Recv, got %v", c.RecvInvocations)
@@ -698,7 +698,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 
 		client := &mocks.MockDependencyManagerClient{RetrieveContainerDependenciesClient: c}
 
-		err := gw.RetrieveContainerDependenciesWithClient(request, server, client)
+		err := gw.RetrieveContainerDependenciesV2WithClient(request, server, client)
 
 		if client.RetrieveContainerDependenciesInvocations != 1 {
 			t.Errorf("Expected 1 call to RetrieveContainerDependencies, got %v", client.RetrieveContainerDependenciesInvocations)

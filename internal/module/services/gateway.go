@@ -322,7 +322,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrari
 
 	client := NewDependencyManagerClient(conn)
 
-	return gw.RetrieveContainerDependenciesWithClient(request, server, client)
+	return gw.RetrieveContainerDependenciesV2WithClient(request, server, client)
 }
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
