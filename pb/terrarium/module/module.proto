@@ -27,6 +27,7 @@ service Publisher {
   rpc UploadSourceZip (stream UploadSourceZipRequest) returns (Response) {}
   // Upload Documentation
   rpc EndVersion(EndVersionRequest) returns (Response) {}
+  rpc PublishTag(PublishTagRequest) returns (Response) {} 
 }
 
 service Consumer {
