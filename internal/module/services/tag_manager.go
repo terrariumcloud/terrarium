@@ -14,33 +14,39 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	//"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	//"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+)
+
+const (
+	DefaultTagTableName      = "terrarium-module-tags"
+	DefaultTagManagerEndpoint = "tag_manager:3001"
+)
+
+var (
+	TagTableName      string = DefaultTagTableName
+	TagManagerEndpoint string = DefaultTagManagerEndpoint
+	TagPublished = &terrarium.Response{Message: "Tag published."}
+	ModuleTagTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for tags.")
+	//MarshalModuleVersionError              = status.Error(codes.Unknown, "Failed to marshal module version.")
+	PublishModuleTagError              = status.Error(codes.Unknown, "Failed to publish module tag.")
 )
 
 type TagManagerService struct {
-	UnimplementedVersionManagerServer
+	UnimplementedTagManagerServer
 	Db     dynamodbiface.DynamoDBAPI
 	Table  string
 	Schema *dynamodb.CreateTableInput
 }
 
-var (
-	//VersionsTableName      string = DefaultVersionsTableName
-	//VersionManagerEndpoint string = DefaultVersionManagerEndpoint
-
-	//VersionCreated   = &terrarium.Response{Message: "Version created."}
-	//VersionPublished = &terrarium.Response{Message: "Version published."}
-	//VersionAborted   = &terrarium.Response{Message: "Version aborted."}
-
-	ModuleTagTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for tags.")
-	//MarshalModuleVersionError              = status.Error(codes.Unknown, "Failed to marshal module version.")
-	//CreateModuleVersionError               = status.Error(codes.Unknown, "Failed to create module version.")
-	//AbortModuleVersionError                = status.Error(codes.Unknown, "Failed to abort module version.")
-	//PublishModuleVersionError              = status.Error(codes.Unknown, "Failed to publish module version.")
-)
-
+type ModuleTag struct {
+	Name        string `json:"name" bson:"name" dynamodbav:"name"`
+	Version     string `json:"version" bson:"version" dynamodbav:"version"`
+	Tag         []string `json:"tags" bson:"tags" dynamodbav:"tags"`
+	CreatedOn   string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	PublishedOn string `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+}
 
 
 
@@ -52,53 +58,77 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 		return ModuleTagTableInitializationError
 	}
 
-	RegisterTagManagerServer(grpcServer, s)  // should be generated in grpc.pb.go
+	RegisterTagManagerServer(grpcServer, s)  
 
 	return nil
 }
 
 
+// PublishTag Updates Module Tag to published with Tag Manager service
+func (s *TagManagerService) PublishTag(_ context.Context, request *PublishTagRequest) (*terrarium.Response, error) {
+	log.Println("Publishing module tag.")
+	in := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":published_on": {S: aws.String(time.Now().UTC().String())},
+		},
+		Key: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(request.Module.GetName())},
+			"version": {S: aws.String(request.Module.GetVersion())},			
+		},
+		TableName:        aws.String(TagTableName),
+		UpdateExpression: aws.String("set published_on = :published_on"),
+	}
+
+	if _, err := s.Db.UpdateItem(in); err != nil {
+		log.Println(err)
+		return nil, PublishModuleTagError
+	}
+
+	log.Println("Module version published.")
+	return TagPublished, nil
+}
+
 // ListModuleTags retrieve all tags of a given module for specified version and return an array of tags.
 
-func (s *TagManagerService) ListModuleTags(_ context.Context, request *ListModuleVersionsRequest) (*ListModuleVersionsResponse, error) {
-	projection := expression.NamesList(expression.Name("version"))
-	filter := expression.And(
-		expression.Name("name").Equal(expression.Value(request.Module)),
-		expression.Name("published_on").AttributeExists())
-	expr, err := expression.NewBuilder().WithProjection(projection).WithFilter(filter).Build()
-	if err != nil {
-		log.Printf("Expression Builder failed creation: %v", err)
-		return nil, err
-	}
+// func (s *TagManagerService) ListModuleTags(_ context.Context, request *ListModuleVersionsRequest) (*ListModuleVersionsResponse, error) {
+// 	projection := expression.NamesList(expression.Name("version"))
+// 	filter := expression.And(
+// 		expression.Name("name").Equal(expression.Value(request.Module)),
+// 		expression.Name("published_on").AttributeExists())
+// 	expr, err := expression.NewBuilder().WithProjection(projection).WithFilter(filter).Build()
+// 	if err != nil {
+// 		log.Printf("Expression Builder failed creation: %v", err)
+// 		return nil, err
+// 	}
 
-	scanQueryInputs := &dynamodb.ScanInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(VersionsTableName),
-	}
+// 	scanQueryInputs := &dynamodb.ScanInput{
+// 		ExpressionAttributeNames:  expr.Names(),
+// 		ExpressionAttributeValues: expr.Values(),
+// 		FilterExpression:          expr.Filter(),
+// 		ProjectionExpression:      expr.Projection(),
+// 		TableName:                 aws.String(VersionsTableName),
+// 	}
 
-	response, err := s.Db.Scan(scanQueryInputs)
-	if err != nil {
-		log.Printf("ScanInput failed: %v", err)
-		return nil, err
-	}
+// 	response, err := s.Db.Scan(scanQueryInputs)
+// 	if err != nil {
+// 		log.Printf("ScanInput failed: %v", err)
+// 		return nil, err
+// 	}
 
-	grpcResponse := ListModuleVersionsResponse{}
-	if response.Items != nil {
-		for _, item := range response.Items {
-			moduleVersion := ModuleVersion{}
-			if err3 := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err3 != nil {
-				log.Printf("UnmarshalMap failed: %v", err3)
-				return nil, err3
-			}
-			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
-		}
-	}
+// 	grpcResponse := ListModuleVersionsResponse{}
+// 	if response.Items != nil {
+// 		for _, item := range response.Items {
+// 			moduleVersion := ModuleVersion{}
+// 			if err3 := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err3 != nil {
+// 				log.Printf("UnmarshalMap failed: %v", err3)
+// 				return nil, err3
+// 			}
+// 			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
+// 		}
+// 	}
 
-	return &grpcResponse, nil
-}
+// 	return &grpcResponse, nil
+// }
 
 
 

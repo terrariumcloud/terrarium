@@ -80,6 +80,23 @@ func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terra
 	return gw.BeginVersionWithClient(ctx, request, client)
 }
 
+// TODO REGISTER TAGMANAGER AND ENDPOINT
+// func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
+// 	log.Println("Register => Registrar")
+// 	conn, err := grpc.Dial(RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+// 	if err != nil {
+// 		log.Println(err)
+// 		return nil, ConnectToRegistrarError
+// 	}
+
+// 	defer conn.Close()
+
+// 	client := NewRegistrarClient(conn)
+
+// 	return gw.RegisterWithClient(ctx, request, client)
+//}
+
 // BeginVersionWithClient calls BeginVersion on Version Manager client
 func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrarium.BeginVersionRequest, client VersionManagerClient) (*terrarium.Response, error) {
 	if res, delegateError := client.BeginVersion(ctx, request); delegateError != nil {
@@ -402,3 +419,4 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 		}
 	}
 }
+
