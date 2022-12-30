@@ -3,8 +3,9 @@ package services_test
 import (
 	"context"
 	"errors"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 
 	"github.com/terrariumcloud/terrarium/internal/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
@@ -53,8 +54,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleRegistered {
-			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+		if res != services.ModuleTagPublished {
+			t.Errorf("Expected %v, got %v.", services.ModuleTagPublished, res)
 		}
 	})
 
@@ -107,8 +108,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleRegistered {
-			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+		if res != services.ModuleTagPublished {
+			t.Errorf("Expected %v, got %v.", services.ModuleTagPublished, res)
 		}
 	})
 

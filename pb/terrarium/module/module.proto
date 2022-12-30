@@ -142,10 +142,7 @@ message ContainerDependenciesResponseV2 {
 }
 
 message PublishTagRequest {
-  terrarium.module.Module module = 1;
-  map<string, TagList> tags = 2;
-}
-
-message TagList {
-  string tag = 1;
+  string api_key = 1;
+  string name = 2;
+  repeated string tags = 3;
 }

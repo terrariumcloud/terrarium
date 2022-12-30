@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TagManagerClient interface {
-	PublishTag(ctx context.Context, in *PublishTagRequest, opts ...grpc.CallOption) (*module.Response, error)
+	PublishTag(ctx context.Context, in *module.PublishTagRequest, opts ...grpc.CallOption) (*module.Response, error)
 }
 
 type tagManagerClient struct {
@@ -34,7 +34,7 @@ func NewTagManagerClient(cc grpc.ClientConnInterface) TagManagerClient {
 	return &tagManagerClient{cc}
 }
 
-func (c *tagManagerClient) PublishTag(ctx context.Context, in *PublishTagRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (c *tagManagerClient) PublishTag(ctx context.Context, in *module.PublishTagRequest, opts ...grpc.CallOption) (*module.Response, error) {
 	out := new(module.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.module.services.TagManager/PublishTag", in, out, opts...)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *tagManagerClient) PublishTag(ctx context.Context, in *PublishTagRequest
 // All implementations must embed UnimplementedTagManagerServer
 // for forward compatibility
 type TagManagerServer interface {
-	PublishTag(context.Context, *PublishTagRequest) (*module.Response, error)
+	PublishTag(context.Context, *module.PublishTagRequest) (*module.Response, error)
 	mustEmbedUnimplementedTagManagerServer()
 }
 
@@ -55,7 +55,7 @@ type TagManagerServer interface {
 type UnimplementedTagManagerServer struct {
 }
 
-func (UnimplementedTagManagerServer) PublishTag(context.Context, *PublishTagRequest) (*module.Response, error) {
+func (UnimplementedTagManagerServer) PublishTag(context.Context, *module.PublishTagRequest) (*module.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishTag not implemented")
 }
 func (UnimplementedTagManagerServer) mustEmbedUnimplementedTagManagerServer() {}
@@ -72,7 +72,7 @@ func RegisterTagManagerServer(s grpc.ServiceRegistrar, srv TagManagerServer) {
 }
 
 func _TagManager_PublishTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishTagRequest)
+	in := new(module.PublishTagRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func _TagManager_PublishTag_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/terrarium.module.services.TagManager/PublishTag",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TagManagerServer).PublishTag(ctx, req.(*PublishTagRequest))
+		return srv.(TagManagerServer).PublishTag(ctx, req.(*module.PublishTagRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

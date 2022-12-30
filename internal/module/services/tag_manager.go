@@ -14,23 +14,27 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+
 	//"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	//"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
 const (
-	DefaultTagTableName      = "terrarium-module-tags"
+	DefaultTagTableName       = "terrarium-module-tags"
 	DefaultTagManagerEndpoint = "tag_manager:3001"
 )
 
 var (
-	TagTableName      string = DefaultTagTableName
-	TagManagerEndpoint string = DefaultTagManagerEndpoint
-	TagPublished = &terrarium.Response{Message: "Tag published."}
-	ModuleTagTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for tags.")
+	TagTableName                      string = DefaultTagTableName
+	TagManagerEndpoint                string = DefaultTagManagerEndpoint
+	TagPublished                             = &terrarium.Response{Message: "Tag published."}
+	ModuleTagTableInitializationError        = status.Error(codes.Unknown, "Failed to initialize table for tags.")
 	//MarshalModuleVersionError              = status.Error(codes.Unknown, "Failed to marshal module version.")
-	PublishModuleTagError              = status.Error(codes.Unknown, "Failed to publish module tag.")
+	PublishModuleTagError = status.Error(codes.Unknown, "Failed to publish module tag.")
+	ConnectToTagManagerError = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
 )
 
 type TagManagerService struct {
@@ -41,15 +45,11 @@ type TagManagerService struct {
 }
 
 type ModuleTag struct {
-	Name        string `json:"name" bson:"name" dynamodbav:"name"`
-	Version     string `json:"version" bson:"version" dynamodbav:"version"`
-	Tag         []string `json:"tags" bson:"tags" dynamodbav:"tags"`
-	CreatedOn   string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
-	PublishedOn string `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+	Name       string   `json:"name" bson:"name" dynamodbav:"name"`
+	Tags       []string `json:"tags" bson:"tags" dynamodbav:"tags"`
+	CreatedOn  string   `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	ModifiedOn string   `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
 }
-
-
-
 
 // RegisterWithServer registers TagManagerService with grpc server
 func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
@@ -58,81 +58,80 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 		return ModuleTagTableInitializationError
 	}
 
-	RegisterTagManagerServer(grpcServer, s)  
+	RegisterTagManagerServer(grpcServer, s)
 
 	return nil
 }
 
+func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
+	log.Println("Publish module tag.")
 
-// PublishTag Updates Module Tag to published with Tag Manager service
-func (s *TagManagerService) PublishTag(_ context.Context, request *PublishTagRequest) (*terrarium.Response, error) {
-	log.Println("Publishing module tag.")
-	in := &dynamodb.UpdateItemInput{
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":published_on": {S: aws.String(time.Now().UTC().String())},
-		},
+	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(TagTableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(request.Module.GetName())},
-			"version": {S: aws.String(request.Module.GetVersion())},			
+			"name": {S: aws.String(request.GetName())},
 		},
-		TableName:        aws.String(TagTableName),
-		UpdateExpression: aws.String("set published_on = :published_on"),
-	}
+	})
 
-	if _, err := s.Db.UpdateItem(in); err != nil {
+	if err != nil {
 		log.Println(err)
-		return nil, PublishModuleTagError
+		return nil, ModuleGetError
 	}
 
-	log.Println("Module version published.")
-	return TagPublished, nil
+	if res.Item == nil {
+		ms := ModuleTag{
+			Name:       request.GetName(),
+			Tags:       request.GetTags(),
+			CreatedOn:  time.Now().UTC().String(),
+			ModifiedOn: time.Now().UTC().String(),
+		}
+
+		av, err := dynamodbattribute.MarshalMap(ms)
+
+		if err != nil {
+			log.Println(err)
+			return nil, MarshalModuleError
+		}
+
+		in := &dynamodb.PutItemInput{
+			Item:      av,
+			TableName: aws.String(RegistrarTableName),
+		}
+
+		if _, err = s.Db.PutItem(in); err != nil {
+			log.Println(err)
+			return nil, ModuleRegisterError
+		}
+	} else {
+		update := expression.Set(expression.Name("tags"), expression.Value(request.GetTags()))
+		update.Set(expression.Name("modified_on"), expression.Value(time.Now().UTC().String()))
+		expr, err := expression.NewBuilder().WithUpdate(update).Build()
+
+		if err != nil {
+			log.Println(err)
+			return nil, ExpressionBuildError
+		}
+
+		in := &dynamodb.UpdateItemInput{
+			TableName: aws.String(RegistrarTableName),
+			Key: map[string]*dynamodb.AttributeValue{
+				"name": {S: aws.String(request.GetName())}},
+			ExpressionAttributeNames:  expr.Names(),
+			ExpressionAttributeValues: expr.Values(),
+			UpdateExpression:          expr.Update(),
+		}
+
+		_, err = s.Db.UpdateItem(in)
+
+		if err != nil {
+			log.Println(err)
+			return nil, ModuleUpdateError
+		}
+	}
+
+	log.Println("Module tags published.")
+	return ModuleTagPublished, nil
 }
-
-// ListModuleTags retrieve all tags of a given module for specified version and return an array of tags.
-
-// func (s *TagManagerService) ListModuleTags(_ context.Context, request *ListModuleVersionsRequest) (*ListModuleVersionsResponse, error) {
-// 	projection := expression.NamesList(expression.Name("version"))
-// 	filter := expression.And(
-// 		expression.Name("name").Equal(expression.Value(request.Module)),
-// 		expression.Name("published_on").AttributeExists())
-// 	expr, err := expression.NewBuilder().WithProjection(projection).WithFilter(filter).Build()
-// 	if err != nil {
-// 		log.Printf("Expression Builder failed creation: %v", err)
-// 		return nil, err
-// 	}
-
-// 	scanQueryInputs := &dynamodb.ScanInput{
-// 		ExpressionAttributeNames:  expr.Names(),
-// 		ExpressionAttributeValues: expr.Values(),
-// 		FilterExpression:          expr.Filter(),
-// 		ProjectionExpression:      expr.Projection(),
-// 		TableName:                 aws.String(VersionsTableName),
-// 	}
-
-// 	response, err := s.Db.Scan(scanQueryInputs)
-// 	if err != nil {
-// 		log.Printf("ScanInput failed: %v", err)
-// 		return nil, err
-// 	}
-
-// 	grpcResponse := ListModuleVersionsResponse{}
-// 	if response.Items != nil {
-// 		for _, item := range response.Items {
-// 			moduleVersion := ModuleVersion{}
-// 			if err3 := dynamodbattribute.UnmarshalMap(item, &moduleVersion); err3 != nil {
-// 				log.Printf("UnmarshalMap failed: %v", err3)
-// 				return nil, err3
-// 			}
-// 			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
-// 		}
-// 	}
-
-// 	return &grpcResponse, nil
-// }
-
-
-
-
 
 
 // GetTagsSchema returns CreateTableInput that can be used to create table if it does not exist
@@ -143,23 +142,11 @@ func GetTagsSchema(table string) *dynamodb.CreateTableInput {
 				AttributeName: aws.String("name"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
-			{
-				AttributeName: aws.String("version"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
-			{
-				AttributeName: aws.String("tag"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
 				AttributeName: aws.String("name"),
 				KeyType:       aws.String("HASH"),
-			},
-			{
-				AttributeName: aws.String("version"),
-				KeyType:       aws.String("RANGE"),
 			},
 		},
 		TableName:   aws.String(table),

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+
 	"github.com/terrariumcloud/terrarium/internal/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -14,14 +16,16 @@ import (
 func Test_RegisterTagManagerWithServer(t *testing.T) {
 	t.Parallel()
 
-	t.Run("when table init is successful", func(t *testing.T) {
+	t.Run("when there is no error with table init", func(t *testing.T) {
 		db := &mocks.MockDynamoDB{}
 
-		tms := &services.TagManagerService{Db: db}
+		tm := &services.TagManagerService{
+			Db: db,
+		}
 
 		s := grpc.NewServer(*new([]grpc.ServerOption)...)
 
-		err := tms.RegisterWithServer(s)
+		err := tm.RegisterWithServer(s)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v.", err)
@@ -35,17 +39,23 @@ func Test_RegisterTagManagerWithServer(t *testing.T) {
 			t.Errorf("Expected no calls to CreateTable, got %v.", db.CreateTableInvocations)
 		}
 	})
-	t.Run("when Table initialization fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
 
-		tms := &services.TagManagerService{Db: db}
+	t.Run("when Table initialization fails", func(t *testing.T) {
+
+		db := &mocks.MockDynamoDB{
+			DescribeTableErrors: []error{errors.New("some error")},
+		}
+
+		tm := &services.TagManagerService{
+			Db: db,
+		}
 
 		s := grpc.NewServer(*new([]grpc.ServerOption)...)
 
-		err := tms.RegisterWithServer(s)
+		err := tm.RegisterWithServer(s)
 
-		if err != services.ModuleTagTableInitializationError {
-			t.Errorf("Expected %v, got %v.", services.ModuleTagTableInitializationError, err)
+		if err != services.ModuleTableInitializationError {
+			t.Errorf("Expected %v, got %v.", services.ModuleTableInitializationError, err)
 		}
 
 		if db.DescribeTableInvocations != 1 {
@@ -65,17 +75,14 @@ func Test_PublishTag(t *testing.T) {
 		db := &mocks.MockDynamoDB{}
 
 		svc := &services.TagManagerService{Db: db}
-
-		req := &services.PublishTagRequest{
-		Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}, 
-		Tags: map[string]*services.TagList{
-			"EKS": {
-			  Tag: "eks-bundle-tag",
-			},
-		},
+    
+		req := terrarium.TagManagerRequest{
+			Name:        "test",
+			Description: "test desc",
+			Tags:  "eks",
 		}
 
-		res, err := svc.PublishTag(context.TODO(), req)
+		res, err := svc.PublishTag(context.TODO(), &req)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -99,7 +106,7 @@ func Test_PublishTag(t *testing.T) {
 
 		svc := &services.TagManagerService{Db: db}
 
-		req := &services.PublishTagRequest{
+		req := terrarium.PublishTagRequest{
 			Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}, 
 			Tags: map[string]*services.TagList{
 				"EKS": {
