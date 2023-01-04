@@ -33,7 +33,7 @@ var (
 	TagPublished                             = &terrarium.Response{Message: "Tag published."}
 	ModuleTagTableInitializationError        = status.Error(codes.Unknown, "Failed to initialize table for tags.")
 	//MarshalModuleVersionError              = status.Error(codes.Unknown, "Failed to marshal module version.")
-	PublishModuleTagError = status.Error(codes.Unknown, "Failed to publish module tag.")
+	PublishModuleTagError    = status.Error(codes.Unknown, "Failed to publish module tag.")
 	ConnectToTagManagerError = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
 )
 
@@ -130,9 +130,8 @@ func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.Pu
 	}
 
 	log.Println("Module tags published.")
-	return ModuleTagPublished, nil
+	return TagPublished, nil
 }
-
 
 // GetTagsSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetTagsSchema(table string) *dynamodb.CreateTableInput {

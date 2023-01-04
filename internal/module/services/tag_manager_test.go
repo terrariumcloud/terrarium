@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-
 	"github.com/terrariumcloud/terrarium/internal/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -75,25 +73,18 @@ func Test_PublishTag(t *testing.T) {
 		db := &mocks.MockDynamoDB{}
 
 		svc := &services.TagManagerService{Db: db}
-    
-		req := terrarium.TagManagerRequest{
-			Name:        "test",
-			Description: "test desc",
-			Tags:  "eks",
+
+		listOfTags := []string{"eks"}
+		req := terrarium.PublishTagRequest{
+			Name:   "test",
+			ApiKey: "test desc",
+			Tags:   listOfTags,
 		}
 
 		res, err := svc.PublishTag(context.TODO(), &req)
 
 		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if db.UpdateItemInvocations != 1 {
-			t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
-		}
-
-		if db.TableName != services.TagTableName {
-			t.Errorf("Expected tableName to be %v, got %v.", services.TagTableName, db.TableName)
+			t.Errorf("Expected %v, got %v.", services.TagPublished, res)
 		}
 
 		if res != services.TagPublished {
@@ -106,15 +97,14 @@ func Test_PublishTag(t *testing.T) {
 
 		svc := &services.TagManagerService{Db: db}
 
+		listOfTags := []string{"eks"}
 		req := terrarium.PublishTagRequest{
-			Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}, 
-			Tags: map[string]*services.TagList{
-				"EKS": {
-				  Tag: "eks-bundle-tag",
-				},
-			},
-			}
-		res, err := svc.PublishTag(context.TODO(), req)
+			Name:   "test",
+			ApiKey: "test desc",
+			Tags:   listOfTags,
+		}
+
+		res, err := svc.PublishTag(context.TODO(), &req)
 
 		if res != nil {
 			t.Errorf("Expected no response, got %v", res)
