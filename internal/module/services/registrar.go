@@ -30,7 +30,7 @@ var (
 	RegistrarTableName       string = DefaultRegistrarTableName
 	RegistrarServiceEndpoint string = DefaultRegistrarServiceEndpoint
 
-	ModuleTagPublished = &terrarium.Response{Message: "Module registered successfully."}
+	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
 	ModuleTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for modules.")
 	ModuleGetError                 = status.Error(codes.Unknown, "Failed to check if module already exists.")
@@ -139,7 +139,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	}
 
 	log.Println("New module registered.")
-	return ModuleTagPublished, nil
+	return ModuleRegistered, nil
 }
 
 func unmarshalModule(item map[string]*dynamodb.AttributeValue) (*ModuleMetadata, error) {

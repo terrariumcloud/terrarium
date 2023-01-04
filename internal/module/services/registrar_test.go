@@ -54,8 +54,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleTagPublished {
-			t.Errorf("Expected %v, got %v.", services.ModuleTagPublished, res)
+		if res != services.ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
 		}
 	})
 
@@ -108,8 +108,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleTagPublished {
-			t.Errorf("Expected %v, got %v.", services.ModuleTagPublished, res)
+		if res != services.ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
 		}
 	})
 
