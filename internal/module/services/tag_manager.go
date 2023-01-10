@@ -32,9 +32,10 @@ var (
 	TagManagerEndpoint                string = DefaultTagManagerEndpoint
 	TagPublished                             = &terrarium.Response{Message: "Tag published."}
 	ModuleTagTableInitializationError        = status.Error(codes.Unknown, "Failed to initialize table for tags.")
-	//MarshalModuleVersionError              = status.Error(codes.Unknown, "Failed to marshal module version.")
-	PublishModuleTagError    = status.Error(codes.Unknown, "Failed to publish module tag.")
-	ConnectToTagManagerError = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
+	MarshalModuleTagError                    = status.Error(codes.Unknown, "Failed to marshal module tags for Dynamodb.")
+	PublishModuleTagError                    = status.Error(codes.Unknown, "Failed to publish module tag.")
+	UpdateModuleTagError                     = status.Error(codes.Unknown, "Failed to update module tag.")
+	ConnectToTagManagerError                 = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
 )
 
 type TagManagerService struct {
@@ -63,7 +64,7 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 	return nil
 }
 
-func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
+func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
 	log.Println("Publish module tag.")
 
 	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
@@ -90,17 +91,17 @@ func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.Pu
 
 		if err != nil {
 			log.Println(err)
-			return nil, MarshalModuleError
+			return nil, MarshalModuleTagError
 		}
 
 		in := &dynamodb.PutItemInput{
 			Item:      av,
-			TableName: aws.String(RegistrarTableName),
+			TableName: aws.String(TagTableName),
 		}
 
 		if _, err = s.Db.PutItem(in); err != nil {
 			log.Println(err)
-			return nil, ModuleRegisterError
+			return nil, PublishModuleTagError
 		}
 	} else {
 		update := expression.Set(expression.Name("tags"), expression.Value(request.GetTags()))
@@ -113,7 +114,7 @@ func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.Pu
 		}
 
 		in := &dynamodb.UpdateItemInput{
-			TableName: aws.String(RegistrarTableName),
+			TableName: aws.String(TagTableName),
 			Key: map[string]*dynamodb.AttributeValue{
 				"name": {S: aws.String(request.GetName())}},
 			ExpressionAttributeNames:  expr.Names(),
@@ -125,7 +126,7 @@ func (s *RegistrarService) PublishTag(ctx context.Context, request *terrarium.Pu
 
 		if err != nil {
 			log.Println(err)
-			return nil, ModuleUpdateError
+			return nil, UpdateModuleTagError
 		}
 	}
 
