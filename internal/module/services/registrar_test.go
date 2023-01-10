@@ -3,8 +3,9 @@ package services_test
 import (
 	"context"
 	"errors"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 
 	"github.com/terrariumcloud/terrarium/internal/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services"

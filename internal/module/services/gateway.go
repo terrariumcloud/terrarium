@@ -63,6 +63,32 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 	}
 }
 
+// Register PublishTag with Registrar service
+func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
+	conn, err := grpc.Dial(TagManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		log.Println(err)
+		return nil, ConnectToTagManagerError
+	}
+
+	defer conn.Close()
+
+	client := NewTagManagerClient(conn)
+
+	return gw.PublishTagWithClient(ctx, request, client)
+}
+
+func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, request *terrarium.PublishTagRequest, client TagManagerClient) (*terrarium.Response, error) {
+	if res, delegateError := client.PublishTag(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		return nil, delegateError
+	} else {
+		log.Println("Done <= Registrar")
+		return res, nil
+	}
+}
+
 // BeginVersion creates new version with Version Manager service
 func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Begin version => Version Manager")

@@ -27,6 +27,7 @@ service Publisher {
   rpc UploadSourceZip (stream UploadSourceZipRequest) returns (Response) {}
   // Upload Documentation
   rpc EndVersion(EndVersionRequest) returns (Response) {}
+  rpc PublishTag(PublishTagRequest) returns (Response) {} 
 }
 
 service Consumer {
@@ -138,4 +139,10 @@ message RetrieveContainerDependenciesRequestV2 {
 message ContainerDependenciesResponseV2 {
   Module module = 1;
   map<string, ContainerImageDetails> dependencies = 2;
+}
+
+message PublishTagRequest {
+  string api_key = 1;
+  string name = 2;
+  repeated string tags = 3;
 }
