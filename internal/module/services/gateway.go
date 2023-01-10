@@ -35,7 +35,6 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 	return nil
 }
 
-
 // Register new module with Registrar service
 func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Register => Registrar")
@@ -52,6 +51,7 @@ func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium
 
 	return gw.RegisterWithClient(ctx, request, client)
 }
+
 // RegisterWithClient calls Register on Registrar client
 func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request *terrarium.RegisterModuleRequest, client RegistrarClient) (*terrarium.Response, error) {
 	if res, delegateError := client.Register(ctx, request); delegateError != nil {
@@ -63,7 +63,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 	}
 }
 
-// Register new module with Registrar service
+// Register PublishTag with Registrar service
 func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
 	conn, err := grpc.Dial(TagManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -88,6 +88,7 @@ func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, reques
 		return res, nil
 	}
 }
+
 // BeginVersion creates new version with Version Manager service
 func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Begin version => Version Manager")
@@ -104,8 +105,6 @@ func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terra
 
 	return gw.BeginVersionWithClient(ctx, request, client)
 }
-
-
 
 // BeginVersionWithClient calls BeginVersion on Version Manager client
 func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrarium.BeginVersionRequest, client VersionManagerClient) (*terrarium.Response, error) {
@@ -429,4 +428,3 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 		}
 	}
 }
-

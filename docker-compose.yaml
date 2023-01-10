@@ -40,6 +40,26 @@ services:
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
+  registrar:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-tag-manager-service
+    environment:
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
+     - AWS_DEFAULT_REGION
+    ports:
+      - 50007:3001
+    networks:
+      - terrarium
+    command:
+      - tag-manager
+      - "--aws-access-key-id"
+      - "$AWS_ACCESS_KEY_ID"
+      - "--aws-secret-access-key"
+      - "$AWS_SECRET_ACCESS_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
   version_manager:
     build: .
     image: terrarium:dev
