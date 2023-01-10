@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/terrariumcloud/terrarium/internal/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -52,8 +53,8 @@ func Test_RegisterTagManagerWithServer(t *testing.T) {
 
 		err := tm.RegisterWithServer(s)
 
-		if err != services.ModuleTableInitializationError {
-			t.Errorf("Expected %v, got %v.", services.ModuleTableInitializationError, err)
+		if err != services.ModuleTagTableInitializationError {
+			t.Errorf("Expected %v, got %v.", services.ModuleTagTableInitializationError, err)
 		}
 
 		if db.DescribeTableInvocations != 1 {
@@ -70,7 +71,9 @@ func Test_PublishTag(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when tag is published", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{}
+		db := &mocks.MockDynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{{}},
+		}
 
 		svc := &services.TagManagerService{Db: db}
 
@@ -84,7 +87,7 @@ func Test_PublishTag(t *testing.T) {
 		res, err := svc.PublishTag(context.TODO(), &req)
 
 		if err != nil {
-			t.Errorf("Expected %v, got %v.", services.TagPublished, res)
+			t.Errorf("Expected %v, got %v.", nil, err)
 		}
 
 		if res != services.TagPublished {
@@ -92,12 +95,23 @@ func Test_PublishTag(t *testing.T) {
 		}
 	})
 
-	t.Run("when UpdateItem fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{UpdateItemError: errors.New("some error")}
+	t.Run("when UpdateItem is successful", func(t *testing.T) {
+		name := "test"
+		tagsList := "eks"
+		db := &mocks.MockDynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{{
+				Item: map[string]*dynamodb.AttributeValue{
+					"name": {S: &name},
+					"tags": {S: &tagsList},
+				},
+			},
+			},
+			UpdateItemOut: &dynamodb.UpdateItemOutput{},
+		}
 
 		svc := &services.TagManagerService{Db: db}
 
-		listOfTags := []string{"eks"}
+		listOfTags := []string{"eks", "eks1"}
 		req := terrarium.PublishTagRequest{
 			Name:   "test",
 			ApiKey: "test desc",
@@ -106,20 +120,12 @@ func Test_PublishTag(t *testing.T) {
 
 		res, err := svc.PublishTag(context.TODO(), &req)
 
-		if res != nil {
-			t.Errorf("Expected no response, got %v", res)
+		if err != nil {
+			t.Errorf("Expected %v, got %v.", nil, err)
 		}
 
-		if db.UpdateItemInvocations != 1 {
-			t.Errorf("Expected 1 call to UpdateItem, got %v", db.UpdateItemInvocations)
-		}
-
-		if db.TableName != services.TagTableName {
-			t.Errorf("Expected tableName to be %v, got %v.", services.TagTableName, db.TableName)
-		}
-
-		if err != services.PublishModuleTagError {
-			t.Errorf("Expected %v, got %v.", services.PublishModuleVersionError, err)
+		if res != services.TagPublished {
+			t.Errorf("Expected %v, got %v.", services.TagPublished, res)
 		}
 	})
 }
