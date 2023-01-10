@@ -128,4 +128,43 @@ func Test_PublishTag(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", services.TagPublished, res)
 		}
 	})
+
+	t.Run("when UpdateItem is not successful", func(t *testing.T) {
+		name := "test"
+		tagsList := "eks"
+		db := &mocks.MockDynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{{
+				Item: map[string]*dynamodb.AttributeValue{
+					"name": {S: &name},
+					"tags": {S: &tagsList},
+				},
+			},
+			},
+			UpdateItemOut:   &dynamodb.UpdateItemOutput{},
+			UpdateItemError: errors.New("Failed to update module tag."),
+		}
+
+		svc := &services.TagManagerService{Db: db}
+
+		listOfTags := []string{"eks"}
+		req := terrarium.PublishTagRequest{
+			Name:   "test",
+			ApiKey: "test desc",
+			Tags:   listOfTags,
+		}
+
+		res, err := svc.PublishTag(context.TODO(), &req)
+
+		if res != nil {
+			t.Errorf("Expected no response, got %v", err)
+		}
+
+		if db.UpdateItemError == nil {
+			t.Errorf("Expected failed update, got %d", db.UpdateItemError)
+		}
+
+		if err != services.UpdateModuleTagError {
+			t.Errorf("Expected %v, got %v.", services.UpdateModuleTagError, err)
+		}
+	})
 }
