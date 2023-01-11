@@ -19,7 +19,7 @@ func init() {
 	gatewayCmd.Flags().StringVarP(&services.DependencyManagerEndpoint, "dependency-manager", "", services.DefaultDependencyManagerEndpoint, "GRPC Endpoint for Dependency Manager Service")
 	gatewayCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
-	gatewayCmd.Flags().StringVarP(&services.TagManagerEndpoint, "tag", "", services.DefaultTagManagerEndpoint, "GRPC Endpoint for Tag Service")
+	gatewayCmd.Flags().StringVarP(&services.TagManagerEndpoint, "tag-manager", "", services.DefaultTagManagerEndpoint, "GRPC Endpoint for Tag Service")
 
 }
 
