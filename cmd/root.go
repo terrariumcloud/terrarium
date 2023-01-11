@@ -2,15 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/terrariumcloud/terrarium/internal/restapi"
 	"log"
 	"net"
 	"net/http"
+
+	"github.com/terrariumcloud/terrarium/internal/restapi"
 
 	services "github.com/terrariumcloud/terrarium/internal/module/services"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/otel"
+	stdoutTrace "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 const (
@@ -26,6 +32,20 @@ var rootCmd = &cobra.Command{
 	Use:   "terrarium",
 	Short: "Terrarium Services",
 	Long:  "Runs backend that exposes Terrarium Services",
+}
+
+func InitOTELTracer() (*sdktrace.TracerProvider, error) {
+	exporter, err := stdoutTrace.New(stdoutTrace.WithPrettyPrint())
+	if err != nil {
+		return nil, err
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return tp, nil
 }
 
 func init() {
@@ -57,12 +77,32 @@ func startGRPCService(name string, service services.Service) {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %v", err)
 	}
+
+	tp, err := InitOTELTracer()
+
+	if err != nil {
+		log.Fatalf("Failed to initiate OTEL Tracer: %v", err)
+	}
+
+	if tp != nil {
+		log.Fatalf("Successfully initiated OTEL Tracer...")
+	}
 }
 
 func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
 	log.Printf("Starting %s", name)
 	log.Println(fmt.Sprintf("Listening on %s", endpoint))
 	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
+
+	tp, err := InitOTELTracer()
+
+	if err != nil {
+		log.Fatalf("Failed to initiate OTEL Tracer: %v", err)
+	}
+
+	if tp != nil {
+		log.Fatalf("Successfully initiated OTEL Tracer: %v", err)
+	}
 }
 
 // Execute root command
