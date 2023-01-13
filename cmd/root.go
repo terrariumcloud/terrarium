@@ -1,20 +1,30 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
 	services "github.com/terrariumcloud/terrarium/internal/module/services"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdk_tracy "go.opentelemetry.io/otel/sdk/trace"
+
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
-
-const OtelTracerName = "terrarium-tracer"
 
 const (
 	defaultEndpoint = "0.0.0.0:3001"
@@ -56,17 +66,69 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
+func newExporter(w io.Writer) (sdk_tracy.SpanExporter, error) {
+	log.Printf("Returning newExporter")
+	return stdouttrace.New(
+		stdouttrace.WithWriter(w),
+		// Use human-readable output.
+		// Do not print timestamps for the demo.
+	)
+}
+
+func newResource(name string) *resource.Resource {
+	r, _ := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(name),
+			semconv.ServiceVersionKey.String("v0.1.0"),
+			attribute.String("environment", "dev"),
+		),
+	)
+	log.Printf("Returning newResource")
+	return r
+}
+
 func startGRPCService(name string, service services.Service) {
 
 	log.Printf("Starting %s", name)
+
+	f, err := os.Create("traces.txt")
+	if err != nil {
+		log.Fatal(err)
+		log.Printf("Failed 117")
+	}
+	defer f.Close()
+
+	exp, err := newExporter(f)
+	if err != nil {
+		log.Printf("Failed 122")
+		log.Fatal(err)
+	}
+
+	tp := sdk_tracy.NewTracerProvider(
+		sdk_tracy.WithSyncer(exp),
+		sdk_tracy.WithResource(newResource(name)),
+	)
+	defer func() {
+		log.Printf("Failed 132")
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	log.Printf("Will execute TP")
+	otel.SetTracerProvider(tp)
 
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %v", err)
 	}
 
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+	)
 
 	if err := service.RegisterWithServer(grpcServer); err != nil {
 		log.Fatalf("Failed to start: %v", err)

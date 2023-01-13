@@ -2,9 +2,7 @@ package services
 
 import (
 	"context"
-	"io"
 	"log"
-	"os"
 	"time"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
@@ -17,23 +15,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdk_tracy "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-
 	//"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	//"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
-
-const OtelTracerName = "terrarium-tracer"
 
 const (
 	DefaultTagTableName       = "terrarium-module-tags"
@@ -65,29 +52,6 @@ type ModuleTag struct {
 	ModifiedOn string   `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
 }
 
-func newExporter(w io.Writer) (sdk_tracy.SpanExporter, error) {
-	log.Printf("Returning newExporter")
-	return stdouttrace.New(
-		stdouttrace.WithWriter(w),
-		// Use human-readable output.
-		// Do not print timestamps for the demo.
-	)
-}
-
-func newResource() *resource.Resource {
-	r, _ := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(OtelTracerName),
-			semconv.ServiceVersionKey.String("v0.1.0"),
-			attribute.String("environment", "dev"),
-		),
-	)
-	log.Printf("Returning newResource")
-	return r
-}
-
 // RegisterWithServer registers TagManagerService with grpc server
 func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
@@ -102,44 +66,6 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 
 func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
 	log.Println("Publish module tag.")
-
-	f, err := os.Create("traces.txt")
-	if err != nil {
-		log.Fatal(err)
-		log.Printf("Failed 117")
-	}
-	defer f.Close()
-
-	exp, err := newExporter(f)
-	if err != nil {
-		log.Printf("Failed 122")
-		log.Fatal(err)
-	}
-
-	tp := sdk_tracy.NewTracerProvider(
-		sdk_tracy.WithBatcher(exp),
-		sdk_tracy.WithResource(newResource()),
-	)
-	// defer func() {
-	// 	log.Printf("Failed 132")
-	// 	if err := tp.Shutdown(context.Background()); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }()
-
-	log.Printf("Will execute TP")
-	otel.SetTracerProvider(tp)
-
-	var span trace.Span
-
-	ctx, span = otel.Tracer(OtelTracerName).Start(ctx, "MiTracer")
-	//defer span.End()
-
-	if span != nil {
-		log.Printf("Started Tracer")
-	}
-
-	/* … */
 
 	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(TagTableName),
