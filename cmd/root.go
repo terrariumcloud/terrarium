@@ -26,6 +26,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const OtelTracerName = "terrarium-tracer"
+
 const (
 	defaultEndpoint = "0.0.0.0:3001"
 )
@@ -52,7 +54,20 @@ var rootCmd = &cobra.Command{
 // 	)
 // 	otel.SetTracerProvider(tp)
 // 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+// func InitOTELTracer() (*sdktrace.TracerProvider, error) {
+// 	exporter, err := stdoutTrace.New(stdoutTrace.WithPrettyPrint())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	tp := sdktrace.NewTracerProvider(
+// 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+// 		sdktrace.WithBatcher(exporter),
+// 	)
+// 	otel.SetTracerProvider(tp)
+// 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
+// 	return tp, nil
+// }
 // 	return tp, nil
 // }
 
