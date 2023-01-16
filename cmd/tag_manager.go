@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 
 	"github.com/spf13/cobra"
@@ -16,16 +16,16 @@ var tagManagerCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(tagManagerCmd)
-	tagManagerCmd.Flags().StringVarP(&services.TagTableName, "table", "t", services.DefaultTagTableName, "Module tags table name")
+	tagManagerCmd.Flags().StringVarP(&tag_manager.TagTableName, "table", "t", tag_manager.DefaultTagTableName, "Module tags table name")
 }
 
 func runTagManager(cmd *cobra.Command, args []string) {
 
-	tagManagerServer := &services.TagManagerService{
+	tagManagerServer := &tag_manager.TagManagerService{
 		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
-		Table:  services.TagTableName,
-		Schema: services.GetTagsSchema(services.TagTableName),
+		Table:  tag_manager.TagTableName,
+		Schema: tag_manager.GetTagsSchema(tag_manager.TagTableName),
 	}
 
-	startGRPCService("Terrarium GRPCTtag Manager service", tagManagerServer)
+	startGRPCService("tag-manager", tagManagerServer)
 }

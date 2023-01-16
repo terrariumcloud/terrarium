@@ -1,0 +1,1242 @@
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "33c3085bace9942ec8687fb4e21b2c2a",
+    "SpanID": "6aad67888897a529",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:46:52.46368Z",
+  "EndTime": "2023-01-16T16:46:52.800307738Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DescribeTable"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "GNMJ8BRJ635HQHM9TBF4V1CVGRVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "a3e436f19a181c812f4ae777f5fd7c32",
+    "SpanID": "a156fb7377b3920d",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "a3e436f19a181c812f4ae777f5fd7c32",
+    "SpanID": "0bb5bb0c2a8521a9",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:47:35.003796Z",
+  "EndTime": "2023-01-16T16:47:35.07597228Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "Scan"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.select",
+      "Value": {
+        "Type": "STRING",
+        "Value": ""
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "5FT8RVJ7PN10DLHJIMBEURFSLJVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "terrarium.module.services.Registrar/ListModules",
+  "SpanContext": {
+    "TraceID": "a3e436f19a181c812f4ae777f5fd7c32",
+    "SpanID": "0bb5bb0c2a8521a9",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": true
+  },
+  "SpanKind": 2,
+  "StartTime": "2023-01-16T16:47:35.003727Z",
+  "EndTime": "2023-01-16T16:47:35.077065015Z",
+  "Attributes": [
+    {
+      "Key": "rpc.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "grpc"
+      }
+    },
+    {
+      "Key": "rpc.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium.module.services.Registrar"
+      }
+    },
+    {
+      "Key": "rpc.method",
+      "Value": {
+        "Type": "STRING",
+        "Value": "ListModules"
+      }
+    },
+    {
+      "Key": "net.peer.ip",
+      "Value": {
+        "Type": "STRING",
+        "Value": "127.0.0.1"
+      }
+    },
+    {
+      "Key": "net.peer.port",
+      "Value": {
+        "Type": "STRING",
+        "Value": "58342"
+      }
+    },
+    {
+      "Key": "rpc.grpc.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 0
+      }
+    }
+  ],
+  "Events": [
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "RECEIVED"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 0
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:35.003734Z"
+    },
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "SENT"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 8396
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:35.077065Z"
+    }
+  ],
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 1,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "e2be63e33a6c1f1bee96dd8850b1d749",
+    "SpanID": "144299982befd255",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "e2be63e33a6c1f1bee96dd8850b1d749",
+    "SpanID": "2c032ea75abbe030",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:47:37.338254Z",
+  "EndTime": "2023-01-16T16:47:37.409622095Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "Scan"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.select",
+      "Value": {
+        "Type": "STRING",
+        "Value": ""
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "2SJOPJUF6TTLQQ75R2CIJPD7ARVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "terrarium.module.services.Registrar/ListModules",
+  "SpanContext": {
+    "TraceID": "e2be63e33a6c1f1bee96dd8850b1d749",
+    "SpanID": "2c032ea75abbe030",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": true
+  },
+  "SpanKind": 2,
+  "StartTime": "2023-01-16T16:47:37.33821Z",
+  "EndTime": "2023-01-16T16:47:37.409820378Z",
+  "Attributes": [
+    {
+      "Key": "rpc.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "grpc"
+      }
+    },
+    {
+      "Key": "rpc.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium.module.services.Registrar"
+      }
+    },
+    {
+      "Key": "rpc.method",
+      "Value": {
+        "Type": "STRING",
+        "Value": "ListModules"
+      }
+    },
+    {
+      "Key": "net.peer.ip",
+      "Value": {
+        "Type": "STRING",
+        "Value": "127.0.0.1"
+      }
+    },
+    {
+      "Key": "net.peer.port",
+      "Value": {
+        "Type": "STRING",
+        "Value": "58346"
+      }
+    },
+    {
+      "Key": "rpc.grpc.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 0
+      }
+    }
+  ],
+  "Events": [
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "RECEIVED"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 0
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:37.338216Z"
+    },
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "SENT"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 8396
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:37.40982Z"
+    }
+  ],
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 1,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "aef226a71372a649242c1bda76bc3d60",
+    "SpanID": "48f739133ab50371",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "aef226a71372a649242c1bda76bc3d60",
+    "SpanID": "eb543e22135ace87",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:47:38.183674Z",
+  "EndTime": "2023-01-16T16:47:38.251567342Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "Scan"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.select",
+      "Value": {
+        "Type": "STRING",
+        "Value": ""
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "V0JKCC7KH0G37O89NSDBR415HRVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "terrarium.module.services.Registrar/ListModules",
+  "SpanContext": {
+    "TraceID": "aef226a71372a649242c1bda76bc3d60",
+    "SpanID": "eb543e22135ace87",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": true
+  },
+  "SpanKind": 2,
+  "StartTime": "2023-01-16T16:47:38.183604Z",
+  "EndTime": "2023-01-16T16:47:38.251787027Z",
+  "Attributes": [
+    {
+      "Key": "rpc.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "grpc"
+      }
+    },
+    {
+      "Key": "rpc.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium.module.services.Registrar"
+      }
+    },
+    {
+      "Key": "rpc.method",
+      "Value": {
+        "Type": "STRING",
+        "Value": "ListModules"
+      }
+    },
+    {
+      "Key": "net.peer.ip",
+      "Value": {
+        "Type": "STRING",
+        "Value": "127.0.0.1"
+      }
+    },
+    {
+      "Key": "net.peer.port",
+      "Value": {
+        "Type": "STRING",
+        "Value": "58350"
+      }
+    },
+    {
+      "Key": "rpc.grpc.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 0
+      }
+    }
+  ],
+  "Events": [
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "RECEIVED"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 0
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:38.183619Z"
+    },
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "SENT"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 8396
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:38.251786Z"
+    }
+  ],
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 1,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "271f71918321255d7fb84655f5e9d3b9",
+    "SpanID": "2382f11307c41abe",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "271f71918321255d7fb84655f5e9d3b9",
+    "SpanID": "106f72db1e855d10",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:47:38.827241Z",
+  "EndTime": "2023-01-16T16:47:38.893026005Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "Scan"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.select",
+      "Value": {
+        "Type": "STRING",
+        "Value": ""
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "42A6U3B8QP70PP0IKAU3M2CSPJVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "terrarium.module.services.Registrar/ListModules",
+  "SpanContext": {
+    "TraceID": "271f71918321255d7fb84655f5e9d3b9",
+    "SpanID": "106f72db1e855d10",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": true
+  },
+  "SpanKind": 2,
+  "StartTime": "2023-01-16T16:47:38.827181Z",
+  "EndTime": "2023-01-16T16:47:38.89323886Z",
+  "Attributes": [
+    {
+      "Key": "rpc.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "grpc"
+      }
+    },
+    {
+      "Key": "rpc.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium.module.services.Registrar"
+      }
+    },
+    {
+      "Key": "rpc.method",
+      "Value": {
+        "Type": "STRING",
+        "Value": "ListModules"
+      }
+    },
+    {
+      "Key": "net.peer.ip",
+      "Value": {
+        "Type": "STRING",
+        "Value": "127.0.0.1"
+      }
+    },
+    {
+      "Key": "net.peer.port",
+      "Value": {
+        "Type": "STRING",
+        "Value": "58354"
+      }
+    },
+    {
+      "Key": "rpc.grpc.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 0
+      }
+    }
+  ],
+  "Events": [
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "RECEIVED"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 0
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:38.827186Z"
+    },
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "SENT"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 8396
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:38.893238Z"
+    }
+  ],
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 1,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "DynamoDB",
+  "SpanContext": {
+    "TraceID": "abb4c699457674fe9e1df57638d1b216",
+    "SpanID": "5b58fe46663cf56b",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "abb4c699457674fe9e1df57638d1b216",
+    "SpanID": "fc725ac88b56ff3d",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "SpanKind": 3,
+  "StartTime": "2023-01-16T16:47:39.42668Z",
+  "EndTime": "2023-01-16T16:47:39.499072684Z",
+  "Attributes": [
+    {
+      "Key": "aws.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "DynamoDB"
+      }
+    },
+    {
+      "Key": "aws.region",
+      "Value": {
+        "Type": "STRING",
+        "Value": "eu-west-1"
+      }
+    },
+    {
+      "Key": "aws.operation",
+      "Value": {
+        "Type": "STRING",
+        "Value": "Scan"
+      }
+    },
+    {
+      "Key": "db.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "dynamodb"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.table_names",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium-modules"
+      }
+    },
+    {
+      "Key": "aws.dynamodb.select",
+      "Value": {
+        "Type": "STRING",
+        "Value": ""
+      }
+    },
+    {
+      "Key": "http.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 200
+      }
+    },
+    {
+      "Key": "aws.request_id",
+      "Value": {
+        "Type": "STRING",
+        "Value": "4KO1FLBUMUPTO18DS6AOBIRINNVV4KQNSO5AEMVJF66Q9ASUAAJG"
+      }
+    }
+  ],
+  "Events": null,
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 0,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}
+{
+  "Name": "terrarium.module.services.Registrar/ListModules",
+  "SpanContext": {
+    "TraceID": "abb4c699457674fe9e1df57638d1b216",
+    "SpanID": "fc725ac88b56ff3d",
+    "TraceFlags": "01",
+    "TraceState": "",
+    "Remote": false
+  },
+  "Parent": {
+    "TraceID": "00000000000000000000000000000000",
+    "SpanID": "0000000000000000",
+    "TraceFlags": "00",
+    "TraceState": "",
+    "Remote": true
+  },
+  "SpanKind": 2,
+  "StartTime": "2023-01-16T16:47:39.426631Z",
+  "EndTime": "2023-01-16T16:47:39.49931034Z",
+  "Attributes": [
+    {
+      "Key": "rpc.system",
+      "Value": {
+        "Type": "STRING",
+        "Value": "grpc"
+      }
+    },
+    {
+      "Key": "rpc.service",
+      "Value": {
+        "Type": "STRING",
+        "Value": "terrarium.module.services.Registrar"
+      }
+    },
+    {
+      "Key": "rpc.method",
+      "Value": {
+        "Type": "STRING",
+        "Value": "ListModules"
+      }
+    },
+    {
+      "Key": "net.peer.ip",
+      "Value": {
+        "Type": "STRING",
+        "Value": "127.0.0.1"
+      }
+    },
+    {
+      "Key": "net.peer.port",
+      "Value": {
+        "Type": "STRING",
+        "Value": "58358"
+      }
+    },
+    {
+      "Key": "rpc.grpc.status_code",
+      "Value": {
+        "Type": "INT64",
+        "Value": 0
+      }
+    }
+  ],
+  "Events": [
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "RECEIVED"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 0
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:39.426641Z"
+    },
+    {
+      "Name": "message",
+      "Attributes": [
+        {
+          "Key": "message.type",
+          "Value": {
+            "Type": "STRING",
+            "Value": "SENT"
+          }
+        },
+        {
+          "Key": "message.id",
+          "Value": {
+            "Type": "INT64",
+            "Value": 1
+          }
+        },
+        {
+          "Key": "message.uncompressed_size",
+          "Value": {
+            "Type": "INT64",
+            "Value": 8396
+          }
+        }
+      ],
+      "DroppedAttributeCount": 0,
+      "Time": "2023-01-16T16:47:39.499307Z"
+    }
+  ],
+  "Links": null,
+  "Status": {
+    "Code": "Unset",
+    "Description": ""
+  },
+  "DroppedAttributes": 0,
+  "DroppedEvents": 0,
+  "DroppedLinks": 0,
+  "ChildSpanCount": 1,
+  "Resource": null,
+  "InstrumentationLibrary": {
+    "Name": "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
+    "Version": "semver:0.37.0",
+    "SchemaURL": ""
+  }
+}

@@ -1,14 +1,15 @@
-package services_test
+package registrar
 
 import (
 	"context"
 	"errors"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
-	"github.com/terrariumcloud/terrarium/internal/mocks"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
@@ -23,11 +24,11 @@ func Test_RegisterModule(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when new version is created", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{
+		db := &mocks.DynamoDB{
 			GetItemOuts: []*dynamodb.GetItemOutput{{}},
 		}
 
-		svc := &services.RegistrarService{Db: db}
+		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
 			Name:        "test",
@@ -50,34 +51,35 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected 1 call to PutItem, got %d", db.PutItemInvocations)
 		}
 
-		if db.TableName != services.RegistrarTableName {
-			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
+		if db.TableName != RegistrarTableName {
+			t.Errorf("Expected tableName to be %s, got %s", RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleRegistered {
-			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+		if res != ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", ModuleRegistered, res)
 		}
 	})
 
 	t.Run("when version already exists", func(t *testing.T) {
 		name := "test"
 		emptyString := ""
-		db := &mocks.MockDynamoDB{
-			GetItemOuts: []*dynamodb.GetItemOutput{{
-				Item: map[string]*dynamodb.AttributeValue{
-					"name":        {S: &name},
-					"description": {S: &emptyString},
-					"source_url":  {S: &emptyString},
-					"maturity":    {S: &emptyString},
-					"created_on":  {S: &emptyString},
-					"modified_on": {S: &emptyString},
+		db := &mocks.DynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{
+					Item: map[string]types.AttributeValue{
+						"name":        services.MustMarshallString(name, t),
+						"description": services.MustMarshallString(emptyString, t),
+						"source_url":  services.MustMarshallString(emptyString, t),
+						"maturity":    services.MustMarshallString(emptyString, t),
+						"created_on":  services.MustMarshallString(emptyString, t),
+						"modified_on": services.MustMarshallString(emptyString, t),
+					},
 				},
-			},
 			},
 			UpdateItemOut: &dynamodb.UpdateItemOutput{},
 		}
 
-		svc := &services.RegistrarService{Db: db}
+		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
 			Name:        "test",
@@ -104,21 +106,21 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected 1 call to UpdateItem, got %d", db.UpdateItemInvocations)
 		}
 
-		if db.TableName != services.RegistrarTableName {
-			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
+		if db.TableName != RegistrarTableName {
+			t.Errorf("Expected tableName to be %s, got %s", RegistrarTableName, db.TableName)
 		}
 
-		if res != services.ModuleRegistered {
-			t.Errorf("Expected %v, got %v.", services.ModuleRegistered, res)
+		if res != ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", ModuleRegistered, res)
 		}
 	})
 
 	t.Run("when GetItem fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{
+		db := &mocks.DynamoDB{
 			GetItemErrors: []error{errors.New("some error")},
 		}
 
-		svc := &services.RegistrarService{Db: db}
+		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
 			Name:        "test",
@@ -147,12 +149,12 @@ func Test_RegisterModule(t *testing.T) {
 	})
 
 	t.Run("when PutItem fails", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{
+		db := &mocks.DynamoDB{
 			GetItemOuts:  []*dynamodb.GetItemOutput{{}},
 			PutItemError: errors.New("some error"),
 		}
 
-		svc := &services.RegistrarService{Db: db}
+		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
 			Name:        "test",
@@ -171,12 +173,12 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected 1 call to PutItem, got %d", db.PutItemInvocations)
 		}
 
-		if db.TableName != services.RegistrarTableName {
-			t.Errorf("Expected tableName to be %s, got %s", services.RegistrarTableName, db.TableName)
+		if db.TableName != RegistrarTableName {
+			t.Errorf("Expected tableName to be %s, got %s", RegistrarTableName, db.TableName)
 		}
 
-		if err != services.ModuleRegisterError {
-			t.Errorf("Expected %v, got %v.", services.ModuleRegisterError, err)
+		if err != ModuleRegisterError {
+			t.Errorf("Expected %v, got %v.", ModuleRegisterError, err)
 		}
 	})
 }
@@ -188,9 +190,9 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when there is no error with table init", func(t *testing.T) {
-		db := &mocks.MockDynamoDB{}
+		db := &mocks.DynamoDB{}
 
-		rs := &services.RegistrarService{
+		rs := &RegistrarService{
 			Db: db,
 		}
 
@@ -213,11 +215,11 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 
 	t.Run("when Table initialization fails", func(t *testing.T) {
 
-		db := &mocks.MockDynamoDB{
+		db := &mocks.DynamoDB{
 			DescribeTableErrors: []error{errors.New("some error")},
 		}
 
-		rs := &services.RegistrarService{
+		rs := &RegistrarService{
 			Db: db,
 		}
 
@@ -225,8 +227,8 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 
 		err := rs.RegisterWithServer(s)
 
-		if err != services.ModuleTableInitializationError {
-			t.Errorf("Expected %v, got %v.", services.ModuleTableInitializationError, err)
+		if err != ModuleTableInitializationError {
+			t.Errorf("Expected %v, got %v.", ModuleTableInitializationError, err)
 		}
 
 		if db.DescribeTableInvocations != 1 {

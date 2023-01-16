@@ -1,12 +1,11 @@
 package mocks
 
 import (
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"context"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
-type MockDynamoDB struct {
-	dynamodbiface.DynamoDBAPI
+type DynamoDB struct {
 	DescribeTableInvocations int
 	TableName                string
 	DescribeTableOut         *dynamodb.DescribeTableOutput
@@ -29,7 +28,7 @@ type MockDynamoDB struct {
 	DeleteItemError          error
 }
 
-func (mdb *MockDynamoDB) DescribeTable(in *dynamodb.DescribeTableInput) (*dynamodb.DescribeTableOutput, error) {
+func (mdb *DynamoDB) DescribeTable(_ context.Context, in *dynamodb.DescribeTableInput, _ ...func(*dynamodb.Options)) (*dynamodb.DescribeTableOutput, error) {
 	var err error = nil
 	if len(mdb.DescribeTableErrors) > mdb.DescribeTableInvocations {
 		err = mdb.DescribeTableErrors[mdb.DescribeTableInvocations]
@@ -41,14 +40,13 @@ func (mdb *MockDynamoDB) DescribeTable(in *dynamodb.DescribeTableInput) (*dynamo
 	mdb.TableName = *in.TableName
 	return mdb.DescribeTableOut, err
 }
-
-func (mdb *MockDynamoDB) CreateTable(in *dynamodb.CreateTableInput) (*dynamodb.CreateTableOutput, error) {
+func (mdb *DynamoDB) CreateTable(_ context.Context, in *dynamodb.CreateTableInput, _ ...func(*dynamodb.Options)) (*dynamodb.CreateTableOutput, error) {
 	mdb.CreateTableInvocations++
 	mdb.Schema = in
 	return mdb.CreateTableOut, mdb.CreateTableError
 }
 
-func (mdb *MockDynamoDB) GetItem(in *dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
+func (mdb *DynamoDB) GetItem(_ context.Context, in *dynamodb.GetItemInput, _ ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
 	var err error = nil
 	if len(mdb.GetItemErrors) > mdb.GetItemInvocations {
 		err = mdb.GetItemErrors[mdb.GetItemInvocations]
@@ -64,21 +62,25 @@ func (mdb *MockDynamoDB) GetItem(in *dynamodb.GetItemInput) (*dynamodb.GetItemOu
 	return out, err
 }
 
-func (mdb *MockDynamoDB) PutItem(in *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
+func (mdb *DynamoDB) PutItem(_ context.Context, in *dynamodb.PutItemInput, _ ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
 	mdb.PutItemInvocations++
 	mdb.TableName = *in.TableName
 	return mdb.PutItemOut, mdb.PutItemError
 }
 
-func (mdb *MockDynamoDB) UpdateItem(in *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
+func (mdb *DynamoDB) UpdateItem(_ context.Context, in *dynamodb.UpdateItemInput, _ ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
 	mdb.UpdateItemInvocations++
 	mdb.TableName = *in.TableName
 	return mdb.UpdateItemOut, mdb.UpdateItemError
 
 }
 
-func (mdb *MockDynamoDB) DeleteItem(in *dynamodb.DeleteItemInput) (*dynamodb.DeleteItemOutput, error) {
+func (mdb *DynamoDB) DeleteItem(_ context.Context, in *dynamodb.DeleteItemInput, _ ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
 	mdb.DeleteItemInvocations++
 	mdb.TableName = *in.TableName
 	return mdb.DeleteItemOut, mdb.DeleteItemError
+}
+
+func (mdb *DynamoDB) Scan(_ context.Context, in *dynamodb.ScanInput, _ ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+	panic("Not implemented")
 }

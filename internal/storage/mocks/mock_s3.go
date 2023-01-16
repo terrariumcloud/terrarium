@@ -1,12 +1,11 @@
 package mocks
 
 import (
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"context"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type MockS3 struct {
-	s3iface.S3API
+type S3 struct {
 	HeadBucketInvocations   int
 	HeadBucketOut           *s3.HeadBucketOutput
 	HeadBucketError         error
@@ -24,27 +23,26 @@ type MockS3 struct {
 	GetObjectError          error
 }
 
-func (ms3 *MockS3) HeadBucket(in *s3.HeadBucketInput) (*s3.HeadBucketOutput, error) {
+func (ms3 *S3) HeadBucket(_ context.Context, in *s3.HeadBucketInput, _ ...func(*s3.Options)) (*s3.HeadBucketOutput, error) {
 	ms3.HeadBucketInvocations++
 	ms3.BucketName = *in.Bucket
 	return ms3.HeadBucketOut, ms3.HeadBucketError
 }
-
-func (ms3 *MockS3) CreateBucket(in *s3.CreateBucketInput) (*s3.CreateBucketOutput, error) {
+func (ms3 *S3) CreateBucket(_ context.Context, in *s3.CreateBucketInput, _ ...func(*s3.Options)) (*s3.CreateBucketOutput, error) {
 	ms3.CreateBucketInvocations++
 	ms3.BucketName = *in.Bucket
-	ms3.Region = *in.CreateBucketConfiguration.LocationConstraint
+	ms3.Region = string(in.CreateBucketConfiguration.LocationConstraint)
 	return ms3.CreateBucketOut, ms3.CreateBucketError
 }
 
-func (ms3 *MockS3) PutObject(in *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+func (ms3 *S3) PutObject(_ context.Context, in *s3.PutObjectInput, _ ...func(*s3.Options)) (*s3.PutObjectOutput, error) {
 	ms3.PutObjectInvocations++
 	ms3.BucketName = *in.Bucket
 	ms3.Filename = *in.Key
 	return ms3.PutObjectOut, ms3.PutObjectError
 }
 
-func (ms3 *MockS3) GetObject(in *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+func (ms3 *S3) GetObject(_ context.Context, in *s3.GetObjectInput, _ ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 	ms3.GetObjectInvocations++
 	ms3.BucketName = *in.Bucket
 	ms3.Filename = *in.Key

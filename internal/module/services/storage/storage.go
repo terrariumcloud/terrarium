@@ -1,32 +1,34 @@
-package services
+package storage
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"io"
 	"log"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	DefaultBucketName                    = "terrarium-modules"
-	DefaultStorageServiceDefaultEndpoint = "storage:3001"
-	DefaultChunkSize                     = 64 * 1024 // 64 KB
+	DefaultBucketName                          = "terrarium-modules"
+	DefaultStorageServiceDefaultEndpoint       = "storage:3001"
+	DefaultChunkSize                     int64 = 64 * 1024 // 64 KB
 )
 
 var (
-	BucketName             string = DefaultBucketName
-	StorageServiceEndpoint string = DefaultStorageServiceDefaultEndpoint
-	ChunkSize                     = DefaultChunkSize
+	BucketName             = DefaultBucketName
+	StorageServiceEndpoint = DefaultStorageServiceDefaultEndpoint
+	ChunkSize              = DefaultChunkSize
 
 	SourceZipUploaded = &terrarium.Response{Message: "Source zip uploaded successfully."}
 
@@ -39,26 +41,26 @@ var (
 )
 
 type StorageService struct {
-	UnimplementedStorageServer
-	S3         s3iface.S3API
+	services.UnimplementedStorageServer
+	Client     storage.AWSS3BucketClient
 	BucketName string
 	Region     string
 }
 
 // Registers StorageService with grpc server
 func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.S3); err != nil {
+	if err := storage.InitializeS3Bucket(s.BucketName, s.Region, s.Client); err != nil {
 		log.Println(err)
 		return BucketInitializationError
 	}
 
-	RegisterStorageServer(grpcServer, s)
+	services.RegisterStorageServer(grpcServer, s)
 
 	return nil
 }
 
 // Upload Source Zip to storage
-func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) error {
+func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZipServer) error {
 	log.Println("Uploading source zip.")
 	zip := []byte{}
 	var filename string
@@ -79,7 +81,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 				Body:   bytes.NewReader(zip),
 			}
 
-			if _, err := s.S3.PutObject(in); err != nil {
+			if _, err := s.Client.PutObject(context.TODO(), in); err != nil {
 				log.Println(err)
 				return UploadSourceZipError
 			}
@@ -99,7 +101,7 @@ func (s *StorageService) UploadSourceZip(server Storage_UploadSourceZipServer) e
 }
 
 // Download Source Zip from storage
-func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server Storage_DownloadSourceZipServer) error {
+func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server services.Storage_DownloadSourceZipServer) error {
 	log.Println("Downloading source zip.")
 	filename := fmt.Sprintf("%s/%s.zip", request.GetModule().Name, request.Module.GetVersion())
 
@@ -108,7 +110,7 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 		Key:    aws.String(filename),
 	}
 
-	out, err := s.S3.GetObject(in)
+	out, err := s.Client.GetObject(context.TODO(), in)
 
 	if err != nil {
 		log.Println(err)
@@ -119,10 +121,10 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 	buf.ReadFrom(out.Body)
 	bb := buf.Bytes()
 
-	outContentLength := int(*out.ContentLength)
-	if len(bb) == outContentLength {
+	outContentLength := out.ContentLength
+	if int64(len(bb)) == outContentLength {
 		res := &terrarium.SourceZipResponse{}
-		for i := 0; i < outContentLength; i += ChunkSize {
+		for i := int64(0); i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
 				res.ZipDataChunk = bb[i:outContentLength]
 			} else {

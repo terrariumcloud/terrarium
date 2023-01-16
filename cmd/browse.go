@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
+	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
 )
 
@@ -21,13 +22,13 @@ func init() {
 	//	"modules",
 	//	"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
 	//)
-	browseCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar", "", services.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
-	browseCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	browseCmd.Flags().StringVarP(&registrar.RegistrarServiceEndpoint, "registrar", "", registrar.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
+	browseCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	rootCmd.AddCommand(browseCmd)
 }
 
 func runBrowseServer(cmd *cobra.Command, args []string) {
 
 	restAPIServer := browse.New()
-	startRESTAPIService("Terrarium REST API Server for modules.v1 protocol", "", restAPIServer)
+	startRESTAPIService("browse", "", restAPIServer)
 }

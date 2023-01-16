@@ -1,34 +1,42 @@
 package storage
 
 import (
+	"context"
 	"log"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-// Create new S3 client
-func NewS3Client(key string, secret string, region string) s3iface.S3API {
-	sess, err := NewAwsSession(key, secret, region)
+type AWSS3BucketClient interface {
+	HeadBucket(ctx context.Context, params *s3.HeadBucketInput, optFns ...func(*s3.Options)) (*s3.HeadBucketOutput, error)
+	CreateBucket(ctx context.Context, params *s3.CreateBucketInput, optFns ...func(*s3.Options)) (*s3.CreateBucketOutput, error)
+	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
+	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+}
+
+// NewS3Client Create new S3 client
+func NewS3Client(key string, secret string, region string) *s3.Client {
+	cfg, err := NewAwsSession(key, secret, region)
 	if err != nil {
 		log.Fatalf("Unable to create AWS Session: %s", err.Error())
 	}
-	return s3.New(sess)
+	return s3.NewFromConfig(*cfg)
 }
 
 // InitializeS3Bucket - checks if bucket exists, in case it doesn't it creates it
-func InitializeS3Bucket(bucketName, region string, svc s3iface.S3API) error {
+func InitializeS3Bucket(bucketName, region string, svc AWSS3BucketClient) error {
 	in := &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	}
-	if _, err := svc.HeadBucket(in); err != nil {
+	if _, err := svc.HeadBucket(context.TODO(), in); err != nil {
 		log.Printf("Creating S3 bucket: %s", bucketName)
-		if _, err := svc.CreateBucket(&s3.CreateBucketInput{
-			ACL:    aws.String(s3.BucketCannedACLPrivate),
+		if _, err := svc.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 			Bucket: &bucketName,
-			CreateBucketConfiguration: &s3.CreateBucketConfiguration{
-				LocationConstraint: aws.String(region),
+			ACL:    types.BucketCannedACLPrivate,
+			CreateBucketConfiguration: &types.CreateBucketConfiguration{
+				LocationConstraint: types.BucketLocationConstraint(region),
 			},
 		}); err != nil {
 			return err

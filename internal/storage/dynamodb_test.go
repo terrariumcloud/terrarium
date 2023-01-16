@@ -2,11 +2,11 @@ package storage_test
 
 import (
 	"errors"
-	"testing"
-
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/terrariumcloud/terrarium/internal/mocks"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/terrariumcloud/terrarium/internal/storage"
+	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
+	"testing"
 )
 
 // Test_InitializeDynamoDb checks:
@@ -20,7 +20,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 	t.Run("when table exists", func(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
-		db := &mocks.MockDynamoDB{}
+		db := &mocks.DynamoDB{}
 
 		err := storage.InitializeDynamoDb(table, schema, db)
 
@@ -40,8 +40,8 @@ func Test_InitializeDynamoDb(t *testing.T) {
 	t.Run("when table does not exists", func(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
-		db := &mocks.MockDynamoDB{
-			DescribeTableErrors: []error{&dynamodb.ResourceNotFoundException{}},
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{&types.TableNotFoundException{}},
 		}
 
 		err := storage.InitializeDynamoDb(table, schema, db)
@@ -71,7 +71,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
 		someError := errors.New("some error")
-		db := &mocks.MockDynamoDB{
+		db := &mocks.DynamoDB{
 			DescribeTableErrors: []error{errors.New("some error")},
 		}
 
@@ -98,8 +98,8 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
 		someError := errors.New("some error")
-		db := &mocks.MockDynamoDB{
-			DescribeTableErrors: []error{&dynamodb.ResourceNotFoundException{}},
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{&types.TableNotFoundException{}},
 			CreateTableError:    someError,
 		}
 

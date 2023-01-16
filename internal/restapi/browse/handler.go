@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
+	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 	"log"
 	"net/http"
@@ -54,9 +56,9 @@ func (h *browseHttpService) healthHandler() http.Handler {
 // GetModuleListHandler will return a list of all published module.
 func (h *browseHttpService) getModuleListHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		conn, err := grpc.Dial(services.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(registrar.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", services.RegistrarServiceEndpoint, err)
+			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -81,17 +83,17 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		moduleName := v1.GetModuleNameFromRequest(r)
-		conn, err := grpc.Dial(services.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(registrar.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", services.RegistrarServiceEndpoint, err)
+			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
 			return
 		}
 		defer closeClient(conn)
 
-		connVersion, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		connVersion, err := grpc.Dial(version_manager.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", services.VersionManagerEndpoint, err)
+			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
 			return
 		}

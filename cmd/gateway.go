@@ -1,7 +1,12 @@
 package cmd
 
 import (
-	services "github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
+	"github.com/terrariumcloud/terrarium/internal/module/services/gateway"
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
+	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
+	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 
 	"github.com/spf13/cobra"
 )
@@ -15,17 +20,17 @@ var gatewayCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gatewayCmd)
-	gatewayCmd.Flags().StringVarP(&services.RegistrarServiceEndpoint, "registrar", "", services.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
-	gatewayCmd.Flags().StringVarP(&services.DependencyManagerEndpoint, "dependency-manager", "", services.DefaultDependencyManagerEndpoint, "GRPC Endpoint for Dependency Manager Service")
-	gatewayCmd.Flags().StringVarP(&services.VersionManagerEndpoint, "version-manager", "", services.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
-	gatewayCmd.Flags().StringVarP(&services.StorageServiceEndpoint, "storage", "", services.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
-	gatewayCmd.Flags().StringVarP(&services.TagManagerEndpoint, "tag-manager", "", services.DefaultTagManagerEndpoint, "GRPC Endpoint for Tag Service")
+	gatewayCmd.Flags().StringVarP(&registrar.RegistrarServiceEndpoint, "registrar", "", registrar.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
+	gatewayCmd.Flags().StringVarP(&dependency_manager.DependencyManagerEndpoint, "dependency-manager", "", dependency_manager.DefaultDependencyManagerEndpoint, "GRPC Endpoint for Dependency Manager Service")
+	gatewayCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	gatewayCmd.Flags().StringVarP(&storage.StorageServiceEndpoint, "storage", "", storage.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
+	gatewayCmd.Flags().StringVarP(&tag_manager.TagManagerEndpoint, "tag-manager", "", tag_manager.DefaultTagManagerEndpoint, "GRPC Endpoint for Tag Service")
 
 }
 
 func runGateway(cmd *cobra.Command, args []string) {
 
-	gatewayServer := &services.TerrariumGrpcGateway{}
+	gatewayServer := &gateway.TerrariumGrpcGateway{}
 
-	startGRPCService("Terrarium GRPC Gateway service", gatewayServer)
+	startGRPCService("api-gateway", gatewayServer)
 }
