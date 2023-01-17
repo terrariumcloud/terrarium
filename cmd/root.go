@@ -3,11 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
-	"os"
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
@@ -16,7 +14,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdk_tracy "go.opentelemetry.io/otel/sdk/trace"
 
@@ -44,7 +43,7 @@ var rootCmd = &cobra.Command{
 }
 
 // func InitOTELTracer() (*sdktrace.TracerProvider, error) {
-// 	exporter, err := stdoutTrace.New(stdoutTrace.WithPrettyPrint())
+// 	exporter, err := otlptrace.New(otlptrace.WithPrettyPrint())
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -68,13 +67,28 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-func newExporter(w io.Writer) (sdk_tracy.SpanExporter, error) {
-	log.Printf("Returning newExporter")
-	return stdouttrace.New(
-		stdouttrace.WithWriter(w),
-		// Use human-readable output.
-		// Do not print timestamps for the demo.
+var (
+	lsEndpoint    = ""
+	lsToken       = ""
+	lsEnvironment = "dev"
+)
+
+func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+	var headers = map[string]string{
+		"lightstep-access-token": lsToken,
+	}
+	fmt.Printf("Created exporter")
+	client := otlptracegrpc.NewClient(
+		otlptracegrpc.WithHeaders(headers),
+		otlptracegrpc.WithEndpoint(lsEndpoint),
 	)
+
+	exp, err := otlptrace.New(ctx, client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return exp, nil
 }
 
 func newResource(name string) *resource.Resource {
@@ -95,19 +109,16 @@ func startGRPCService(name string, service services.Service) {
 
 	log.Printf("Starting %s", name)
 
-	f, err := os.Create("traces.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
+	ctx := context.Background()
 
-	exp, err := newExporter(f)
+	exp, err := newExporter(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	tp := sdk_tracy.NewTracerProvider(
 		sdk_tracy.WithSyncer(exp),
+		// sdk_tracy.WithBatcher(exp),
 		sdk_tracy.WithResource(newResource(name)),
 	)
 	defer func() {
@@ -116,7 +127,6 @@ func startGRPCService(name string, service services.Service) {
 		}
 	}()
 
-	log.Printf("Will execute TP")
 	otel.SetTracerProvider(tp)
 
 	listener, err := net.Listen("tcp4", endpoint)
@@ -142,7 +152,29 @@ func startGRPCService(name string, service services.Service) {
 
 func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
 	log.Printf("Starting %s", name)
-	log.Println(fmt.Sprintf("Listening on %s", endpoint))
+
+	ctx := context.Background()
+
+	exp, err := newExporter(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tp := sdk_tracy.NewTracerProvider(
+		sdk_tracy.WithSyncer(exp),
+		// sdk_tracy.WithBatcher(exp),
+		sdk_tracy.WithResource(newResource(name)),
+	)
+	defer func() {
+		if err := tp.Shutdown(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	otel.SetTracerProvider(tp)
+
+	log.Println(fmt.Printf("Listening on %s", endpoint))
+
 	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
 
 }

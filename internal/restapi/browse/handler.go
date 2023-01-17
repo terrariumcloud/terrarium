@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
-	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
+	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -18,6 +19,8 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
 type browseHttpService struct {
@@ -27,6 +30,7 @@ type browseHttpService struct {
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
 	router := h.createRouter(mountPath)
+	router.Use(otelmux.Middleware("browse"))
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 

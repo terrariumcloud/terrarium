@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
@@ -12,13 +13,16 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/errgo.v2/errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/errgo.v2/errors"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
 type modulesV1HttpService struct {
@@ -40,6 +44,7 @@ type ModuleVersionResponse struct {
 
 func (h *modulesV1HttpService) GetHttpHandler(mountPath string) http.Handler {
 	router := h.createRouter(mountPath)
+	router.Use(otelmux.Middleware("modules-v1"))
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 

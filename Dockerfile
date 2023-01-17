@@ -13,7 +13,7 @@ RUN go build -o terrarium -mod vendor
 RUN apt-get update && \
     apt-get install -y ca-certificates
 
-FROM scratch
+FROM alpine
 COPY --from=build /workspace/terrarium /
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ENTRYPOINT [ "/terrarium" ]
