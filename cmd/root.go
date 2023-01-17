@@ -54,20 +54,7 @@ var rootCmd = &cobra.Command{
 // 	)
 // 	otel.SetTracerProvider(tp)
 // 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-// func InitOTELTracer() (*sdktrace.TracerProvider, error) {
-// 	exporter, err := stdoutTrace.New(stdoutTrace.WithPrettyPrint())
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	tp := sdktrace.NewTracerProvider(
-// 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-// 		sdktrace.WithBatcher(exporter),
-// 	)
-// 	otel.SetTracerProvider(tp)
-// 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-// 	return tp, nil
-// }
 // 	return tp, nil
 // }
 
@@ -111,13 +98,11 @@ func startGRPCService(name string, service services.Service) {
 	f, err := os.Create("traces.txt")
 	if err != nil {
 		log.Fatal(err)
-		log.Printf("Failed 117")
 	}
 	defer f.Close()
 
 	exp, err := newExporter(f)
 	if err != nil {
-		log.Printf("Failed 122")
 		log.Fatal(err)
 	}
 
@@ -126,7 +111,6 @@ func startGRPCService(name string, service services.Service) {
 		sdk_tracy.WithResource(newResource(name)),
 	)
 	defer func() {
-		log.Printf("Failed 132")
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Fatal(err)
 		}
