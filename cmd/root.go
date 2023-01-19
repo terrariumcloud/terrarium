@@ -54,7 +54,7 @@ func init() {
 
 var (
 	lsEndpoint    = "ingest.lightstep.com"
-	lsToken       = "iIFsJNz6Bfr6oMLuPJgaT+mXEQUdIrpdNej70rbJgoD7OJjAMOZxMCt4m/xGVkWw9yBeugOW2//To8DWuouXwonumB0HS+wl2Mrm3pWs"
+	lsToken       = ""
 	lsEnvironment = "dev"
 )
 
