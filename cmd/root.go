@@ -19,13 +19,11 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
-
-const OtelTracerName = "terrarium-tracer"
 
 const (
 	defaultEndpoint = "0.0.0.0:3001"
@@ -53,7 +51,7 @@ func init() {
 }
 
 var (
-	lsEndpoint    = "ingest.lightstep.com"
+	lsEndpoint    = "ingest.lightstep.com:443"
 	lsToken       = ""
 	lsEnvironment = "dev"
 )
@@ -77,15 +75,18 @@ func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 }
 
 func newResource(name string) *resource.Resource {
-	r, _ := resource.Merge(
+	r, err := resource.Merge(
 		resource.Default(),
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(name),
-			semconv.ServiceVersionKey.String("v0.1.0"),
+			semconv.ServiceVersionKey.String("1.0.2"),
 			attribute.String("environment", lsEnvironment),
 		),
 	)
+	if err != nil {
+		log.Fatalf("The SchemaURL of the resources is not merged.")
+	}
 	log.Printf("Returning newResource")
 	return r
 }
