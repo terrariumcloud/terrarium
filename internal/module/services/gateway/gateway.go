@@ -2,20 +2,21 @@ package gateway
 
 import (
 	"context"
+	"io"
+	"log"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	"io"
-	"log"
 
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -44,7 +45,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 // Register new module with Registrar service
 func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Register => Registrar")
-	conn, err := grpc.Dial(registrar.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -71,7 +72,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 
 // Register PublishTag with Registrar service
 func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
-	conn, err := grpc.Dial(tag_manager.TagManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(tag_manager.TagManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -98,7 +99,7 @@ func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, reques
 // BeginVersion creates new version with Version Manager service
 func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Begin version => Version Manager")
-	conn, err := grpc.Dial(version_manager.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -126,8 +127,7 @@ func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, requ
 // EndVersion publishes/aborts with Version Manger service
 func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.Response, error) {
 	log.Println("End version => Version Manager")
-	conn, err := grpc.Dial(version_manager.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
+	conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 	if err != nil {
 		log.Println(err)
 		return nil, ConnectToVersionManagerError
@@ -173,7 +173,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 // UploadSourceZip uploads source zip to Storage service
 func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
 	log.Println("Upload source zip => Storage")
-	conn, err := grpc.Dial(storage.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -232,7 +232,7 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 // DownloadSourceZip downloads source zip from Storage service
 func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
 	log.Println("Download source zip => Storage")
-	conn, err := grpc.Dial(storage.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -281,7 +281,7 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.D
 // RegisterModuleDependencies registers Module dependencies with Dependency Manager service
 func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register module dependencies => Dependency Manager")
-	conn, err := grpc.Dial(dependency_manager.DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -309,7 +309,7 @@ func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context
 // RegisterContainerDependencies registers Container dependencies with Dependency Manager service
 func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register container dependencies => Dependency Manager")
-	conn, err := grpc.Dial(dependency_manager.DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -343,7 +343,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium
 // RetrieveContainerDependenciesV2 retrieves Container dependencies from Dependency Manager service
 func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
 	log.Println("Retrieve container dependencies => Dependency Manager")
-	conn, err := grpc.Dial(dependency_manager.DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
@@ -359,7 +359,8 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrari
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
 func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client services.DependencyManagerClient) error {
-	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
+	ctx := metadata.AppendToOutgoingContext(server.Context(), "k", "v")
+	downStream, downErr := client.RetrieveContainerDependencies(ctx, request)
 
 	if downErr != nil {
 		return downErr
@@ -391,7 +392,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(reques
 // Retrieve Module dependences from Dependency Manager service
 func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer) error {
 	log.Println("Retrieve module dependencies => Dependency Manager")
-	conn, err := grpc.Dial(dependency_manager.DependencyManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
