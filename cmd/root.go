@@ -9,7 +9,7 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
-	services "github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
-	sdk_tracy "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
@@ -31,7 +31,7 @@ const (
 	defaultEndpoint = "0.0.0.0:3001"
 )
 
-var endpoint string = defaultEndpoint
+var endpoint = defaultEndpoint
 var awsAccessKey string
 var awsSecretKey string
 var awsRegion string
@@ -41,21 +41,6 @@ var rootCmd = &cobra.Command{
 	Short: "Terrarium Services",
 	Long:  "Runs backend that exposes Terrarium Services",
 }
-
-// func InitOTELTracer() (*sdktrace.TracerProvider, error) {
-// 	exporter, err := otlptrace.New(otlptrace.WithPrettyPrint())
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	tp := sdktrace.NewTracerProvider(
-// 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-// 		sdktrace.WithBatcher(exporter),
-// 	)
-// 	otel.SetTracerProvider(tp)
-// 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-// 	return tp, nil
-// }
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", defaultEndpoint, "Endpoint")
@@ -68,8 +53,8 @@ func init() {
 }
 
 var (
-	lsEndpoint    = ""
-	lsToken       = ""
+	lsEndpoint    = "ingest.lightstep.com"
+	lsToken       = "iIFsJNz6Bfr6oMLuPJgaT+mXEQUdIrpdNej70rbJgoD7OJjAMOZxMCt4m/xGVkWw9yBeugOW2//To8DWuouXwonumB0HS+wl2Mrm3pWs"
 	lsEnvironment = "dev"
 )
 
@@ -98,7 +83,7 @@ func newResource(name string) *resource.Resource {
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(name),
 			semconv.ServiceVersionKey.String("v0.1.0"),
-			attribute.String("environment", "dev"),
+			attribute.String("environment", lsEnvironment),
 		),
 	)
 	log.Printf("Returning newResource")
@@ -111,23 +96,23 @@ func startGRPCService(name string, service services.Service) {
 
 	ctx := context.Background()
 
-	exp, err := newExporter(ctx)
+	traceExporter, err := newExporter(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tp := sdk_tracy.NewTracerProvider(
-		sdk_tracy.WithSyncer(exp),
-		// sdk_tracy.WithBatcher(exp),
-		sdk_tracy.WithResource(newResource(name)),
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithBatcher(traceExporter),
+		trace.WithResource(newResource(name)),
 	)
 	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
+		if err := tracerProvider.Shutdown(context.Background()); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	otel.SetTracerProvider(tp)
+	otel.SetTracerProvider(tracerProvider)
 
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
@@ -147,7 +132,6 @@ func startGRPCService(name string, service services.Service) {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed: %v", err)
 	}
-
 }
 
 func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
@@ -155,28 +139,25 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 
 	ctx := context.Background()
 
-	exp, err := newExporter(ctx)
+	traceExporter, err := newExporter(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tp := sdk_tracy.NewTracerProvider(
-		sdk_tracy.WithSyncer(exp),
-		// sdk_tracy.WithBatcher(exp),
-		sdk_tracy.WithResource(newResource(name)),
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithBatcher(traceExporter),
+		trace.WithResource(newResource(name)),
 	)
 	defer func() {
-		if err := tp.Shutdown(ctx); err != nil {
+		if err := tracerProvider.Shutdown(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
-
-	otel.SetTracerProvider(tp)
+	otel.SetTracerProvider(tracerProvider)
 
 	log.Println(fmt.Printf("Listening on %s", endpoint))
-
 	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
-
 }
 
 // Execute root command

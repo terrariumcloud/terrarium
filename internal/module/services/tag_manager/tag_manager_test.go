@@ -74,7 +74,7 @@ func Test_PublishTag(t *testing.T) {
 
 	t.Run("when tag is published", func(t *testing.T) {
 		db := &mocks.DynamoDB{
-			GetItemOuts: []*dynamodb.GetItemOutput{},
+			GetItemOuts: []*dynamodb.GetItemOutput{{}},
 		}
 
 		svc := &TagManagerService{Db: db}

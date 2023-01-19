@@ -275,15 +275,14 @@ func Test_DownloadSourceZip(t *testing.T) {
 		}
 	})
 
-	t.Run("when wrong content lenght is read", func(t *testing.T) {
-		var length int64 = 1000
-		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
+	t.Run("when wrong content length is read", func(t *testing.T) {
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
 
-		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: 10001}}
 
 		svc := &StorageService{Client: s3Client}
 
-		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, length)}
+		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, 1000)}
 
 		mds := &mocks.MockDownloadSourceZipServer{SendResponse: res}
 
