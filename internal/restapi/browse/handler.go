@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 type browseHttpService struct {
@@ -57,10 +59,20 @@ func (h *browseHttpService) healthHandler() http.Handler {
 	})
 }
 
+// createGRPCConnection takes an endpoint and returns a grpc connection
+func createGRPCConnection(target string) (*grpc.ClientConn, error) {
+	return grpc.Dial(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
+}
+
 // GetModuleListHandler will return a list of all published module.
 func (h *browseHttpService) getModuleListHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		conn, err := grpc.Dial(registrar.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := createGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
@@ -87,7 +99,7 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		moduleName := v1.GetModuleNameFromRequest(r)
-		conn, err := grpc.Dial(registrar.RegistrarServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := createGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
@@ -95,7 +107,7 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 		}
 		defer closeClient(conn)
 
-		connVersion, err := grpc.Dial(version_manager.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		connVersion, err := createGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
