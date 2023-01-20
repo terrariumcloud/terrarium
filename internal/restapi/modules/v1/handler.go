@@ -18,8 +18,6 @@ import (
 	"net/http"
 	"os"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/errgo.v2/errors"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -80,7 +78,7 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getModuleVersionHandler")
 		moduleName := GetModuleNameFromRequest(r)
-		conn, err := grpc.Dial(version_manager.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
@@ -116,7 +114,7 @@ func (h *modulesV1HttpService) downloadModuleHandler() http.Handler {
 // makes the stored registry code available to the client
 func (h *modulesV1HttpService) archiveHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		conn, err := grpc.Dial(storage.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect: %v", err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the storage backend service"), http.StatusInternalServerError)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
@@ -13,7 +14,6 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -50,20 +50,15 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-var (
-	lsEndpoint    = "ingest.lightstep.com:443"
-	lsToken       = ""
-	lsEnvironment = "dev"
-)
-
 func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
-	var headers = map[string]string{
-		"lightstep-access-token": lsToken,
+	otelEndpoint := "ingest.lightstep.com:443"
+	if otelEndpointEnv, found := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); found {
+		otelEndpoint = otelEndpointEnv
 	}
+
 	fmt.Printf("Created exporter")
 	client := otlptracegrpc.NewClient(
-		otlptracegrpc.WithHeaders(headers),
-		otlptracegrpc.WithEndpoint(lsEndpoint),
+		otlptracegrpc.WithEndpoint(otelEndpoint),
 	)
 
 	exp, err := otlptrace.New(ctx, client)
@@ -75,15 +70,22 @@ func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 }
 
 func newResource(name string) *resource.Resource {
+	var resources []*resource.Resource
+	resources = append(
+		resources,
+		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)))
+
+	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
+		resources = append(
+			resources,
+			resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(serviceVersion)))
+	}
 	r, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(name),
-			semconv.ServiceVersionKey.String("1.0.2"),
-			attribute.String("environment", lsEnvironment),
-		),
+		resources...,
+	// attribute.String("environment", lsEnvironment),
 	)
+
 	if err != nil {
 		log.Fatalf("The SchemaURL of the resources is not merged.")
 	}
