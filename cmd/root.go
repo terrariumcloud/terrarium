@@ -18,8 +18,8 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	noop "go.opentelemetry.io/otel/trace"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -51,46 +51,43 @@ func init() {
 }
 
 func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
-	otelEndpoint := "ingest.lightstep.com:443"
-	if otelEndpointEnv, found := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); found {
-		otelEndpoint = otelEndpointEnv
+	if otelEndpoint, found := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); found {
+		fmt.Printf("Created exporter")
+		client := otlptracegrpc.NewClient(
+			otlptracegrpc.WithEndpoint(otelEndpoint),
+		)
+
+		exp, err := otlptrace.New(ctx, client)
+		if err != nil {
+			return nil, err
+		}
+		return exp, nil
+	} else {
+		return nil, nil
 	}
-
-	fmt.Printf("Created exporter")
-	client := otlptracegrpc.NewClient(
-		otlptracegrpc.WithEndpoint(otelEndpoint),
-	)
-
-	exp, err := otlptrace.New(ctx, client)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return exp, nil
 }
 
 func newResource(name string) *resource.Resource {
-	var resources []*resource.Resource
-	resources = append(
-		resources,
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)))
-
-	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
-		resources = append(
-			resources,
-			resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(serviceVersion)))
-	}
-	r, err := resource.Merge(
+	res, err := resource.Merge(
 		resource.Default(),
-		resources...,
-	// attribute.String("environment", lsEnvironment),
+		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)),
 	)
-
 	if err != nil {
 		log.Fatalf("The SchemaURL of the resources is not merged.")
 	}
+	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
+		res, err = resource.Merge(
+			res,
+			resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(serviceVersion)),
+		)
+		if err != nil {
+			log.Fatalf("The SchemaURL of the resources is not merged.")
+		}
+	} else {
+		log.Println("Warning: No version provided")
+	}
 	log.Printf("Returning newResource")
-	return r
+	return res
 }
 
 func startGRPCService(name string, service services.Service) {
@@ -104,18 +101,21 @@ func startGRPCService(name string, service services.Service) {
 		log.Fatal(err)
 	}
 
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithSampler(trace.AlwaysSample()),
-		trace.WithBatcher(traceExporter),
-		trace.WithResource(newResource(name)),
-	)
-	defer func() {
-		if err := tracerProvider.Shutdown(context.Background()); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	otel.SetTracerProvider(tracerProvider)
+	if traceExporter != nil {
+		tracerProvider := trace.NewTracerProvider(
+			trace.WithSampler(trace.AlwaysSample()),
+			trace.WithBatcher(traceExporter),
+			trace.WithResource(newResource(name)),
+		)
+		defer func() {
+			if err := tracerProvider.Shutdown(context.Background()); err != nil {
+				log.Fatal(err)
+			}
+		}()
+		otel.SetTracerProvider(tracerProvider)
+	} else {
+		otel.SetTracerProvider(noop.NewNoopTracerProvider())
+	}
 
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
@@ -147,17 +147,21 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 		log.Fatal(err)
 	}
 
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithSampler(trace.AlwaysSample()),
-		trace.WithBatcher(traceExporter),
-		trace.WithResource(newResource(name)),
-	)
-	defer func() {
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	otel.SetTracerProvider(tracerProvider)
+	if traceExporter != nil {
+		tracerProvider := trace.NewTracerProvider(
+			trace.WithSampler(trace.AlwaysSample()),
+			trace.WithBatcher(traceExporter),
+			trace.WithResource(newResource(name)),
+		)
+		defer func() {
+			if err := tracerProvider.Shutdown(context.Background()); err != nil {
+				log.Fatal(err)
+			}
+		}()
+		otel.SetTracerProvider(tracerProvider)
+	} else {
+		otel.SetTracerProvider(noop.NewNoopTracerProvider())
+	}
 
 	log.Println(fmt.Printf("Listening on %s", endpoint))
 	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
