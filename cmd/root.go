@@ -25,6 +25,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	buildVersion string
+)
+
 const (
 	defaultEndpoint = "0.0.0.0:3001"
 )
@@ -50,7 +54,7 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("aws-region")
 }
 
-func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 	if otelEndpoint, found := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); found {
 		fmt.Printf("Created exporter")
 		client := otlptracegrpc.NewClient(
@@ -67,7 +71,7 @@ func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 	}
 }
 
-func newResource(name string) *resource.Resource {
+func newServiceResource(name string) *resource.Resource {
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)),
@@ -75,18 +79,20 @@ func newResource(name string) *resource.Resource {
 	if err != nil {
 		log.Fatalf("The SchemaURL of the resources is not merged.")
 	}
+	versionInfo := buildVersion
 	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
-		res, err = resource.Merge(
-			res,
-			resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(serviceVersion)),
-		)
-		if err != nil {
-			log.Fatalf("The SchemaURL of the resources is not merged.")
-		}
-	} else {
-		log.Println("Warning: No version provided")
+		log.Println("Warning: build time version overriden by environment variable")
+		versionInfo = serviceVersion
+
 	}
-	log.Printf("Returning newResource")
+	res, err = resource.Merge(
+		res,
+		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(versionInfo)),
+	)
+	if err != nil {
+		log.Fatalf("The SchemaURL of the resources is not merged.")
+	}
+
 	return res
 }
 
@@ -96,7 +102,7 @@ func startGRPCService(name string, service services.Service) {
 
 	ctx := context.Background()
 
-	traceExporter, err := newExporter(ctx)
+	traceExporter, err := newTraceExporter(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,7 +111,7 @@ func startGRPCService(name string, service services.Service) {
 		tracerProvider := trace.NewTracerProvider(
 			trace.WithSampler(trace.AlwaysSample()),
 			trace.WithBatcher(traceExporter),
-			trace.WithResource(newResource(name)),
+			trace.WithResource(newServiceResource(name)),
 		)
 		defer func() {
 			if err := tracerProvider.Shutdown(context.Background()); err != nil {
@@ -142,7 +148,7 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 
 	ctx := context.Background()
 
-	traceExporter, err := newExporter(ctx)
+	traceExporter, err := newTraceExporter(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,7 +157,7 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 		tracerProvider := trace.NewTracerProvider(
 			trace.WithSampler(trace.AlwaysSample()),
 			trace.WithBatcher(traceExporter),
-			trace.WithResource(newResource(name)),
+			trace.WithResource(newServiceResource(name)),
 		)
 		defer func() {
 			if err := tracerProvider.Shutdown(context.Background()); err != nil {
@@ -168,6 +174,7 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 }
 
 // Execute root command
-func Execute() {
+func Execute(serviceVersion string) {
+	buildVersion = serviceVersion
 	cobra.CheckErr(rootCmd.Execute())
 }
