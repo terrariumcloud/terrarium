@@ -36,9 +36,7 @@ jobs:
         context: .
         push: true
         tags: ghcr.io/terrariumcloud/terrarium:latest,ghcr.io/terrariumcloud/terrarium:${{ steps.tag_version.outputs.new_tag }}
-        build-args:
-          - BUILD_INFO_VERSION=${{ steps.tag_version.outputs.new_tag }}
-
+        build-args: "BUILD_INFO_VERSION=${{ steps.tag_version.outputs.new_tag }}"
     
     - name: Create a GitHub release
       uses: 3rd-Party-Actions/release-action@v1
