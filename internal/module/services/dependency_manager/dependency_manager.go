@@ -1,16 +1,18 @@
-package services
+package dependency_manager
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,8 +45,8 @@ var (
 )
 
 type DependencyManagerService struct {
-	UnimplementedDependencyManagerServer
-	Db              dynamodbiface.DynamoDBAPI
+	services.UnimplementedDependencyManagerServer
+	Db              storage.DynamoDBTableCreator
 	ModuleTable     string
 	ModuleSchema    *dynamodb.CreateTableInput
 	ContainerTable  string
@@ -62,7 +64,7 @@ type ContainerDependencies struct {
 	Images  map[string]*terrarium.ContainerImageDetails `json:"images" bson:"images" dynamodbav:"images"`
 }
 
-// Registers DependencyManagerService with grpc server
+// RegisterWithServer Registers DependencyManagerService with grpc server
 func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.ModuleTable, s.ModuleSchema, s.Db); err != nil {
 		log.Println(err)
@@ -74,13 +76,13 @@ func (s *DependencyManagerService) RegisterWithServer(grpcServer grpc.ServiceReg
 		return ContainerDependenciesTableInitializationError
 	}
 
-	RegisterDependencyManagerServer(grpcServer, s)
+	services.RegisterDependencyManagerServer(grpcServer, s)
 
 	return nil
 }
 
-func (s *DependencyManagerService) registerDependencies(tableName string, in interface{}) error {
-	marshalledItem, err := dynamodbattribute.MarshalMap(in)
+func (s *DependencyManagerService) registerDependencies(ctx context.Context, tableName string, in interface{}) error {
+	marshalledItem, err := attributevalue.MarshalMap(in)
 	if err != nil {
 		log.Println(err)
 		return MarshalDependenciesError
@@ -91,7 +93,7 @@ func (s *DependencyManagerService) registerDependencies(tableName string, in int
 		Item:      marshalledItem,
 	}
 
-	if _, err = s.Db.PutItem(item); err != nil {
+	if _, err = s.Db.PutItem(ctx, item); err != nil {
 		log.Println(err)
 		return RegisterDependenciesError
 	}
@@ -107,7 +109,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 		Version: request.Module.GetVersion(),
 		Modules: request.GetDependencies(),
 	}
-	err := s.registerDependencies(s.ModuleTable, item)
+	err := s.registerDependencies(ctx, s.ModuleTable, item)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +117,7 @@ func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Contex
 	return ModuleDependenciesRegistered, err
 }
 
-// Registers Container dependencies in Terrarium
+// RegisterContainerDependencies Registers Container dependencies in Terrarium
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Printf("Registering container dependencies for %s/%s.\n", request.Module.GetName(), request.Module.GetVersion())
 
@@ -125,7 +127,7 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 		Images:  request.Images,
 	}
 
-	err := s.registerDependencies(s.ContainerTable, item)
+	err := s.registerDependencies(ctx, s.ContainerTable, item)
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +135,8 @@ func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Con
 	return ContainerDependenciesRegistered, nil
 }
 
-// Retrieve Container dependencies from Terrarium
-func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequestV2, server DependencyManager_RetrieveContainerDependenciesServer) error {
+// RetrieveContainerDependencies Retrieve Container dependencies from Terrarium
+func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequestV2, server services.DependencyManager_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieving container dependencies.")
 	controlCh := make(chan *terrarium.Module, 250)
 	controlCh <- request.Module
@@ -144,12 +146,12 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 	for moreModulesToProcess {
 		select {
 		case moduleToProcess := <-controlCh:
-			dep, err := s.GetModuleDependencies(moduleToProcess)
+			dep, err := s.GetModuleDependencies(context.TODO(), moduleToProcess)
 			if err != nil {
 				return err
 			}
 
-			images, err := s.GetContainerDependencies(moduleToProcess)
+			images, err := s.GetContainerDependencies(context.TODO(), moduleToProcess)
 			if err != nil {
 				return err
 			}
@@ -177,17 +179,35 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 	return nil
 }
 
-func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Module) ([]*terrarium.Module, error) {
+func (s *DependencyManagerService) GetModuleKey(module *terrarium.Module) (map[string]types.AttributeValue, error) {
+	moduleName, err := attributevalue.Marshal(module.GetName())
+	if err != nil {
+		return map[string]types.AttributeValue{}, err
+	}
+	moduleVersion, err := attributevalue.Marshal(module.GetVersion())
+	if err != nil {
+		return map[string]types.AttributeValue{}, err
+	}
+	return map[string]types.AttributeValue{
+		"name":    moduleName,
+		"version": moduleVersion,
+	}, nil
+}
+
+func (s *DependencyManagerService) GetModuleDependencies(ctx context.Context, module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Printf("GetModuleDependencies for module: %s/%s", module.GetName(), module.GetVersion())
-	in := &dynamodb.GetItemInput{
-		TableName: aws.String(s.ModuleTable),
-		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(module.GetName())},
-			"version": {S: aws.String(module.GetVersion())},
-		},
+	moduleKey, err := s.GetModuleKey(module)
+	if err != nil {
+		log.Println(err)
+		return nil, GetModuleDependenciesError
 	}
 
-	out, err := s.Db.GetItem(in)
+	in := &dynamodb.GetItemInput{
+		TableName: aws.String(s.ModuleTable),
+		Key:       moduleKey,
+	}
+
+	out, err := s.Db.GetItem(ctx, in)
 
 	if err != nil {
 		log.Println(err)
@@ -196,7 +216,7 @@ func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Modul
 
 	dependencies := ModuleDependencies{}
 
-	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
+	if err := attributevalue.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
 		return nil, UnmarshalModuleDependenciesError
 	}
@@ -204,24 +224,26 @@ func (s *DependencyManagerService) GetModuleDependencies(module *terrarium.Modul
 	return dependencies.Modules, nil
 }
 
-func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
+func (s *DependencyManagerService) GetContainerDependencies(ctx context.Context, module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
 	log.Printf("GetContainerDependencies for module: %s/%s\n", module.GetName(), module.GetVersion())
+	moduleKey, err := s.GetModuleKey(module)
+	if err != nil {
+		log.Println(err)
+		return nil, GetModuleDependenciesError
+	}
 	in := &dynamodb.GetItemInput{
 		TableName: aws.String(s.ContainerTable),
-		Key: map[string]*dynamodb.AttributeValue{
-			"name":    {S: aws.String(module.GetName())},
-			"version": {S: aws.String(module.GetVersion())},
-		},
+		Key:       moduleKey,
 	}
 
-	out, err := s.Db.GetItem(in)
+	out, err := s.Db.GetItem(ctx, in)
 	if err != nil {
 		log.Println(err)
 		return nil, GetContainerDependenciesError
 	}
 
 	dependencies := ContainerDependencies{}
-	if err := dynamodbattribute.UnmarshalMap(out.Item, &dependencies); err != nil {
+	if err := attributevalue.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
 		return nil, UnmarshalContainerDependenciesError
 	}
@@ -229,8 +251,8 @@ func (s *DependencyManagerService) GetContainerDependencies(module *terrarium.Mo
 	return dependencies.Images, nil
 }
 
-// Retrieve Module dependencies from Terrarium
-func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server DependencyManager_RetrieveModuleDependenciesServer) error {
+// RetrieveModuleDependencies Retrieve Module dependencies from Terrarium
+func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server services.DependencyManager_RetrieveModuleDependenciesServer) error {
 	controlCh := make(chan *terrarium.Module, 250)
 	controlCh <- request.Module
 
@@ -239,7 +261,7 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 	for moreModulesToProcess {
 		select {
 		case moduleToProcess := <-controlCh:
-			dep, err := s.GetModuleDependencies(moduleToProcess)
+			dep, err := s.GetModuleDependencies(context.TODO(), moduleToProcess)
 			if err != nil {
 				return err
 			}
@@ -271,27 +293,27 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 // that can be used to create table if it does not exist
 func GetDependenciesSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+		AttributeDefinitions: []types.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+				AttributeType: types.ScalarAttributeTypeS,
 			},
 			{
 				AttributeName: aws.String("version"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+				AttributeType: types.ScalarAttributeTypeS,
 			},
 		},
-		KeySchema: []*dynamodb.KeySchemaElement{
+		KeySchema: []types.KeySchemaElement{
 			{
 				AttributeName: aws.String("name"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       types.KeyTypeHash,
 			},
 			{
 				AttributeName: aws.String("version"),
-				KeyType:       aws.String("RANGE"),
+				KeyType:       types.KeyTypeRange,
 			},
 		},
 		TableName:   aws.String(table),
-		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		BillingMode: types.BillingModePayPerRequest,
 	}
 }

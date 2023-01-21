@@ -4,19 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/errgo.v2/errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"gopkg.in/errgo.v2/errors"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
 type modulesV1HttpService struct {
@@ -38,6 +42,7 @@ type ModuleVersionResponse struct {
 
 func (h *modulesV1HttpService) GetHttpHandler(mountPath string) http.Handler {
 	router := h.createRouter(mountPath)
+	router.Use(otelmux.Middleware("modules-v1"))
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
@@ -73,9 +78,9 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getModuleVersionHandler")
 		moduleName := GetModuleNameFromRequest(r)
-		conn, err := grpc.Dial(services.VersionManagerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", services.VersionManagerEndpoint, err)
+			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -109,7 +114,7 @@ func (h *modulesV1HttpService) downloadModuleHandler() http.Handler {
 // makes the stored registry code available to the client
 func (h *modulesV1HttpService) archiveHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		conn, err := grpc.Dial(services.StorageServiceEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect: %v", err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the storage backend service"), http.StatusInternalServerError)

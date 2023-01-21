@@ -1,13 +1,13 @@
-package services_test
+package gateway
 
 import (
 	"context"
 	"errors"
+	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
+	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"io"
 	"testing"
 
-	"github.com/terrariumcloud/terrarium/internal/mocks"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 )
 
@@ -20,7 +20,7 @@ func Test_RegisterWithClient(t *testing.T) {
 	t.Run("when client returns response", func(t *testing.T) {
 		response := &module.Response{}
 		client := &mocks.MockRegistrarClient{RegisterResponse: response}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		res, err := gw.RegisterWithClient(context.TODO(), &module.RegisterModuleRequest{}, client)
 
@@ -40,7 +40,7 @@ func Test_RegisterWithClient(t *testing.T) {
 	t.Run("when client returns error", func(t *testing.T) {
 		expected := errors.New("Test")
 		client := &mocks.MockRegistrarClient{RegisterError: expected}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		_, actual := gw.RegisterWithClient(context.TODO(), &module.RegisterModuleRequest{}, client)
 
@@ -63,7 +63,7 @@ func Test_BeginVersionWithClient(t *testing.T) {
 	t.Run("when client returns response", func(t *testing.T) {
 		response := &module.Response{}
 		client := &mocks.MockVersionManagerClient{BeginVersionResponse: response}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		res, err := gw.BeginVersionWithClient(context.TODO(), &module.BeginVersionRequest{}, client)
 
@@ -83,7 +83,7 @@ func Test_BeginVersionWithClient(t *testing.T) {
 	t.Run("when client returns error", func(t *testing.T) {
 		expected := errors.New("Test")
 		client := &mocks.MockVersionManagerClient{BeginVersionError: expected}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		_, actual := gw.BeginVersionWithClient(context.TODO(), &module.BeginVersionRequest{}, client)
 
@@ -109,7 +109,7 @@ func Test_EndVersionWithClient(t *testing.T) {
 	t.Run("when client returns publish response", func(t *testing.T) {
 		response := &module.Response{}
 		client := &mocks.MockVersionManagerClient{PublishVersionResponse: response}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 		req := &module.EndVersionRequest{
 			Action: module.EndVersionRequest_PUBLISH,
 			Module: &module.Module{},
@@ -133,7 +133,7 @@ func Test_EndVersionWithClient(t *testing.T) {
 	t.Run("when client returns publish error", func(t *testing.T) {
 		expected := errors.New("Test")
 		client := &mocks.MockVersionManagerClient{PublishVersionError: expected}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 		req := &module.EndVersionRequest{
 			Action: module.EndVersionRequest_PUBLISH,
 			Module: &module.Module{},
@@ -153,7 +153,7 @@ func Test_EndVersionWithClient(t *testing.T) {
 	t.Run("when client returns abort response", func(t *testing.T) {
 		response := &module.Response{}
 		client := &mocks.MockVersionManagerClient{AbortVersionResponse: response}
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 		req := &module.EndVersionRequest{
 			Action: module.EndVersionRequest_DISCARD,
 			Module: &module.Module{},
@@ -179,7 +179,7 @@ func Test_EndVersionWithClient(t *testing.T) {
 
 		client := &mocks.MockVersionManagerClient{AbortVersionError: expected}
 
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		req := &module.EndVersionRequest{
 			Action: module.EndVersionRequest_DISCARD,
@@ -200,7 +200,7 @@ func Test_EndVersionWithClient(t *testing.T) {
 	t.Run("when unknown action is requested", func(t *testing.T) {
 		client := &mocks.MockVersionManagerClient{}
 
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		req := &module.EndVersionRequest{
 			Action: 123,
@@ -209,8 +209,8 @@ func Test_EndVersionWithClient(t *testing.T) {
 
 		_, actual := gw.EndVersionWithClient(context.TODO(), req, client)
 
-		if actual != services.UnknownVersionManagerActionError {
-			t.Errorf("Expected %v, got %v.", services.UnknownVersionManagerActionError, actual)
+		if actual != UnknownVersionManagerActionError {
+			t.Errorf("Expected %v, got %v.", UnknownVersionManagerActionError, actual)
 		}
 
 		if client.PublishVersionInvocations != 0 {
@@ -234,7 +234,7 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client UploadSourceZip fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{}
 
@@ -252,7 +252,7 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv returns EOF and client fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{RecvError: io.EOF}
 
@@ -280,7 +280,7 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv returns EOF and both client and server close stream", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{RecvError: io.EOF}
 
@@ -312,7 +312,7 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{RecvError: errors.New("some error")}
 
@@ -328,13 +328,13 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 			t.Errorf("Expected 1 call to UploadSourceZip, got %v", client.UploadSourceZipInvocations)
 		}
 
-		if err != services.RecieveSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.RecieveSourceZipError, err)
+		if err != storage.RecieveSourceZipError {
+			t.Errorf("Expected %v, got %v.", storage.RecieveSourceZipError, err)
 		}
 	})
 
 	t.Run("when Send returns EOF", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{}
 
@@ -370,7 +370,7 @@ func Test_UploadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		server := &mocks.MockUploadSourceZipServer{}
 
@@ -407,7 +407,7 @@ func Test_DownloadSourceZipWithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client DownloadSourceZip fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.DownloadSourceZipRequest{}
 
@@ -427,7 +427,7 @@ func Test_DownloadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when client Recv returns EOF", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.DownloadSourceZipRequest{}
 
@@ -453,7 +453,7 @@ func Test_DownloadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.DownloadSourceZipRequest{}
 
@@ -479,7 +479,7 @@ func Test_DownloadSourceZipWithClient(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.DownloadSourceZipRequest{}
 
@@ -503,8 +503,8 @@ func Test_DownloadSourceZipWithClient(t *testing.T) {
 			t.Errorf("Expected 1 call to Send, got %v", server.SendInvocations)
 		}
 
-		if err != services.SendSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.SendSourceZipError, err)
+		if err != storage.SendSourceZipError {
+			t.Errorf("Expected %v, got %v.", storage.SendSourceZipError, err)
 		}
 	})
 }
@@ -516,7 +516,7 @@ func Test_RegisterModuleDependenciesWithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client returns response", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RegisterModuleDependenciesRequest{}
 
@@ -540,7 +540,7 @@ func Test_RegisterModuleDependenciesWithClient(t *testing.T) {
 	})
 
 	t.Run("when client returns error", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RegisterModuleDependenciesRequest{}
 
@@ -565,7 +565,7 @@ func Test_RegisterContainerDependenciesWithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client returns response", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RegisterContainerDependenciesRequest{}
 
@@ -589,7 +589,7 @@ func Test_RegisterContainerDependenciesWithClient(t *testing.T) {
 	})
 
 	t.Run("when client returns error", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RegisterContainerDependenciesRequest{}
 
@@ -616,7 +616,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client RetrieveContainerDependencies fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveContainerDependenciesRequestV2{}
 
@@ -636,7 +636,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 	})
 
 	t.Run("when client Recv returns EOF", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveContainerDependenciesRequestV2{}
 
@@ -662,7 +662,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveContainerDependenciesRequestV2{}
 
@@ -688,7 +688,7 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveContainerDependenciesRequestV2{}
 
@@ -712,8 +712,8 @@ func Test_RetrieveContainerDependenciesV2WithClient(t *testing.T) {
 			t.Errorf("Expected 1 call to Send, got %v", server.SendInvocations)
 		}
 
-		if err != services.ForwardModuleDependenciesError {
-			t.Errorf("Expected %v, got %v.", services.ForwardModuleDependenciesError, err)
+		if err != ForwardModuleDependenciesError {
+			t.Errorf("Expected %v, got %v.", ForwardModuleDependenciesError, err)
 		}
 	})
 }
@@ -727,7 +727,7 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when client RetrieveModuleDependencies fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveModuleDependenciesRequest{}
 
@@ -747,7 +747,7 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 	})
 
 	t.Run("when client Recv returns EOF", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveModuleDependenciesRequest{}
 
@@ -773,7 +773,7 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 	})
 
 	t.Run("when Recv fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveModuleDependenciesRequest{}
 
@@ -799,7 +799,7 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		gw := &services.TerrariumGrpcGateway{}
+		gw := &TerrariumGrpcGateway{}
 
 		request := &module.RetrieveModuleDependenciesRequest{}
 
@@ -823,8 +823,8 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 			t.Errorf("Expected 1 call to Send, got %v", server.SendInvocations)
 		}
 
-		if err != services.ForwardModuleDependenciesError {
-			t.Errorf("Expected %v, got %v.", services.ForwardModuleDependenciesError, err)
+		if err != ForwardModuleDependenciesError {
+			t.Errorf("Expected %v, got %v.", ForwardModuleDependenciesError, err)
 		}
 	})
 }

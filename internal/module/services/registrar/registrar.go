@@ -1,13 +1,12 @@
-package services
+package registrar
 
 import (
 	"context"
 	"fmt"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"log"
 	"strings"
 	"time"
-
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -15,10 +14,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -27,8 +27,8 @@ const (
 )
 
 var (
-	RegistrarTableName       string = DefaultRegistrarTableName
-	RegistrarServiceEndpoint string = DefaultRegistrarServiceEndpoint
+	RegistrarTableName       = DefaultRegistrarTableName
+	RegistrarServiceEndpoint = DefaultRegistrarServiceEndpoint
 
 	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
@@ -41,8 +41,8 @@ var (
 )
 
 type RegistrarService struct {
-	UnimplementedRegistrarServer
-	Db     dynamodbiface.DynamoDBAPI
+	services.UnimplementedRegistrarServer
+	Db     storage.DynamoDBTableCreator
 	Table  string
 	Schema *dynamodb.CreateTableInput
 }
@@ -62,7 +62,7 @@ func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) 
 		return ModuleTableInitializationError
 	}
 
-	RegisterRegistrarServer(grpcServer, s)
+	services.RegisterRegistrarServer(grpcServer, s)
 
 	return nil
 }
@@ -70,11 +70,15 @@ func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) 
 // Register new Module in Terrarium
 func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Registering new module.")
-
-	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
+	name, err := attributevalue.Marshal(request.GetName())
+	if err != nil {
+		log.Println(err)
+		return nil, ModuleGetError
+	}
+	res, err := s.Db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(RegistrarTableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"name": {S: aws.String(request.GetName())},
+		Key: map[string]types.AttributeValue{
+			"name": name,
 		},
 	})
 
@@ -93,7 +97,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 			ModifiedOn:  time.Now().UTC().String(),
 		}
 
-		av, err := dynamodbattribute.MarshalMap(ms)
+		av, err := attributevalue.MarshalMap(ms)
 
 		if err != nil {
 			log.Println(err)
@@ -105,7 +109,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 			TableName: aws.String(RegistrarTableName),
 		}
 
-		if _, err = s.Db.PutItem(in); err != nil {
+		if _, err = s.Db.PutItem(ctx, in); err != nil {
 			log.Println(err)
 			return nil, ModuleRegisterError
 		}
@@ -123,14 +127,14 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 
 		in := &dynamodb.UpdateItemInput{
 			TableName: aws.String(RegistrarTableName),
-			Key: map[string]*dynamodb.AttributeValue{
-				"name": {S: aws.String(request.GetName())}},
+			Key: map[string]types.AttributeValue{
+				"name": name},
 			ExpressionAttributeNames:  expr.Names(),
 			ExpressionAttributeValues: expr.Values(),
 			UpdateExpression:          expr.Update(),
 		}
 
-		_, err = s.Db.UpdateItem(in)
+		_, err = s.Db.UpdateItem(ctx, in)
 
 		if err != nil {
 			log.Println(err)
@@ -142,15 +146,15 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	return ModuleRegistered, nil
 }
 
-func unmarshalModule(item map[string]*dynamodb.AttributeValue) (*ModuleMetadata, error) {
+func unmarshalModule(item map[string]types.AttributeValue) (*services.ModuleMetadata, error) {
 	module := Module{}
-	if err := dynamodbattribute.UnmarshalMap(item, &module); err != nil {
+	if err := attributevalue.UnmarshalMap(item, &module); err != nil {
 		log.Printf("UnmarshalMap failed: %v", err)
 		return nil, err
 	}
 	moduleAddress := strings.Split(module.Name, "/")
 
-	result := ModuleMetadata{
+	result := services.ModuleMetadata{
 		Organization: moduleAddress[0],
 		Name:         moduleAddress[1],
 		Provider:     moduleAddress[2],
@@ -162,7 +166,7 @@ func unmarshalModule(item map[string]*dynamodb.AttributeValue) (*ModuleMetadata,
 }
 
 // GetModule Retrieve module metadata
-func (s *RegistrarService) GetModule(_ context.Context, request *GetModuleRequest) (*GetModuleResponse, error) {
+func (s *RegistrarService) GetModule(ctx context.Context, request *services.GetModuleRequest) (*services.GetModuleResponse, error) {
 	filter := expression.Name("name").Equal(expression.Value(request.Name))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
@@ -176,8 +180,7 @@ func (s *RegistrarService) GetModule(_ context.Context, request *GetModuleReques
 		FilterExpression:          expr.Filter(),
 		TableName:                 aws.String(RegistrarTableName),
 	}
-
-	response, err := s.Db.Scan(scanQueryInputs)
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
@@ -186,7 +189,7 @@ func (s *RegistrarService) GetModule(_ context.Context, request *GetModuleReques
 	if response.Items == nil || len(response.Items) < 1 {
 		return nil, fmt.Errorf("module not found '%v'", request.GetName())
 	}
-	grpcResponse := GetModuleResponse{}
+	grpcResponse := services.GetModuleResponse{}
 	if moduleMetadata, err := unmarshalModule(response.Items[0]); err != nil {
 		return nil, err
 	} else {
@@ -196,19 +199,19 @@ func (s *RegistrarService) GetModule(_ context.Context, request *GetModuleReques
 }
 
 // ListModules Retrieve all published modules
-func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRequest) (*ListModulesResponse, error) {
+func (s *RegistrarService) ListModules(ctx context.Context, request *services.ListModulesRequest) (*services.ListModulesResponse, error) {
 
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(RegistrarTableName),
 	}
 
-	response, err := s.Db.Scan(scanQueryInputs)
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 
-	grpcResponse := ListModulesResponse{}
+	grpcResponse := services.ListModulesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
 			if moduleMetadata, err := unmarshalModule(item); err != nil {
@@ -226,19 +229,19 @@ func (s *RegistrarService) ListModules(_ context.Context, request *ListModulesRe
 // that can be used to create table if it does not exist
 func GetModulesSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+		AttributeDefinitions: []types.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+				AttributeType: types.ScalarAttributeTypeS,
 			},
 		},
-		KeySchema: []*dynamodb.KeySchemaElement{
+		KeySchema: []types.KeySchemaElement{
 			{
 				AttributeName: aws.String("name"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       types.KeyTypeHash,
 			},
 		},
 		TableName:   aws.String(table),
-		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		BillingMode: types.BillingModePayPerRequest,
 	}
 }

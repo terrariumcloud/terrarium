@@ -1,13 +1,13 @@
-package services_test
+package storage
 
 import (
 	"bytes"
 	"errors"
+	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
+	mocks2 "github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/terrariumcloud/terrarium/internal/mocks"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
@@ -27,9 +27,9 @@ func Test_RegisterStorageWithServer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when bucket init is successful", func(t *testing.T) {
-		s3 := &mocks.MockS3{}
+		s3Client := &mocks2.S3{}
 
-		ss := &services.StorageService{S3: s3}
+		ss := &StorageService{Client: s3Client}
 
 		s := grpc.NewServer(*new([]grpc.ServerOption)...)
 
@@ -39,37 +39,37 @@ func Test_RegisterStorageWithServer(t *testing.T) {
 			t.Errorf("Expected no error, got %v.", err)
 		}
 
-		if s3.HeadBucketInvocations != 1 {
-			t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.HeadBucketInvocations)
+		if s3Client.HeadBucketInvocations != 1 {
+			t.Errorf("Expected 1 call to HeadBucket, got %v.", s3Client.HeadBucketInvocations)
 		}
 
-		if s3.CreateBucketInvocations != 0 {
-			t.Errorf("Expected no calls to CreateBucket, got %v.", s3.CreateBucketInvocations)
+		if s3Client.CreateBucketInvocations != 0 {
+			t.Errorf("Expected no calls to CreateBucket, got %v.", s3Client.CreateBucketInvocations)
 		}
 	})
 
 	t.Run("when bucket init fails", func(t *testing.T) {
-		s3 := &mocks.MockS3{
+		s3Client := &mocks2.S3{
 			HeadBucketError:   errors.New("some error"),
 			CreateBucketError: errors.New("some error"),
 		}
 
-		vms := &services.StorageService{S3: s3}
+		vms := &StorageService{Client: s3Client}
 
 		s := grpc.NewServer(*new([]grpc.ServerOption)...)
 
 		err := vms.RegisterWithServer(s)
 
-		if err != services.BucketInitializationError {
-			t.Errorf("Expected %v, got %v.", services.BucketInitializationError, err)
+		if err != BucketInitializationError {
+			t.Errorf("Expected %v, got %v.", BucketInitializationError, err)
 		}
 
-		if s3.HeadBucketInvocations != 1 {
-			t.Errorf("Expected 1 call to DescribeTable, got %v.", s3.HeadBucketInvocations)
+		if s3Client.HeadBucketInvocations != 1 {
+			t.Errorf("Expected 1 call to DescribeTable, got %v.", s3Client.HeadBucketInvocations)
 		}
 
-		if s3.CreateBucketInvocations != 1 {
-			t.Errorf("Expected 0 calls to CreateTable, got %v.", s3.CreateBucketInvocations)
+		if s3Client.CreateBucketInvocations != 1 {
+			t.Errorf("Expected 0 calls to CreateTable, got %v.", s3Client.CreateBucketInvocations)
 		}
 	})
 }
@@ -82,9 +82,9 @@ func Test_UploadSourceZip(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when source zip is uploaded", func(t *testing.T) {
-		s3 := &mocks.MockS3{}
+		s3Client := &mocks2.S3{}
 
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		req := &terrarium.UploadSourceZipRequest{
 			Module:       &terrarium.Module{Name: "test", Version: "v1"},
@@ -103,23 +103,23 @@ func Test_UploadSourceZip(t *testing.T) {
 			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
 		}
 
-		if s3.PutObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to PutObject, got %v", s3.PutObjectInvocations)
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
 		}
 
 		if mus.SendAndCloseInvocations != 1 {
 			t.Errorf("Expected 1 call to SendAndClose, got %v", mus.SendAndCloseInvocations)
 		}
 
-		if mus.SendAndCloseResponse != services.SourceZipUploaded {
-			t.Errorf("Expected %v, got %v.", services.SourceZipUploaded, mus.SendAndCloseResponse)
+		if mus.SendAndCloseResponse != SourceZipUploaded {
+			t.Errorf("Expected %v, got %v.", SourceZipUploaded, mus.SendAndCloseResponse)
 		}
 	})
 
 	t.Run("when PutObject fails", func(t *testing.T) {
-		s3 := &mocks.MockS3{PutObjectError: errors.New("some error")}
+		s3Client := &mocks2.S3{PutObjectError: errors.New("some error")}
 
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		req := &terrarium.UploadSourceZipRequest{
 			Module:       &terrarium.Module{Name: "test", Version: "v1"},
@@ -134,23 +134,23 @@ func Test_UploadSourceZip(t *testing.T) {
 			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
 		}
 
-		if s3.PutObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to PutObject, got %v", s3.PutObjectInvocations)
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
 		}
 
 		if mus.SendAndCloseInvocations != 0 {
 			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
 		}
 
-		if err != services.UploadSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.UploadSourceZipError, err)
+		if err != UploadSourceZipError {
+			t.Errorf("Expected %v, got %v.", UploadSourceZipError, err)
 		}
 	})
 
 	t.Run("when Recv fails", func(t *testing.T) {
-		s3 := &mocks.MockS3{}
+		s3Client := &mocks2.S3{}
 
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		mus := &mocks.MockUploadSourceZipServer{
 			RecvError:          errors.New("some error"),
@@ -163,16 +163,16 @@ func Test_UploadSourceZip(t *testing.T) {
 			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
 		}
 
-		if s3.PutObjectInvocations != 0 {
-			t.Errorf("Expected 0 calls to PutObject, got %v", s3.PutObjectInvocations)
+		if s3Client.PutObjectInvocations != 0 {
+			t.Errorf("Expected 0 calls to PutObject, got %v", s3Client.PutObjectInvocations)
 		}
 
 		if mus.SendAndCloseInvocations != 0 {
 			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
 		}
 
-		if err != services.RecieveSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.RecieveSourceZipError, err)
+		if err != RecieveSourceZipError {
+			t.Errorf("Expected %v, got %v.", RecieveSourceZipError, err)
 		}
 	})
 }
@@ -186,15 +186,14 @@ func Test_DownloadSourceZip(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when source zip is downloaded", func(t *testing.T) {
-		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
+		var length int64 = 1000
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
-		len := int64(1000)
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
 
-		s3 := &mocks.MockS3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: &len}}
+		svc := &StorageService{Client: s3Client}
 
-		svc := &services.StorageService{S3: s3}
-
-		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, 1000)}
+		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, length)}
 
 		mds := &mocks.MockDownloadSourceZipServer{SendResponse: res}
 
@@ -208,8 +207,8 @@ func Test_DownloadSourceZip(t *testing.T) {
 			t.Errorf("Expected no error, got %v.", err)
 		}
 
-		if s3.GetObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to GetObject, got %v", s3.GetObjectInvocations)
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
 		if mds.SendInvocations != 1 {
@@ -222,9 +221,9 @@ func Test_DownloadSourceZip(t *testing.T) {
 	})
 
 	t.Run("when GetObject fails", func(t *testing.T) {
-		s3 := &mocks.MockS3{GetObjectError: errors.New("some error")}
+		s3Client := &mocks2.S3{GetObjectError: errors.New("some error")}
 
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		mds := &mocks.MockDownloadSourceZipServer{}
 
@@ -234,27 +233,26 @@ func Test_DownloadSourceZip(t *testing.T) {
 
 		err := svc.DownloadSourceZip(req, mds)
 
-		if s3.GetObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to GetObject, got %v", s3.GetObjectInvocations)
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
 		if mds.SendInvocations != 0 {
 			t.Errorf("Expected 0 call to Sends, got %v", mds.SendInvocations)
 		}
 
-		if err != services.DownloadSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.DownloadSourceZipError, err)
+		if err != DownloadSourceZipError {
+			t.Errorf("Expected %v, got %v.", DownloadSourceZipError, err)
 		}
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
+		var length int64 = 1000
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
-		len := int64(1000)
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
 
-		s3 := &mocks.MockS3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: &len}}
-
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		mds := &mocks.MockDownloadSourceZipServer{SendError: errors.New("some error")}
 
@@ -264,27 +262,25 @@ func Test_DownloadSourceZip(t *testing.T) {
 
 		err := svc.DownloadSourceZip(req, mds)
 
-		if s3.GetObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to GetObject, got %v", s3.GetObjectInvocations)
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
 		if mds.SendInvocations != 1 {
 			t.Errorf("Expected 1 call to Send, got %v", mds.SendInvocations)
 		}
 
-		if err != services.SendSourceZipError {
-			t.Errorf("Expected %v, got %v.", services.SendSourceZipError, err)
+		if err != SendSourceZipError {
+			t.Errorf("Expected %v, got %v.", SendSourceZipError, err)
 		}
 	})
 
-	t.Run("when wrong content lenght is read", func(t *testing.T) {
+	t.Run("when wrong content length is read", func(t *testing.T) {
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
 
-		len := int64(10000)
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: 10001}}
 
-		s3 := &mocks.MockS3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: &len}}
-
-		svc := &services.StorageService{S3: s3}
+		svc := &StorageService{Client: s3Client}
 
 		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, 1000)}
 
@@ -296,16 +292,16 @@ func Test_DownloadSourceZip(t *testing.T) {
 
 		err := svc.DownloadSourceZip(req, mds)
 
-		if s3.GetObjectInvocations != 1 {
-			t.Errorf("Expected 1 call to GetObject, got %v", s3.GetObjectInvocations)
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
 		if mds.SendInvocations != 0 {
 			t.Errorf("Expected 0 calls to Send, got %v", mds.SendInvocations)
 		}
 
-		if err != services.ContentLenghtError {
-			t.Errorf("Expected %v, got %v.", services.ContentLenghtError, err)
+		if err != ContentLenghtError {
+			t.Errorf("Expected %v, got %v.", ContentLenghtError, err)
 		}
 	})
 }

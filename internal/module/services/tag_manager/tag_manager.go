@@ -1,7 +1,9 @@
-package services
+package tag_manager
 
 import (
 	"context"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"log"
 	"time"
 
@@ -12,14 +14,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-
-	//"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-	//"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -28,19 +27,19 @@ const (
 )
 
 var (
-	TagTableName                      string = DefaultTagTableName
-	TagManagerEndpoint                string = DefaultTagManagerEndpoint
-	TagPublished                             = &terrarium.Response{Message: "Tag published."}
-	ModuleTagTableInitializationError        = status.Error(codes.Unknown, "Failed to initialize table for tags.")
-	MarshalModuleTagError                    = status.Error(codes.Unknown, "Failed to marshal module tags for Dynamodb.")
-	PublishModuleTagError                    = status.Error(codes.Unknown, "Failed to publish module tag.")
-	UpdateModuleTagError                     = status.Error(codes.Unknown, "Failed to update module tag.")
-	ConnectToTagManagerError                 = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
+	TagTableName                      = DefaultTagTableName
+	TagManagerEndpoint                = DefaultTagManagerEndpoint
+	TagPublished                      = &terrarium.Response{Message: "Tag published."}
+	ModuleTagTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for tags.")
+	MarshalModuleTagError             = status.Error(codes.Unknown, "Failed to marshal module tags for Dynamodb.")
+	PublishModuleTagError             = status.Error(codes.Unknown, "Failed to publish module tag.")
+	UpdateModuleTagError              = status.Error(codes.Unknown, "Failed to update module tag.")
+	ConnectToTagManagerError          = status.Error(codes.Unknown, "Failed to connect to TagManager service.")
 )
 
 type TagManagerService struct {
-	UnimplementedTagManagerServer
-	Db     dynamodbiface.DynamoDBAPI
+	services.UnimplementedTagManagerServer
+	Db     storage.DynamoDBTableCreator
 	Table  string
 	Schema *dynamodb.CreateTableInput
 }
@@ -59,7 +58,7 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 		return ModuleTagTableInitializationError
 	}
 
-	RegisterTagManagerServer(grpcServer, s)
+	services.RegisterTagManagerServer(grpcServer, s)
 
 	return nil
 }
@@ -67,16 +66,22 @@ func (s *TagManagerService) RegisterWithServer(grpcServer grpc.ServiceRegistrar)
 func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
 	log.Println("Publish module tag.")
 
-	res, err := s.Db.GetItem(&dynamodb.GetItemInput{
+	name, err := attributevalue.Marshal(request.GetName())
+	if err != nil {
+		log.Println(err)
+		return nil, registrar.ModuleGetError
+	}
+
+	res, err := s.Db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(TagTableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"name": {S: aws.String(request.GetName())},
+		Key: map[string]types.AttributeValue{
+			"name": name,
 		},
 	})
 
 	if err != nil {
 		log.Println(err)
-		return nil, ModuleGetError
+		return nil, registrar.ModuleGetError
 	}
 
 	if res.Item == nil {
@@ -87,8 +92,7 @@ func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.P
 			ModifiedOn: time.Now().UTC().String(),
 		}
 
-		av, err := dynamodbattribute.MarshalMap(ms)
-
+		av, err := attributevalue.MarshalMap(ms)
 		if err != nil {
 			log.Println(err)
 			return nil, MarshalModuleTagError
@@ -99,7 +103,7 @@ func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.P
 			TableName: aws.String(TagTableName),
 		}
 
-		if _, err = s.Db.PutItem(in); err != nil {
+		if _, err = s.Db.PutItem(ctx, in); err != nil {
 			log.Println(err)
 			return nil, PublishModuleTagError
 		}
@@ -110,19 +114,20 @@ func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.P
 
 		if err != nil {
 			log.Println(err)
-			return nil, ExpressionBuildError
+			return nil, registrar.ExpressionBuildError
 		}
 
 		in := &dynamodb.UpdateItemInput{
 			TableName: aws.String(TagTableName),
-			Key: map[string]*dynamodb.AttributeValue{
-				"name": {S: aws.String(request.GetName())}},
+			Key: map[string]types.AttributeValue{
+				"name": name,
+			},
 			ExpressionAttributeNames:  expr.Names(),
 			ExpressionAttributeValues: expr.Values(),
 			UpdateExpression:          expr.Update(),
 		}
 
-		_, err = s.Db.UpdateItem(in)
+		_, err = s.Db.UpdateItem(ctx, in)
 
 		if err != nil {
 			log.Println(err)
@@ -137,19 +142,19 @@ func (s *TagManagerService) PublishTag(ctx context.Context, request *terrarium.P
 // GetTagsSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetTagsSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+		AttributeDefinitions: []types.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
-				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+				AttributeType: types.ScalarAttributeTypeS,
 			},
 		},
-		KeySchema: []*dynamodb.KeySchemaElement{
+		KeySchema: []types.KeySchemaElement{
 			{
 				AttributeName: aws.String("name"),
-				KeyType:       aws.String("HASH"),
+				KeyType:       types.KeyTypeHash,
 			},
 		},
 		TableName:   aws.String(table),
-		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		BillingMode: types.BillingModePayPerRequest,
 	}
 }

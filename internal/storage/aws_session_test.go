@@ -1,12 +1,12 @@
 package storage_test
 
 import (
-	"testing"
-
+	"context"
 	"github.com/terrariumcloud/terrarium/internal/storage"
+	"testing"
 )
 
-//Test_NewAwsSession checks:
+// Test_NewAwsSession checks:
 // - if it returns AWS session with provided API key, Secret and Region
 func Test_NewAwsSession(t *testing.T) {
 
@@ -16,17 +16,16 @@ func Test_NewAwsSession(t *testing.T) {
 		secret = "test_secret"
 		region = "eu-west-1"
 
-		sess, err := storage.NewAwsSession(key, secret, region)
+		cfg, err := storage.NewAwsSession(key, secret, region)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v.", err)
 		}
 
-		if *sess.Config.Region != region {
-			t.Errorf("Expected %v, got %v.", region, sess.Config.Region)
+		if cfg.Region != region {
+			t.Errorf("Expected %v, got %v.", region, cfg.Region)
 		}
-
-		creds, _ := sess.Config.Credentials.Get()
+		creds, _ := cfg.Credentials.Retrieve(context.TODO())
 
 		if creds.AccessKeyID != key {
 			t.Errorf("Expected %v, got %v.", key, creds.AccessKeyID)
