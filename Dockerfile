@@ -11,7 +11,7 @@ ENV CGO_ENABLED=0 GOOS=linux GARCH=amd64
 WORKDIR /workspace
 COPY . /workspace
 RUN go mod vendor
-RUN go build  -ldflags "-X 'main.buildInformationVersion=${BUILD_INFO_VERSION}' -o terrarium
+RUN go build  -ldflags "-X 'main.buildInformationVersion=${BUILD_INFO_VERSION}'" -o terrarium
 RUN apt-get update && \
     apt-get install -y ca-certificates
 
