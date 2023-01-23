@@ -27,5 +27,5 @@ func runVersionManager(cmd *cobra.Command, args []string) {
 		Schema: version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
 	}
 
-	startGRPCService("Terrarium GRPC Version Manager service", versionManagerServer)
+	startGRPCService("version-manager", versionManagerServer)
 }
