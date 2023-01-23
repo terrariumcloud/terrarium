@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/propagation"
 	"log"
 	"net"
 	"net/http"
@@ -123,7 +124,7 @@ func startGRPCService(name string, service services.Service) {
 	} else {
 		otel.SetTracerProvider(noop.NewNoopTracerProvider())
 	}
-
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %v", err)
@@ -169,6 +170,7 @@ func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHand
 	} else {
 		otel.SetTracerProvider(noop.NewNoopTracerProvider())
 	}
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	log.Println(fmt.Printf("Listening on %s", endpoint))
 	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
