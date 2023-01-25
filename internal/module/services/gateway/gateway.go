@@ -14,6 +14,8 @@ import (
 
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -45,10 +47,19 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 // Register new module with Registrar service
 func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Register => Registrar")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering new Module with Registrar service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+	)
+
 	conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ConnectToRegistrarError
 	}
 
@@ -72,10 +83,19 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 
 // Register PublishTag with Registrar service
 func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering PublishTag with Registrar service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.GetName()), attribute.StringSlice("Module Tags", request.GetTags())))
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+		attribute.StringSlice("module.tags", request.GetTags()),
+	)
+
 	conn, err := services.CreateGRPCConnection(tag_manager.TagManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, tag_manager.ConnectToTagManagerError
 	}
 
@@ -99,10 +119,20 @@ func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, reques
 // BeginVersion creates new version with Version Manager service
 func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Begin version => Version Manager")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: creating new version with Version Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ConnectToVersionManagerError
 	}
 
@@ -127,9 +157,19 @@ func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, requ
 // EndVersion publishes/aborts with Version Manger service
 func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.Response, error) {
 	log.Println("End version => Version Manager")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: aborting version with Version Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ConnectToVersionManagerError
 	}
 
@@ -145,27 +185,37 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 	terminateRequest := services.TerminateVersionRequest{
 		Module: request.GetModule(),
 	}
+	span := trace.SpanFromContext(ctx)
 
 	if request.GetAction() == terrarium.EndVersionRequest_DISCARD {
 		log.Println("Abort version => Version Manager")
 		if res, delegateError := client.AbortVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
+			span.AddEvent("Failed to abort version.")
+			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
+			span.AddEvent("Successfully aborted version.")
+			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return res, nil
 		}
 	} else if request.GetAction() == terrarium.EndVersionRequest_PUBLISH {
 		log.Println("Publish version => Version Manager")
 		if res, delegateError := client.PublishVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
+			span.AddEvent("Failed to publish version.")
+			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
+			span.AddEvent("Successfully published version.")
+			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return res, nil
 		}
 	} else {
 		log.Printf("Unknown Version manager action requested: %v", request.GetAction())
+		span.AddEvent("Unknown action.")
 		return nil, UnknownVersionManagerActionError
 	}
 }
@@ -173,6 +223,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 // UploadSourceZip uploads source zip to Storage service
 func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
 	log.Println("Upload source zip => Storage")
+
 	conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 
 	if err != nil {
@@ -190,9 +241,11 @@ func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_Uploa
 // UploadSourceZipWithClient calls UploadSourceZip on Storage client
 func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publisher_UploadSourceZipServer, client services.StorageClient) error {
 	upstream, upErr := client.UploadSourceZip(server.Context())
-
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
 	if upErr != nil {
 		log.Println(upErr)
+		span.RecordError(upErr)
 		return upErr
 	}
 
@@ -206,11 +259,13 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 				return upErr
 			}
 			log.Println("Done <= Store")
+			span.AddEvent("")
 			return server.SendAndClose(res)
 		}
 
 		if err != nil {
 			log.Printf("Failed to recieve: %v", err)
+			span.AddEvent("")
 			return storage.RecieveSourceZipError
 		}
 
@@ -218,12 +273,14 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 
 		if upErr == io.EOF {
 			log.Println("Done <= Store")
+			span.AddEvent("")
 			upstream.CloseSend()
 			return server.SendAndClose(storage.SourceZipUploaded)
 		}
 
 		if upErr != nil {
 			log.Printf("Failed to send: %v", upErr)
+			span.AddEvent("")
 			return upErr
 		}
 	}

@@ -69,6 +69,7 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 		client := services.NewRegistrarClient(conn)
 
 		registrarResponse, err2 := client.ListModules(context.TODO(), &services.ListModulesRequest{})
+
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
