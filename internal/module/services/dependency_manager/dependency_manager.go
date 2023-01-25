@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -94,7 +96,7 @@ func (s *DependencyManagerService) registerDependencies(ctx context.Context, tab
 	}
 
 	if _, err = s.Db.PutItem(ctx, item); err != nil {
-		log.Println(err)
+
 		return RegisterDependenciesError
 	}
 	return nil
@@ -103,32 +105,43 @@ func (s *DependencyManagerService) registerDependencies(ctx context.Context, tab
 // Registers Module dependencies in Terrarium
 func (s *DependencyManagerService) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
 	log.Printf("Registering module dependencies for %s/%s.\n", request.Module.GetName(), request.Module.GetVersion())
-
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	item := ModuleDependencies{
 		Name:    request.Module.GetName(),
 		Version: request.Module.GetVersion(),
 		Modules: request.GetDependencies(),
 	}
-	err := s.registerDependencies(ctx, s.ModuleTable, item)
-	if err != nil {
+
+	if err := s.registerDependencies(ctx, s.ModuleTable, item); err != nil {
+		span.RecordError(err)
+		log.Println(err)
 		return nil, err
 	}
 	log.Printf("Module dependencies registered for %s/%s.\n", request.Module.GetName(), request.Module.GetVersion())
-	return ModuleDependenciesRegistered, err
+	return ModuleDependenciesRegistered, nil
 }
 
 // RegisterContainerDependencies Registers Container dependencies in Terrarium
 func (s *DependencyManagerService) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Printf("Registering container dependencies for %s/%s.\n", request.Module.GetName(), request.Module.GetVersion())
-
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	item := ContainerDependencies{
 		Name:    request.Module.GetName(),
 		Version: request.Module.GetVersion(),
 		Images:  request.Images,
 	}
 
-	err := s.registerDependencies(ctx, s.ContainerTable, item)
-	if err != nil {
+	if err := s.registerDependencies(ctx, s.ContainerTable, item); err != nil {
+		span.RecordError(err)
+		log.Println(err)
 		return nil, err
 	}
 	log.Printf("Container dependencies registered for %s/%s.\n", request.Module.GetName(), request.Module.GetVersion())
@@ -142,17 +155,26 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 	controlCh <- request.Module
 
 	moreModulesToProcess := true
-
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	for moreModulesToProcess {
 		select {
 		case moduleToProcess := <-controlCh:
-			dep, err := s.GetModuleDependencies(context.TODO(), moduleToProcess)
+			dep, err := s.GetModuleDependencies(ctx, moduleToProcess)
 			if err != nil {
+				log.Println(err)
+				span.RecordError(err)
 				return err
 			}
 
-			images, err := s.GetContainerDependencies(context.TODO(), moduleToProcess)
+			images, err := s.GetContainerDependencies(ctx, moduleToProcess)
 			if err != nil {
+				log.Println(err)
+				span.RecordError(err)
 				return err
 			}
 
@@ -162,6 +184,7 @@ func (s *DependencyManagerService) RetrieveContainerDependencies(request *terrar
 			}
 			if err := server.Send(res); err != nil {
 				log.Println(err)
+				span.RecordError(err)
 				return SendContainerDependenciesError
 			}
 
@@ -196,9 +219,11 @@ func (s *DependencyManagerService) GetModuleKey(module *terrarium.Module) (map[s
 
 func (s *DependencyManagerService) GetModuleDependencies(ctx context.Context, module *terrarium.Module) ([]*terrarium.Module, error) {
 	log.Printf("GetModuleDependencies for module: %s/%s", module.GetName(), module.GetVersion())
+	span := trace.SpanFromContext(ctx)
 	moduleKey, err := s.GetModuleKey(module)
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, GetModuleDependenciesError
 	}
 
@@ -208,16 +233,16 @@ func (s *DependencyManagerService) GetModuleDependencies(ctx context.Context, mo
 	}
 
 	out, err := s.Db.GetItem(ctx, in)
-
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, GetModuleDependenciesError
 	}
 
 	dependencies := ModuleDependencies{}
-
 	if err := attributevalue.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, UnmarshalModuleDependenciesError
 	}
 	log.Printf("GetModuleDependencies returned %d entries\n", len(dependencies.Modules))
@@ -226,9 +251,11 @@ func (s *DependencyManagerService) GetModuleDependencies(ctx context.Context, mo
 
 func (s *DependencyManagerService) GetContainerDependencies(ctx context.Context, module *terrarium.Module) (map[string]*terrarium.ContainerImageDetails, error) {
 	log.Printf("GetContainerDependencies for module: %s/%s\n", module.GetName(), module.GetVersion())
+	span := trace.SpanFromContext(ctx)
 	moduleKey, err := s.GetModuleKey(module)
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, GetModuleDependenciesError
 	}
 	in := &dynamodb.GetItemInput{
@@ -239,12 +266,14 @@ func (s *DependencyManagerService) GetContainerDependencies(ctx context.Context,
 	out, err := s.Db.GetItem(ctx, in)
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, GetContainerDependenciesError
 	}
 
 	dependencies := ContainerDependencies{}
 	if err := attributevalue.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, UnmarshalContainerDependenciesError
 	}
 	log.Printf("GetContainerDependencies returned %d entries\n", len(dependencies.Images))
@@ -253,6 +282,12 @@ func (s *DependencyManagerService) GetContainerDependencies(ctx context.Context,
 
 // RetrieveModuleDependencies Retrieve Module dependencies from Terrarium
 func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server services.DependencyManager_RetrieveModuleDependenciesServer) error {
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	controlCh := make(chan *terrarium.Module, 250)
 	controlCh <- request.Module
 
@@ -263,6 +298,8 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 		case moduleToProcess := <-controlCh:
 			dep, err := s.GetModuleDependencies(context.TODO(), moduleToProcess)
 			if err != nil {
+				log.Println(err)
+				span.RecordError(err)
 				return err
 			}
 
@@ -272,6 +309,7 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 			}
 			if err := server.Send(res); err != nil {
 				log.Println(err)
+				span.RecordError(err)
 				return SendModuleDependenciesError
 			}
 
@@ -282,7 +320,6 @@ func (s *DependencyManagerService) RetrieveModuleDependencies(request *terrarium
 			moreModulesToProcess = false
 			close(controlCh)
 		}
-
 	}
 
 	log.Println("Module dependencies retrieved.")
