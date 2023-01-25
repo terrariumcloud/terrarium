@@ -2,9 +2,10 @@ package storage
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log"
 
@@ -64,9 +65,14 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 	log.Println("Uploading source zip.")
 	zip := []byte{}
 	var filename string
-
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
 	for {
 		req, err := server.Recv()
+		span.SetAttributes(
+			attribute.String("module.name", req.GetModule().GetName()),
+			attribute.String("module.version", req.GetModule().GetVersion()),
+		)
 
 		if filename == "" && req != nil {
 			filename = fmt.Sprintf("%s/%s.zip", req.Module.GetName(), req.Module.GetVersion())
@@ -81,7 +87,8 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 				Body:   bytes.NewReader(zip),
 			}
 
-			if _, err := s.Client.PutObject(context.TODO(), in); err != nil {
+			if _, err := s.Client.PutObject(ctx, in); err != nil {
+				span.RecordError(err)
 				log.Println(err)
 				return UploadSourceZipError
 			}
@@ -103,6 +110,12 @@ func (s *StorageService) UploadSourceZip(server services.Storage_UploadSourceZip
 // Download Source Zip from storage
 func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server services.Storage_DownloadSourceZipServer) error {
 	log.Println("Downloading source zip.")
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.GetModule().GetName()),
+		attribute.String("module.version", request.GetModule().GetVersion()),
+	)
 	filename := fmt.Sprintf("%s/%s.zip", request.GetModule().Name, request.Module.GetVersion())
 
 	in := &s3.GetObjectInput{
@@ -110,9 +123,9 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 		Key:    aws.String(filename),
 	}
 
-	out, err := s.Client.GetObject(context.TODO(), in)
-
+	out, err := s.Client.GetObject(ctx, in)
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return DownloadSourceZipError
 	}
@@ -132,6 +145,7 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 			}
 
 			if err := server.Send(res); err != nil {
+				span.RecordError(err)
 				log.Println(err)
 				return SendSourceZipError
 			}
@@ -139,10 +153,13 @@ func (s *StorageService) DownloadSourceZip(request *terrarium.DownloadSourceZipR
 
 		log.Println("Source zip downloaded.")
 		return nil
-	} else if err != nil { // TODO: check if this is unreachable/dead code
+	} else if err != nil {
+		// TODO: check if this is unreachable/dead code
 		log.Println(err)
+		span.RecordError(err)
 		return err
 	} else {
+		span.RecordError(err)
 		return ContentLenghtError
 	}
 }
