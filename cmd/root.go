@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel/propagation"
 	"log"
 	"net"
 	"net/http"
 	"os"
+
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
