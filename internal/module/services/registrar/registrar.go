@@ -3,10 +3,13 @@ package registrar
 import (
 	"context"
 	"fmt"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -70,8 +73,15 @@ func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) 
 // Register new Module in Terrarium
 func (s *RegistrarService) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
 	log.Println("Registering new module.")
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+	)
+
 	name, err := attributevalue.Marshal(request.GetName())
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, ModuleGetError
 	}
@@ -83,6 +93,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	})
 
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, ModuleGetError
 	}
@@ -100,6 +111,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 		av, err := attributevalue.MarshalMap(ms)
 
 		if err != nil {
+			span.RecordError(err)
 			log.Println(err)
 			return nil, MarshalModuleError
 		}
@@ -110,6 +122,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 		}
 
 		if _, err = s.Db.PutItem(ctx, in); err != nil {
+			span.RecordError(err)
 			log.Println(err)
 			return nil, ModuleRegisterError
 		}
@@ -121,6 +134,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 		expr, err := expression.NewBuilder().WithUpdate(update).Build()
 
 		if err != nil {
+			span.RecordError(err)
 			log.Println(err)
 			return nil, ExpressionBuildError
 		}
@@ -137,6 +151,7 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 		_, err = s.Db.UpdateItem(ctx, in)
 
 		if err != nil {
+			span.RecordError(err)
 			log.Println(err)
 			return nil, ModuleUpdateError
 		}
@@ -167,9 +182,15 @@ func unmarshalModule(item map[string]types.AttributeValue) (*services.ModuleMeta
 
 // GetModule Retrieve module metadata
 func (s *RegistrarService) GetModule(ctx context.Context, request *services.GetModuleRequest) (*services.GetModuleResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+	)
+
 	filter := expression.Name("name").Equal(expression.Value(request.Name))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
@@ -182,6 +203,7 @@ func (s *RegistrarService) GetModule(ctx context.Context, request *services.GetM
 	}
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
@@ -191,6 +213,7 @@ func (s *RegistrarService) GetModule(ctx context.Context, request *services.GetM
 	}
 	grpcResponse := services.GetModuleResponse{}
 	if moduleMetadata, err := unmarshalModule(response.Items[0]); err != nil {
+		span.RecordError(err)
 		return nil, err
 	} else {
 		grpcResponse.Module = moduleMetadata

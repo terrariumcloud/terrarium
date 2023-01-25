@@ -243,7 +243,8 @@ func (s *DependencyManagerService) GetModuleDependencies(ctx context.Context, mo
 	if err := attributevalue.UnmarshalMap(out.Item, &dependencies); err != nil {
 		log.Println(err)
 		span.RecordError(err)
-		return nil, UnmarshalModuleDependenciesError
+		// When no entry is found in the table, for compatibility just return an empty list
+		return dependencies.Modules, nil
 	}
 	log.Printf("GetModuleDependencies returned %d entries\n", len(dependencies.Modules))
 	return dependencies.Modules, nil
