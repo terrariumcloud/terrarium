@@ -190,8 +190,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 		log.Println("Abort version => Version Manager")
 		if res, delegateError := client.AbortVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
-			span.AddEvent("Failed to abort version.")
-			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+			span.RecordError(delegateError)
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
@@ -203,8 +202,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 		log.Println("Publish version => Version Manager")
 		if res, delegateError := client.PublishVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
-			span.AddEvent("Failed to publish version.")
-			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+			span.RecordError(delegateError)
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
