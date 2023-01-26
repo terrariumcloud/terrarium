@@ -70,11 +70,19 @@ func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium
 
 // RegisterWithClient calls Register on Registrar client
 func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request *terrarium.RegisterModuleRequest, client services.RegistrarClient) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: register with Client", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+	)
+
 	if res, delegateError := client.Register(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
 		return nil, delegateError
 	} else {
 		log.Println("Done <= Registrar")
+		span.AddEvent("Successful call to Register on Registrar client.")
 		return res, nil
 	}
 }
@@ -104,11 +112,20 @@ func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrari
 }
 
 func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, request *terrarium.PublishTagRequest, client services.TagManagerClient) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: publishing tags with Client", trace.WithAttributes(attribute.String("Module Name", request.GetName()), attribute.StringSlice("Module Tags", request.GetTags())))
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+		attribute.StringSlice("module.tags", request.GetTags()),
+	)
+
 	if res, delegateError := client.PublishTag(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
 		return nil, delegateError
 	} else {
 		log.Println("Done <= Registrar")
+		span.AddEvent("Successfully publishing tags with Client.")
 		return res, nil
 	}
 }
@@ -141,11 +158,19 @@ func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terra
 
 // BeginVersionWithClient calls BeginVersion on Version Manager client
 func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrarium.BeginVersionRequest, client services.VersionManagerClient) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: call BeginVersion on Version Manager Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	if res, delegateError := client.BeginVersion(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
 		return nil, delegateError
 	} else {
 		log.Println("Done <= Version Manager")
+		span.AddEvent("Sucessful call to BeginVersion.")
 		return res, nil
 	}
 }
@@ -214,11 +239,14 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 // UploadSourceZip uploads source zip to Storage service
 func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
 	log.Println("Upload source zip => Storage")
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
 
 	conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return ConnectToStorageError
 	}
 
@@ -280,10 +308,20 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 // DownloadSourceZip downloads source zip from Storage service
 func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
 	log.Println("Download source zip => Storage")
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: download source zip from Storage", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return ConnectToStorageError
 	}
 
@@ -360,11 +398,20 @@ func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, 
 
 // RegisterModuleDependenciesWithClient calls RegisterModuleDependencies on Dependency Manager client
 func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest, client services.DependencyManagerClient) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering module dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	if res, err := client.RegisterModuleDependencies(ctx, request); err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, err
 	} else {
 		log.Println("Done <= Dependency Manager")
+		span.AddEvent("Successfully registered module dependencies with Client.")
 		return res, nil
 	}
 }
@@ -397,11 +444,19 @@ func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Contex
 
 // RegisterContainerDependenciesWithClient calls RegisterContainerDependencies on Dependency Manager client
 func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest, client services.DependencyManagerClient) (*terrarium.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering container dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 	if res, err := client.RegisterContainerDependencies(ctx, request); err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, err
 	} else {
 		log.Println("Done <= Dependency Manager")
+		span.AddEvent("Successfully registered container dependencies with Client.")
 		return res, nil
 	}
 }
