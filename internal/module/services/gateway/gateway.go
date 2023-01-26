@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -259,13 +258,13 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 				return upErr
 			}
 			log.Println("Done <= Store")
-			span.AddEvent("")
+			span.AddEvent("Success. End of file. No more input is available.")
 			return server.SendAndClose(res)
 		}
 
 		if err != nil {
-			log.Printf("Failed to recieve: %v", err)
-			span.AddEvent("")
+			log.Printf("Failed to receive: %v", err)
+			span.RecordError(err)
 			return storage.RecieveSourceZipError
 		}
 
@@ -273,14 +272,14 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 
 		if upErr == io.EOF {
 			log.Println("Done <= Store")
-			span.AddEvent("")
+			span.AddEvent("Success.")
 			upstream.CloseSend()
 			return server.SendAndClose(storage.SourceZipUploaded)
 		}
 
 		if upErr != nil {
 			log.Printf("Failed to send: %v", upErr)
-			span.AddEvent("")
+			span.RecordError(upErr)
 			return upErr
 		}
 	}
@@ -306,9 +305,12 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSou
 // DownloadSourceZipWithClient calls DownloadSourceZip on Storage client
 func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer, client services.StorageClient) error {
 	downstream, downErr := client.DownloadSourceZip(server.Context(), request)
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
 
 	if downErr != nil {
 		log.Println(downErr)
+		span.RecordError(downErr)
 		return downErr
 	}
 
@@ -317,11 +319,13 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.D
 
 		if downErr == io.EOF {
 			log.Println("Done <= Storage")
+			span.AddEvent("Success. End of file. No more input is available.")
 			return nil
 		}
 
 		if downErr != nil {
 			log.Printf("Failed to recieve: %v", downErr)
+			span.RecordError(downErr)
 			return downErr
 		}
 
@@ -329,6 +333,7 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.D
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
+			span.RecordError(err)
 			downstream.CloseSend()
 			return storage.SendSourceZipError
 		}
@@ -338,10 +343,20 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.D
 // RegisterModuleDependencies registers Module dependencies with Dependency Manager service
 func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register module dependencies => Dependency Manager")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering module dependencies with Dependency Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ConnectToDependencyManagerError
 	}
 
@@ -366,10 +381,20 @@ func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context
 // RegisterContainerDependencies registers Container dependencies with Dependency Manager service
 func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
 	log.Println("Register container dependencies => Dependency Manager")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: registering container dependencies with Dependency Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ConnectToDependencyManagerError
 	}
 
@@ -400,10 +425,21 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium
 // RetrieveContainerDependenciesV2 retrieves Container dependencies from Dependency Manager service
 func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
 	log.Println("Retrieve container dependencies => Dependency Manager")
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: retrieving container dependencies from Dependency Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return ConnectToDependencyManagerError
 	}
 
@@ -416,10 +452,21 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrari
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
 func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client services.DependencyManagerClient) error {
-	ctx := metadata.AppendToOutgoingContext(server.Context(), "k", "v")
-	downStream, downErr := client.RetrieveContainerDependencies(ctx, request)
+	//ctx := metadata.AppendToOutgoingContext(server.Context(), "k", "v")
+
+	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: retrieving container dependencies with Client")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
 
 	if downErr != nil {
+		span.RecordError(downErr)
 		return downErr
 	}
 
@@ -428,11 +475,13 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(reques
 
 		if downErr == io.EOF {
 			log.Println("Done <= Dependency Manager")
+			span.AddEvent("Success. Retrieved container dependencies.")
 			return nil
 		}
 
 		if downErr != nil {
 			log.Printf("Failed to recieve: %v", downErr)
+			span.RecordError(downErr)
 			return downErr
 		}
 
@@ -440,6 +489,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(reques
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
+			span.RecordError(err)
 			downStream.CloseSend()
 			return ForwardModuleDependenciesError
 		}
@@ -451,8 +501,18 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Re
 	log.Println("Retrieve module dependencies => Dependency Manager")
 	conn, err := services.CreateGRPCConnection(dependency_manager.DependencyManagerEndpoint)
 
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: retrieving module dependencies from Dependency Manager service")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return ConnectToDependencyManagerError
 	}
 
@@ -466,7 +526,17 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Re
 func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer, client services.DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveModuleDependencies(server.Context(), request)
 
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: retrieving module dependencies with Client")
+	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	if downErr != nil {
+		span.RecordError(downErr)
 		return downErr
 	}
 
@@ -475,11 +545,13 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 
 		if downErr == io.EOF {
 			log.Println("Done <= Dependency Manager")
+			span.AddEvent("Success. Received all module dependencies.")
 			return nil
 		}
 
 		if downErr != nil {
 			log.Printf("Failed to recieve: %v", downErr)
+			span.RecordError(downErr)
 			return downErr
 		}
 
@@ -487,6 +559,7 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 
 		if err != nil {
 			log.Printf("Failed to send: %v", err)
+			span.RecordError(err)
 			downStream.CloseSend()
 			return ForwardModuleDependenciesError
 		}
