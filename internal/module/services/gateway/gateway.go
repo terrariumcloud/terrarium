@@ -48,8 +48,7 @@ func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium
 	log.Println("Register => Registrar")
 
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: registering new Module with Registrar service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
+	span.AddEvent("gateway: registering new Module with Registrar service", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
 	span.SetAttributes(
 		attribute.String("module.name", request.GetName()),
 	)
@@ -83,8 +82,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 // Register PublishTag with Registrar service
 func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: registering PublishTag with Registrar service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.GetName()), attribute.StringSlice("Module Tags", request.GetTags())))
+	span.AddEvent("gateway: registering PublishTag with Registrar service", trace.WithAttributes(attribute.String("Module Name", request.GetName()), attribute.StringSlice("Module Tags", request.GetTags())))
 	span.SetAttributes(
 		attribute.String("module.name", request.GetName()),
 		attribute.StringSlice("module.tags", request.GetTags()),
@@ -120,8 +118,7 @@ func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terra
 	log.Println("Begin version => Version Manager")
 
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: creating new version with Version Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: creating new version with Version Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -158,8 +155,7 @@ func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrari
 	log.Println("End version => Version Manager")
 
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: aborting version with Version Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: aborting version with Version Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -194,8 +190,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
-			span.AddEvent("Successfully aborted version.")
-			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+			span.AddEvent("Successfully aborted version", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return res, nil
 		}
 	} else if request.GetAction() == terrarium.EndVersionRequest_PUBLISH {
@@ -206,8 +201,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
-			span.AddEvent("Successfully published version.")
-			span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+			span.AddEvent("Successfully published version", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return res, nil
 		}
 	} else {
@@ -343,8 +337,7 @@ func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, 
 	log.Println("Register module dependencies => Dependency Manager")
 
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: registering module dependencies with Dependency Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: registering module dependencies with Dependency Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -381,8 +374,7 @@ func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Contex
 	log.Println("Register container dependencies => Dependency Manager")
 
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: registering container dependencies with Dependency Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: registering container dependencies with Dependency Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -426,8 +418,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrari
 
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: retrieving container dependencies from Dependency Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: retrieving container dependencies from Dependency Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -456,8 +447,7 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(reques
 
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: retrieving container dependencies with Client")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: retrieving container dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -501,8 +491,7 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.Re
 
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: retrieving module dependencies from Dependency Manager service")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: retrieving module dependencies from Dependency Manager service", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
@@ -526,8 +515,7 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: retrieving module dependencies with Client")
-	span.AddEvent("Event", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
+	span.AddEvent("gateway: retrieving module dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
