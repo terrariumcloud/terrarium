@@ -1,10 +1,12 @@
 package browse
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 	"os"
@@ -17,8 +19,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
-
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
 type browseHttpService struct {
@@ -28,7 +28,7 @@ type browseHttpService struct {
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
 	router := h.createRouter(mountPath)
-	router.Use(otelmux.Middleware("browse"))
+
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
@@ -42,6 +42,7 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	rootRouter := mux.NewRouter()
 	rootRouter.Handle("/healthz", h.healthHandler()).Methods(http.MethodGet)
 	apiRouter := rootRouter.PathPrefix(apiPrefix).Subrouter()
+	apiRouter.Use(otelmux.Middleware("browse"))
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
@@ -68,7 +69,7 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 
 		client := services.NewRegistrarClient(conn)
 
-		registrarResponse, err2 := client.ListModules(context.TODO(), &services.ListModulesRequest{})
+		registrarResponse, err2 := client.ListModules(r.Context(), &services.ListModulesRequest{})
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
@@ -85,6 +86,12 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		moduleName := v1.GetModuleNameFromRequest(r)
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		span.SetAttributes(
+			attribute.String("module.name", moduleName),
+		)
+
 		conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
@@ -92,6 +99,15 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 			return
 		}
 		defer closeClient(conn)
+
+		clientRegistrar := services.NewRegistrarClient(conn)
+
+		registrarResponse, err := clientRegistrar.GetModule(ctx, &services.GetModuleRequest{Name: moduleName})
+		if err != nil {
+			log.Printf("Failed GRPC call with error: %v", err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
+			return
+		}
 
 		connVersion, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
@@ -101,17 +117,8 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 		}
 		defer closeClient(connVersion)
 
-		clientRegistrar := services.NewRegistrarClient(conn)
-
-		registrarResponse, err := clientRegistrar.GetModule(context.TODO(), &services.GetModuleRequest{Name: moduleName})
-		if err != nil {
-			log.Printf("Failed GRPC call with error: %v", err)
-			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
-			return
-		}
-
 		clientVersion := services.NewVersionManagerClient(connVersion)
-		versionResponse, err := clientVersion.ListModuleVersions(context.TODO(), &services.ListModuleVersionsRequest{Module: moduleName})
+		versionResponse, err := clientVersion.ListModuleVersions(ctx, &services.ListModuleVersionsRequest{Module: moduleName})
 		if err != nil {
 			log.Printf("Failed GRPC call with error: %v", err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
