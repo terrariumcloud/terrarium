@@ -125,9 +125,18 @@ func (h *modulesV1HttpService) downloadModuleHandler() http.Handler {
 // makes the stored registry code available to the client
 func (h *modulesV1HttpService) archiveHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		moduleName := GetModuleNameFromRequest(r)
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		span.AddEvent("Fetching module source code", trace.WithAttributes(attribute.String("Module Name", moduleName)))
+		span.SetAttributes(
+			attribute.String("module.name", moduleName),
+		)
+
 		conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the storage backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -140,7 +149,8 @@ func (h *modulesV1HttpService) archiveHandler() http.Handler {
 		})
 		if err2 != nil {
 			log.Printf("Failed to connect: %v", err2)
-			h.errorHandler.Write(rw, errors.New("failed to initiate the downlowd of the archive from storage backend service"), http.StatusInternalServerError)
+			span.RecordError(err2)
+			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the archive from storage backend service"), http.StatusInternalServerError)
 			return
 		}
 
