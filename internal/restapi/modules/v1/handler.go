@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -12,6 +11,8 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"io"
 	"log"
@@ -42,7 +43,6 @@ type ModuleVersionResponse struct {
 
 func (h *modulesV1HttpService) GetHttpHandler(mountPath string) http.Handler {
 	router := h.createRouter(mountPath)
-	router.Use(otelmux.Middleware("modules-v1"))
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
@@ -56,6 +56,7 @@ func (h *modulesV1HttpService) createRouter(mountPath string) *mux.Router {
 	r := mux.NewRouter()
 	r.Handle("/healthz", h.healthHandler()).Methods(http.MethodGet)
 	sr := r.PathPrefix(prefix).Subrouter()
+	sr.Use(otelmux.Middleware("modules-v1"))
 	sr.StrictSlash(true)
 	sr.Handle("/{organization_name}/{name}/{provider}/versions", h.getModuleVersionHandler()).Methods(http.MethodGet)
 	sr.Handle("/{organization_name}/{name}/{provider}/{version}/download", h.downloadModuleHandler()).Methods(http.MethodGet)
@@ -78,9 +79,18 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getModuleVersionHandler")
 		moduleName := GetModuleNameFromRequest(r)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		span.AddEvent("Returning a list of available versions for a module", trace.WithAttributes(attribute.String("Module Name", moduleName)))
+		span.SetAttributes(
+			attribute.String("module.name", moduleName),
+		)
+
 		conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
 			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -88,9 +98,10 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 
 		client := services.NewVersionManagerClient(conn)
 
-		versionResponse, err2 := client.ListModuleVersions(context.TODO(), &services.ListModuleVersionsRequest{Module: moduleName})
+		versionResponse, err2 := client.ListModuleVersions(r.Context(), &services.ListModuleVersionsRequest{Module: moduleName})
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
+			span.RecordError(err2)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -110,7 +121,7 @@ func (h *modulesV1HttpService) downloadModuleHandler() http.Handler {
 }
 
 // archiveHandler performs a fetch of the restapi.d module source code from the chosen backing store and presents it to the client
-// As part of the module flow clients are redirected here from the DownloadModuleHandler x-terraform-get header. his handler
+// As part of the module flow clients are redirected here from the DownloadModuleHandler x-terraform-get header. This handler
 // makes the stored registry code available to the client
 func (h *modulesV1HttpService) archiveHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -124,7 +135,7 @@ func (h *modulesV1HttpService) archiveHandler() http.Handler {
 
 		client := services.NewStorageClient(conn)
 
-		downloadStream, err2 := client.DownloadSourceZip(context.TODO(), &pb.DownloadSourceZipRequest{
+		downloadStream, err2 := client.DownloadSourceZip(r.Context(), &pb.DownloadSourceZipRequest{
 			Module: getVersionedModuleFromRequest(r),
 		})
 		if err2 != nil {
