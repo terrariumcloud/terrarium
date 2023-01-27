@@ -2,9 +2,10 @@ package version_manager
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"log"
 	"time"
+
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -18,6 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -69,6 +72,12 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 // BeginVersion Creates new Module Version with Version Manager service
 func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
 	log.Println("Creating new version.")
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	mv := ModuleVersion{
 		Name:      request.Module.GetName(),
 		Version:   request.Module.GetVersion(),
@@ -78,6 +87,7 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 	av, err := attributevalue.MarshalMap(mv)
 
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, MarshalModuleVersionError
 	}
@@ -88,6 +98,7 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 	}
 
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, CreateModuleVersionError
 	}
@@ -114,8 +125,16 @@ func (s *VersionManagerService) GetModuleKey(module *terrarium.Module) (map[stri
 // AbortVersion Removes Module Version with Version Manager service
 func (s *VersionManagerService) AbortVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Aborting module version.")
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	moduleKey, err := s.GetModuleKey(request.Module)
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, AbortModuleVersionError
 	}
@@ -126,6 +145,7 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *servi
 	}
 
 	if _, err := s.Db.DeleteItem(ctx, in); err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, AbortModuleVersionError
 	}
@@ -138,14 +158,22 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *servi
 func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing module version.")
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("module.name", request.Module.GetName()),
+		attribute.String("module.version", request.Module.GetVersion()),
+	)
+
 	moduleKey, err := s.GetModuleKey(request.Module)
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, PublishModuleVersionError
 	}
 
 	publishOn, err := attributevalue.Marshal(time.Now().UTC().String())
 	if err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, PublishModuleVersionError
 	}
@@ -160,6 +188,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 	}
 
 	if _, err := s.Db.UpdateItem(ctx, in); err != nil {
+		span.RecordError(err)
 		log.Println(err)
 		return nil, PublishModuleVersionError
 	}
