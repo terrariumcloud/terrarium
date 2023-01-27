@@ -9,6 +9,6 @@ import (
 var buildInformationVersion string
 
 func main() {
-	cmd.Execute(buildInformationVersion)
 	log.Println(buildInformationVersion)
+	cmd.Execute(buildInformationVersion)
 }
