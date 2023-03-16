@@ -1,2 +1,17 @@
 syntax = "proto3";
-package terrarium.module.services;
+package terrarium.oauth;
+
+option go_package = "github.com/terrariumcloud/terrarium/internal/oauth";
+
+message CreateApplicationRequest {
+    string application_name = 1;
+    string homepage_url = 2;
+    string application_description = 3;
+    string callback_url = 4;
+}
+
+message ApplicationResponse {
+    string id = 1;
+    string application_name = 2;
+    string callback_url = 3;
+}
