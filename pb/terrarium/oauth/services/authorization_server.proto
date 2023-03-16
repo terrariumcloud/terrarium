@@ -7,4 +7,6 @@ option go_package = "github.com/terrariumcloud/terrarium/internal/oauth/services
 
 service Authorization {
     rpc CreateApplication(terrarium.oauth.CreateApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
+    rpc UpdateApplication(terrarium.oauth.UpdateApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
+    rpc DeleteApplication(terrarium.oauth.DeleteApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
 }

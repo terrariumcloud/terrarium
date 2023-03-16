@@ -24,6 +24,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthorizationClient interface {
 	CreateApplication(ctx context.Context, in *oauth.CreateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
+	UpdateApplication(ctx context.Context, in *oauth.UpdateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
+	DeleteApplication(ctx context.Context, in *oauth.DeleteApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
 }
 
 type authorizationClient struct {
@@ -43,11 +45,31 @@ func (c *authorizationClient) CreateApplication(ctx context.Context, in *oauth.C
 	return out, nil
 }
 
+func (c *authorizationClient) UpdateApplication(ctx context.Context, in *oauth.UpdateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error) {
+	out := new(oauth.ApplicationResponse)
+	err := c.cc.Invoke(ctx, "/terrarium.oauth.authorization.Authorization/UpdateApplication", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authorizationClient) DeleteApplication(ctx context.Context, in *oauth.DeleteApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error) {
+	out := new(oauth.ApplicationResponse)
+	err := c.cc.Invoke(ctx, "/terrarium.oauth.authorization.Authorization/DeleteApplication", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorizationServer is the server API for Authorization service.
 // All implementations must embed UnimplementedAuthorizationServer
 // for forward compatibility
 type AuthorizationServer interface {
 	CreateApplication(context.Context, *oauth.CreateApplicationRequest) (*oauth.ApplicationResponse, error)
+	UpdateApplication(context.Context, *oauth.UpdateApplicationRequest) (*oauth.ApplicationResponse, error)
+	DeleteApplication(context.Context, *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error)
 	mustEmbedUnimplementedAuthorizationServer()
 }
 
@@ -57,6 +79,12 @@ type UnimplementedAuthorizationServer struct {
 
 func (UnimplementedAuthorizationServer) CreateApplication(context.Context, *oauth.CreateApplicationRequest) (*oauth.ApplicationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateApplication not implemented")
+}
+func (UnimplementedAuthorizationServer) UpdateApplication(context.Context, *oauth.UpdateApplicationRequest) (*oauth.ApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateApplication not implemented")
+}
+func (UnimplementedAuthorizationServer) DeleteApplication(context.Context, *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteApplication not implemented")
 }
 func (UnimplementedAuthorizationServer) mustEmbedUnimplementedAuthorizationServer() {}
 
@@ -89,6 +117,42 @@ func _Authorization_CreateApplication_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Authorization_UpdateApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(oauth.UpdateApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorizationServer).UpdateApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/terrarium.oauth.authorization.Authorization/UpdateApplication",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorizationServer).UpdateApplication(ctx, req.(*oauth.UpdateApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Authorization_DeleteApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(oauth.DeleteApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorizationServer).DeleteApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/terrarium.oauth.authorization.Authorization/DeleteApplication",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorizationServer).DeleteApplication(ctx, req.(*oauth.DeleteApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Authorization_ServiceDesc is the grpc.ServiceDesc for Authorization service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -99,6 +163,14 @@ var Authorization_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateApplication",
 			Handler:    _Authorization_CreateApplication_Handler,
+		},
+		{
+			MethodName: "UpdateApplication",
+			Handler:    _Authorization_UpdateApplication_Handler,
+		},
+		{
+			MethodName: "DeleteApplication",
+			Handler:    _Authorization_DeleteApplication_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
