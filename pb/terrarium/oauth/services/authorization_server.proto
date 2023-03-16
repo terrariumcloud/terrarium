@@ -3,8 +3,8 @@ package terrarium.oauth.authorization;
 
 import "pb/terrarium/oauth/oauth.proto";
 
-option go_package = "github.com/terrariumcloud/terrarium/internal/oauth/authorization";
+option go_package = "github.com/terrariumcloud/terrarium/internal/oauth/services";
 
-service AuthorizationServer {
+service Authorization {
     rpc CreateApplication(terrarium.oauth.CreateApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
 }
