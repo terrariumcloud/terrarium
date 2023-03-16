@@ -22,6 +22,16 @@ message DeleteApplicationRequest {
     string id = 1;
 }
 
+message RotateApplicationSecretsRequest {
+    string id = 1;
+}
+
+message RotateApplicationSecretsResponse {
+    string id = 1;
+    string client_id = 2;
+    string client_secret = 3;
+}
+
 message ApplicationResponse {
     string id = 1;
     string application_name = 2;

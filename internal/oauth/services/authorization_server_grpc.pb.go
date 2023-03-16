@@ -26,6 +26,7 @@ type AuthorizationClient interface {
 	CreateApplication(ctx context.Context, in *oauth.CreateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
 	UpdateApplication(ctx context.Context, in *oauth.UpdateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
 	DeleteApplication(ctx context.Context, in *oauth.DeleteApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
+	RotateApplicationSecrets(ctx context.Context, in *oauth.RotateApplicationSecretsRequest, opts ...grpc.CallOption) (*oauth.RotateApplicationSecretsResponse, error)
 }
 
 type authorizationClient struct {
@@ -63,6 +64,15 @@ func (c *authorizationClient) DeleteApplication(ctx context.Context, in *oauth.D
 	return out, nil
 }
 
+func (c *authorizationClient) RotateApplicationSecrets(ctx context.Context, in *oauth.RotateApplicationSecretsRequest, opts ...grpc.CallOption) (*oauth.RotateApplicationSecretsResponse, error) {
+	out := new(oauth.RotateApplicationSecretsResponse)
+	err := c.cc.Invoke(ctx, "/terrarium.oauth.authorization.Authorization/RotateApplicationSecrets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorizationServer is the server API for Authorization service.
 // All implementations must embed UnimplementedAuthorizationServer
 // for forward compatibility
@@ -70,6 +80,7 @@ type AuthorizationServer interface {
 	CreateApplication(context.Context, *oauth.CreateApplicationRequest) (*oauth.ApplicationResponse, error)
 	UpdateApplication(context.Context, *oauth.UpdateApplicationRequest) (*oauth.ApplicationResponse, error)
 	DeleteApplication(context.Context, *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error)
+	RotateApplicationSecrets(context.Context, *oauth.RotateApplicationSecretsRequest) (*oauth.RotateApplicationSecretsResponse, error)
 	mustEmbedUnimplementedAuthorizationServer()
 }
 
@@ -85,6 +96,9 @@ func (UnimplementedAuthorizationServer) UpdateApplication(context.Context, *oaut
 }
 func (UnimplementedAuthorizationServer) DeleteApplication(context.Context, *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteApplication not implemented")
+}
+func (UnimplementedAuthorizationServer) RotateApplicationSecrets(context.Context, *oauth.RotateApplicationSecretsRequest) (*oauth.RotateApplicationSecretsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RotateApplicationSecrets not implemented")
 }
 func (UnimplementedAuthorizationServer) mustEmbedUnimplementedAuthorizationServer() {}
 
@@ -153,6 +167,24 @@ func _Authorization_DeleteApplication_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Authorization_RotateApplicationSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(oauth.RotateApplicationSecretsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorizationServer).RotateApplicationSecrets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/terrarium.oauth.authorization.Authorization/RotateApplicationSecrets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorizationServer).RotateApplicationSecrets(ctx, req.(*oauth.RotateApplicationSecretsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Authorization_ServiceDesc is the grpc.ServiceDesc for Authorization service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -171,6 +203,10 @@ var Authorization_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteApplication",
 			Handler:    _Authorization_DeleteApplication_Handler,
+		},
+		{
+			MethodName: "RotateApplicationSecrets",
+			Handler:    _Authorization_RotateApplicationSecrets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

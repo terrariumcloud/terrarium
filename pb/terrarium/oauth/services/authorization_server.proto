@@ -9,4 +9,5 @@ service Authorization {
     rpc CreateApplication(terrarium.oauth.CreateApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
     rpc UpdateApplication(terrarium.oauth.UpdateApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
     rpc DeleteApplication(terrarium.oauth.DeleteApplicationRequest) returns (terrarium.oauth.ApplicationResponse);
+    rpc RotateApplicationSecrets(terrarium.oauth.RotateApplicationSecretsRequest) returns (terrarium.oauth.RotateApplicationSecretsResponse);
 }

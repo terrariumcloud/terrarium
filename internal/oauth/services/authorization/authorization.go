@@ -29,3 +29,7 @@ func (a *AuthorizationServer) UpdateApplication(ctx context.Context, req *oauth.
 func (a *AuthorizationServer) DeleteApplication(ctx context.Context, req *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error) {
 	return nil, nil
 }
+
+func (a *AuthorizationServer) RotateApplicationSecrets(ctx context.Context, req *oauth.RotateApplicationSecretsRequest) (*oauth.RotateApplicationSecretsResponse, error) {
+	return nil, nil
+}
