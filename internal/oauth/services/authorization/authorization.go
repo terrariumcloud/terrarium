@@ -12,6 +12,7 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/oauth"
 	"github.com/terrariumcloud/terrarium/internal/oauth/services"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/jwt"
 	"google.golang.org/grpc"
 )
 
@@ -35,8 +36,13 @@ func (a *AuthorizationServer) CreatePKI() error {
 	} else {
 		log.Println("RSA keys already exist. Skipping")
 	}
-	token := NewJWT()
-	log.Printf("%v", token.Header())
+	var token jwt.Token
+	token = jwt.NewJWT([]string{}, privateKeyPath)
+	signed, err := token.Sign(privateKeyPath)
+	if err != nil {
+		return err
+	}
+	log.Printf("%v", signed)
 	return nil
 }
 
