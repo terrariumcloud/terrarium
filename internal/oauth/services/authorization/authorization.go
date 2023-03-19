@@ -35,6 +35,8 @@ func (a *AuthorizationServer) CreatePKI() error {
 	} else {
 		log.Println("RSA keys already exist. Skipping")
 	}
+	token := NewJWT()
+	log.Printf("%v", token.Header())
 	return nil
 }
 
