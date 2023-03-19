@@ -29,15 +29,5 @@ func runOAuth(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("failed creating PKI keys: %s", err)
 	}
-	token := jwt.NewJWT([]string{})
-	issued, err := token.Sign()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(issued)
-	err = token.Signature().Verify()
-	if err != nil {
-		log.Fatal(err)
-	}
 	startGRPCService("oauth", &authServer)
 }
