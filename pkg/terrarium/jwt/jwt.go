@@ -14,8 +14,10 @@ const (
 )
 
 type Token interface {
-	Verify() error
 	Sign(secretPath string) (string, error)
+	Signature() *JWTSignature
+	Payload() *JWTPayload
+	Header() *JWTHeader
 }
 
 type TokenComponent interface {
@@ -24,6 +26,7 @@ type TokenComponent interface {
 
 type TokenSignature interface {
 	Create(header string, payload string) (string, error)
+	Verify() error
 }
 
 func NewJWT(requestedScopes []string) *JWTToken {

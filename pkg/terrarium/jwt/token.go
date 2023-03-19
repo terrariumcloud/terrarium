@@ -10,6 +10,30 @@ type JWTToken struct {
 	signature TokenSignature
 }
 
+func (j *JWTToken) Header() *JWTHeader {
+	h, ok := j.header.(*JWTHeader)
+	if ok {
+		return h
+	}
+	return nil
+}
+
+func (j *JWTToken) Payload() *JWTPayload {
+	p, ok := j.payload.(*JWTPayload)
+	if ok {
+		return p
+	}
+	return nil
+}
+
+func (j *JWTToken) Signature() *JWTSignature {
+	s, ok := j.signature.(*JWTSignature)
+	if ok {
+		return s
+	}
+	return nil
+}
+
 func (j *JWTToken) Sign() (string, error) {
 	header, err := j.header.Encode()
 	if err != nil {
@@ -24,8 +48,4 @@ func (j *JWTToken) Sign() (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%s.%s.%s", header, payload, signature), nil
-}
-
-func (j *JWTToken) Verify() error {
-	return nil
 }

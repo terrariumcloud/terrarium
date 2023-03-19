@@ -35,5 +35,9 @@ func runOAuth(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	log.Println(issued)
+	err = token.Signature().Verify()
+	if err != nil {
+		log.Fatal(err)
+	}
 	startGRPCService("oauth", &authServer)
 }
