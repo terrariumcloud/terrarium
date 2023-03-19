@@ -10,7 +10,7 @@ type JWTToken struct {
 	signature TokenSignature
 }
 
-func (j *JWTToken) Sign(secretPath string) (string, error) {
+func (j *JWTToken) Sign() (string, error) {
 	header, err := j.header.Encode()
 	if err != nil {
 		return "", err
@@ -19,7 +19,7 @@ func (j *JWTToken) Sign(secretPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	signature, err := j.signature.Create(header, payload, secretPath)
+	signature, err := j.signature.Create(header, payload)
 	if err != nil {
 		return "", err
 	}

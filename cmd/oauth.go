@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium/internal/oauth/services/authorization"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/jwt"
 )
 
 // oauthCmd represents the oauth command
@@ -24,9 +25,15 @@ func init() {
 
 func runOAuth(cmd *cobra.Command, args []string) {
 	authServer := authorization.AuthorizationServer{}
-	err := authServer.CreatePKI()
+	err := jwt.CreatePKI()
 	if err != nil {
 		log.Fatalf("failed creating PKI keys: %s", err)
 	}
+	token := jwt.NewJWT([]string{})
+	issued, err := token.Sign()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(issued)
 	startGRPCService("oauth", &authServer)
 }

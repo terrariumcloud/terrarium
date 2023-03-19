@@ -13,10 +13,10 @@ import (
 
 type JWTSignature struct{}
 
-func (s *JWTSignature) Create(header string, payload string, secretPath string) (string, error) {
+func (s *JWTSignature) Create(header string, payload string) (string, error) {
 	unsignedJWT := fmt.Sprintf("%s.%s", header, payload)
 	hash := sha256.Sum256([]byte(unsignedJWT))
-	secret, err := os.ReadFile(secretPath)
+	secret, err := os.ReadFile(privateKeyPath)
 	if err != nil {
 		return "", err
 	}

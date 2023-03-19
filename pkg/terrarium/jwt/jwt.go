@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+const (
+	privateKeyPath = "./key.pem"
+	publicKeyPath  = "./key.pub"
+	keySize        = 4096
+)
+
 type Token interface {
 	Verify() error
 	Sign(secretPath string) (string, error)
@@ -17,10 +23,10 @@ type TokenComponent interface {
 }
 
 type TokenSignature interface {
-	Create(header string, payload string, privateKey string) (string, error)
+	Create(header string, payload string) (string, error)
 }
 
-func NewJWT(requestedScopes []string, privateKeyPath string) *JWTToken {
+func NewJWT(requestedScopes []string) *JWTToken {
 	if len(requestedScopes) == 0 {
 		requestedScopes = append(requestedScopes, "read")
 	}
