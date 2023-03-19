@@ -27,6 +27,7 @@ type AuthorizationClient interface {
 	UpdateApplication(ctx context.Context, in *oauth.UpdateApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
 	DeleteApplication(ctx context.Context, in *oauth.DeleteApplicationRequest, opts ...grpc.CallOption) (*oauth.ApplicationResponse, error)
 	RotateApplicationSecrets(ctx context.Context, in *oauth.RotateApplicationSecretsRequest, opts ...grpc.CallOption) (*oauth.RotateApplicationSecretsResponse, error)
+	IssueJWTToken(ctx context.Context, in *oauth.IssueJWTTokenRequest, opts ...grpc.CallOption) (*oauth.IssueJWTTokenResponse, error)
 }
 
 type authorizationClient struct {
@@ -73,6 +74,15 @@ func (c *authorizationClient) RotateApplicationSecrets(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *authorizationClient) IssueJWTToken(ctx context.Context, in *oauth.IssueJWTTokenRequest, opts ...grpc.CallOption) (*oauth.IssueJWTTokenResponse, error) {
+	out := new(oauth.IssueJWTTokenResponse)
+	err := c.cc.Invoke(ctx, "/terrarium.oauth.authorization.Authorization/IssueJWTToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorizationServer is the server API for Authorization service.
 // All implementations must embed UnimplementedAuthorizationServer
 // for forward compatibility
@@ -81,6 +91,7 @@ type AuthorizationServer interface {
 	UpdateApplication(context.Context, *oauth.UpdateApplicationRequest) (*oauth.ApplicationResponse, error)
 	DeleteApplication(context.Context, *oauth.DeleteApplicationRequest) (*oauth.ApplicationResponse, error)
 	RotateApplicationSecrets(context.Context, *oauth.RotateApplicationSecretsRequest) (*oauth.RotateApplicationSecretsResponse, error)
+	IssueJWTToken(context.Context, *oauth.IssueJWTTokenRequest) (*oauth.IssueJWTTokenResponse, error)
 	mustEmbedUnimplementedAuthorizationServer()
 }
 
@@ -99,6 +110,9 @@ func (UnimplementedAuthorizationServer) DeleteApplication(context.Context, *oaut
 }
 func (UnimplementedAuthorizationServer) RotateApplicationSecrets(context.Context, *oauth.RotateApplicationSecretsRequest) (*oauth.RotateApplicationSecretsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RotateApplicationSecrets not implemented")
+}
+func (UnimplementedAuthorizationServer) IssueJWTToken(context.Context, *oauth.IssueJWTTokenRequest) (*oauth.IssueJWTTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IssueJWTToken not implemented")
 }
 func (UnimplementedAuthorizationServer) mustEmbedUnimplementedAuthorizationServer() {}
 
@@ -185,6 +199,24 @@ func _Authorization_RotateApplicationSecrets_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Authorization_IssueJWTToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(oauth.IssueJWTTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorizationServer).IssueJWTToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/terrarium.oauth.authorization.Authorization/IssueJWTToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorizationServer).IssueJWTToken(ctx, req.(*oauth.IssueJWTTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Authorization_ServiceDesc is the grpc.ServiceDesc for Authorization service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -207,6 +239,10 @@ var Authorization_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RotateApplicationSecrets",
 			Handler:    _Authorization_RotateApplicationSecrets_Handler,
+		},
+		{
+			MethodName: "IssueJWTToken",
+			Handler:    _Authorization_IssueJWTToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

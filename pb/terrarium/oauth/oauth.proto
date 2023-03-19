@@ -39,3 +39,17 @@ message ApplicationResponse {
     string application_description = 4;
     string callback_url = 5;
 }
+
+message IssueJWTTokenRequest {
+    string grant_type = 1;
+    string client_id = 2;
+    string client_secret = 3;
+    string redirect_uri = 4;
+    string code = 5;
+}
+
+message IssueJWTTokenResponse {
+    string access_token = 1;
+    string token_type = 2;
+    string scope= 3;
+}

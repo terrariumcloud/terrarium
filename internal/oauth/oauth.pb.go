@@ -406,6 +406,148 @@ func (x *ApplicationResponse) GetCallbackUrl() string {
 	return ""
 }
 
+type IssueJWTTokenRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	GrantType    string `protobuf:"bytes,1,opt,name=grant_type,json=grantType,proto3" json:"grant_type,omitempty"`
+	ClientId     string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	ClientSecret string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"`
+	RedirectUri  string `protobuf:"bytes,4,opt,name=redirect_uri,json=redirectUri,proto3" json:"redirect_uri,omitempty"`
+	Code         string `protobuf:"bytes,5,opt,name=code,proto3" json:"code,omitempty"`
+}
+
+func (x *IssueJWTTokenRequest) Reset() {
+	*x = IssueJWTTokenRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_terrarium_oauth_oauth_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *IssueJWTTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IssueJWTTokenRequest) ProtoMessage() {}
+
+func (x *IssueJWTTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_terrarium_oauth_oauth_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IssueJWTTokenRequest.ProtoReflect.Descriptor instead.
+func (*IssueJWTTokenRequest) Descriptor() ([]byte, []int) {
+	return file_pb_terrarium_oauth_oauth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *IssueJWTTokenRequest) GetGrantType() string {
+	if x != nil {
+		return x.GrantType
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenRequest) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenRequest) GetClientSecret() string {
+	if x != nil {
+		return x.ClientSecret
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenRequest) GetRedirectUri() string {
+	if x != nil {
+		return x.RedirectUri
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type IssueJWTTokenResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AccessToken string `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	TokenType   string `protobuf:"bytes,2,opt,name=token_type,json=tokenType,proto3" json:"token_type,omitempty"`
+	Scope       string `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+}
+
+func (x *IssueJWTTokenResponse) Reset() {
+	*x = IssueJWTTokenResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_terrarium_oauth_oauth_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *IssueJWTTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IssueJWTTokenResponse) ProtoMessage() {}
+
+func (x *IssueJWTTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_terrarium_oauth_oauth_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IssueJWTTokenResponse.ProtoReflect.Descriptor instead.
+func (*IssueJWTTokenResponse) Descriptor() ([]byte, []int) {
+	return file_pb_terrarium_oauth_oauth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *IssueJWTTokenResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenResponse) GetTokenType() string {
+	if x != nil {
+		return x.TokenType
+	}
+	return ""
+}
+
+func (x *IssueJWTTokenResponse) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
 var File_pb_terrarium_oauth_oauth_proto protoreflect.FileDescriptor
 
 var file_pb_terrarium_oauth_oauth_proto_rawDesc = []byte{
@@ -464,11 +606,29 @@ var file_pb_terrarium_oauth_oauth_proto_rawDesc = []byte{
 	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
 	0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x61, 0x6c, 0x6c, 0x62, 0x61, 0x63, 0x6b, 0x5f,
 	0x75, 0x72, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x61, 0x6c, 0x6c, 0x62,
-	0x61, 0x63, 0x6b, 0x55, 0x72, 0x6c, 0x42, 0x34, 0x5a, 0x32, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x74, 0x65, 0x72, 0x72, 0x61, 0x72, 0x69, 0x75, 0x6d, 0x63, 0x6c,
-	0x6f, 0x75, 0x64, 0x2f, 0x74, 0x65, 0x72, 0x72, 0x61, 0x72, 0x69, 0x75, 0x6d, 0x2f, 0x69, 0x6e,
-	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x6f, 0x61, 0x75, 0x74, 0x68, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x63, 0x6b, 0x55, 0x72, 0x6c, 0x22, 0xae, 0x01, 0x0a, 0x14, 0x49, 0x73, 0x73, 0x75, 0x65,
+	0x4a, 0x57, 0x54, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x1d, 0x0a, 0x0a, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1b,
+	0x0a, 0x09, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x23, 0x0a, 0x0d, 0x63,
+	0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0c, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74,
+	0x12, 0x21, 0x0a, 0x0c, 0x72, 0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x5f, 0x75, 0x72, 0x69,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x72, 0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74,
+	0x55, 0x72, 0x69, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x22, 0x6f, 0x0a, 0x15, 0x49, 0x73, 0x73, 0x75, 0x65,
+	0x4a, 0x57, 0x54, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x21, 0x0a, 0x0c, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x54, 0x6f,
+	0x6b, 0x65, 0x6e, 0x12, 0x1d, 0x0a, 0x0a, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x54, 0x79,
+	0x70, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x63, 0x6f, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x73, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x34, 0x5a, 0x32, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x74, 0x65, 0x72, 0x72, 0x61, 0x72, 0x69, 0x75, 0x6d,
+	0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2f, 0x74, 0x65, 0x72, 0x72, 0x61, 0x72, 0x69, 0x75, 0x6d, 0x2f,
+	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x6f, 0x61, 0x75, 0x74, 0x68, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -483,7 +643,7 @@ func file_pb_terrarium_oauth_oauth_proto_rawDescGZIP() []byte {
 	return file_pb_terrarium_oauth_oauth_proto_rawDescData
 }
 
-var file_pb_terrarium_oauth_oauth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_pb_terrarium_oauth_oauth_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_pb_terrarium_oauth_oauth_proto_goTypes = []interface{}{
 	(*CreateApplicationRequest)(nil),         // 0: terrarium.oauth.CreateApplicationRequest
 	(*UpdateApplicationRequest)(nil),         // 1: terrarium.oauth.UpdateApplicationRequest
@@ -491,6 +651,8 @@ var file_pb_terrarium_oauth_oauth_proto_goTypes = []interface{}{
 	(*RotateApplicationSecretsRequest)(nil),  // 3: terrarium.oauth.RotateApplicationSecretsRequest
 	(*RotateApplicationSecretsResponse)(nil), // 4: terrarium.oauth.RotateApplicationSecretsResponse
 	(*ApplicationResponse)(nil),              // 5: terrarium.oauth.ApplicationResponse
+	(*IssueJWTTokenRequest)(nil),             // 6: terrarium.oauth.IssueJWTTokenRequest
+	(*IssueJWTTokenResponse)(nil),            // 7: terrarium.oauth.IssueJWTTokenResponse
 }
 var file_pb_terrarium_oauth_oauth_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -578,6 +740,30 @@ func file_pb_terrarium_oauth_oauth_proto_init() {
 				return nil
 			}
 		}
+		file_pb_terrarium_oauth_oauth_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IssueJWTTokenRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pb_terrarium_oauth_oauth_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IssueJWTTokenResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -585,7 +771,7 @@ func file_pb_terrarium_oauth_oauth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pb_terrarium_oauth_oauth_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

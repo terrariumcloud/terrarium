@@ -21,3 +21,4 @@ vendor/
 .vscode/
 terrarium
 .DS_Store
+key.*
