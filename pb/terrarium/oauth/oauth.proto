@@ -1,0 +1,55 @@
+syntax = "proto3";
+package terrarium.oauth;
+
+option go_package = "github.com/terrariumcloud/terrarium/internal/oauth";
+
+message CreateApplicationRequest {
+    string application_name = 1;
+    string homepage_url = 2;
+    string application_description = 3;
+    string callback_url = 4;
+}
+
+message UpdateApplicationRequest {
+    string id = 1;
+    string application_name = 2;
+    string homepage_url = 3;
+    string application_description = 4;
+    string callback_url = 5;
+}
+
+message DeleteApplicationRequest {
+    string id = 1;
+}
+
+message RotateApplicationSecretsRequest {
+    string id = 1;
+}
+
+message RotateApplicationSecretsResponse {
+    string id = 1;
+    string client_id = 2;
+    string client_secret = 3;
+}
+
+message ApplicationResponse {
+    string id = 1;
+    string application_name = 2;
+    string homepage_url = 3;
+    string application_description = 4;
+    string callback_url = 5;
+}
+
+message IssueJWTTokenRequest {
+    string grant_type = 1;
+    string client_id = 2;
+    string client_secret = 3;
+    string redirect_uri = 4;
+    string code = 5;
+}
+
+message IssueJWTTokenResponse {
+    string access_token = 1;
+    string token_type = 2;
+    string scope= 3;
+}
