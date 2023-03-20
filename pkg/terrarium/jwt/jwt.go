@@ -1,9 +1,13 @@
 package jwt
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,6 +22,7 @@ type Token interface {
 	Signature() *JWTSignature
 	Payload() *JWTPayload
 	Header() *JWTHeader
+	ToJSON() ([]byte, error)
 }
 
 type TokenComponent interface {
@@ -56,6 +61,45 @@ func NewJWT(requestedScopes []string) *JWTToken {
 		signature: signature,
 	}
 	return token
+}
+
+func NewJWTFromString(jwt string) (*JWTToken, error) {
+	jwtParts := strings.Split(jwt, ".")
+	if len(jwtParts) != 3 {
+		return nil, errors.New("invalid jwt")
+	}
+	rawHeader, err := base64.RawURLEncoding.DecodeString(jwtParts[0])
+	if err != nil {
+		return nil, err
+	}
+	rawPayload, err := base64.RawURLEncoding.DecodeString(jwtParts[1])
+	if err != nil {
+		return nil, err
+	}
+	signature, err := JWTSignatureFromJWT(jwt)
+	if err != nil {
+		return nil, err
+	}
+	header := &JWTHeader{}
+	payload := &JWTPayload{}
+	err = json.Unmarshal(rawHeader, &header)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(rawPayload, &payload)
+	if err != nil {
+		return nil, err
+	}
+	return &JWTToken{
+		header:    header,
+		payload:   payload,
+		signature: signature,
+	}, nil
+}
+
+func createJWTHash(header, payload string) [32]byte {
+	unsignedJWT := fmt.Sprintf("%s.%s", header, payload)
+	return sha256.Sum256([]byte(unsignedJWT))
 }
 
 func encode(c interface{}) (string, error) {

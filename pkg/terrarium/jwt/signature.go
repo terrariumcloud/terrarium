@@ -3,13 +3,29 @@ package jwt
 import (
 	"crypto"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
+	"errors"
 	"os"
+	"strings"
 )
+
+func JWTSignatureFromJWT(jwt string) (*JWTSignature, error) {
+	jwtParts := strings.Split(jwt, ".")
+	if len(jwtParts) < 3 {
+		return nil, errors.New("invalid JWT")
+	}
+	hash := createJWTHash(jwtParts[0], jwtParts[1])
+	rawSig, err := base64.RawURLEncoding.DecodeString(jwtParts[2])
+	if err != nil {
+		return nil, err
+	}
+	return &JWTSignature{
+		jwtHash:      hash,
+		rawSignature: rawSig,
+	}, nil
+}
 
 type JWTSignature struct {
 	privateKey   *rsa.PrivateKey
@@ -19,8 +35,7 @@ type JWTSignature struct {
 }
 
 func (s *JWTSignature) Create(header string, payload string) (string, error) {
-	unsignedJWT := fmt.Sprintf("%s.%s", header, payload)
-	hash := sha256.Sum256([]byte(unsignedJWT))
+	hash := createJWTHash(header, payload)
 	err := s.readPrivateKey()
 	if err != nil {
 		return "", err

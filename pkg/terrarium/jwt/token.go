@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -32,6 +33,14 @@ func (j *JWTToken) Signature() *JWTSignature {
 		return s
 	}
 	return nil
+}
+
+func (j *JWTToken) ToJSON() ([]byte, error) {
+	var data map[string]interface{} = map[string]interface{}{
+		"header":  j.Header(),
+		"payload": j.Payload(),
+	}
+	return json.MarshalIndent(data, "", "   ")
 }
 
 func (j *JWTToken) Sign() (string, error) {
