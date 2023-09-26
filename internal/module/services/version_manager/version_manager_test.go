@@ -243,7 +243,6 @@ func Test_PublishVersion(t *testing.T) {
 
 // Test_ListModuleVersions checks:
 // - if correct response is returned when versions are fetched
-// - if error is returned when PutItem fails
 func Test_ListModuleVersions(t *testing.T) {
 	t.Parallel()
 
