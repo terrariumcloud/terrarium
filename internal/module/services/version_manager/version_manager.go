@@ -2,23 +2,23 @@ package version_manager
 
 import (
 	"context"
-	"time"
 	"log"
+	"time"
 
-	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/storage"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
-	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"github.com/apparentlymart/go-versions/versions"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/apparentlymart/go-versions/versions"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

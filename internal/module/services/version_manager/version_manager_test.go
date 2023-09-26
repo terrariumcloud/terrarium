@@ -1,13 +1,13 @@
 package version_manager
 
 import (
-	"testing"
 	"context"
 	"errors"
+	"testing"
 
-	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
 
