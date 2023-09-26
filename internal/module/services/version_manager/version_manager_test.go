@@ -255,8 +255,23 @@ func Test_ListModuleVersions(t *testing.T) {
 		req := services.ListModuleVersionsRequest{Module: "dummy"}
 		res, err := svc.ListModuleVersions(context.TODO(), &req)
 
-		if err == nil {
-			t.Errorf("Expected no error, got %v", res)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if res.Versions[0] != "1.0.1" {
+			t.Errorf("Expected version 1.0.1, got %v", res.Versions[0])
+		}
+		if res.Versions[1] != "1.0.2-alpha" {
+			t.Errorf("Expected version 1.0.2-alpha, got %v", res.Versions[1])
+		}
+		if res.Versions[2] != "1.0.2-beta" {
+			t.Errorf("Expected version 1.0.2-beta, got %v", res.Versions[2])
+		}
+		if res.Versions[3] != "1.0.10" {
+			t.Errorf("Expected version 1.0.10, got %v", res.Versions[3])
+		}
+		if res.Versions[4] != "v1.0.2-gamma" {
+			t.Errorf("Expected version v1.0.2-gamma, got %v", res.Versions[4])
 		}
 
 	})

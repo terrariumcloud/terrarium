@@ -237,8 +237,16 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 		}
 	}
 	var semverList versions.List
+	var invalidSemVersions []string
 	for _, moduleVersion := range grpcResponse.Versions {
-		semverList = append(semverList, versions.MustParseVersion(moduleVersion))
+		parsedVersion, err := versions.ParseVersion(moduleVersion)
+
+		if err != nil {
+			invalidSemVersions = append(invalidSemVersions, moduleVersion)
+		} else {
+			semverList = append(semverList, parsedVersion)
+		}
+
 	}
 	semverList.Sort()
 
@@ -246,7 +254,7 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 	for _, moduleVersion := range semverList {
 		sortedVersions = append(sortedVersions, moduleVersion.String())
 	}
-	grpcResponse.Versions = sortedVersions
+	grpcResponse.Versions = append(sortedVersions, invalidSemVersions...)
 
 	return &grpcResponse, nil
 }
