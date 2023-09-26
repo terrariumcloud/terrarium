@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/apparentlymart/go-versions/versions"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -235,6 +236,18 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
 		}
 	}
+	var semverList versions.List
+	for _, moduleVersion := range grpcResponse.Versions {
+		semverList = append(semverList, versions.MustParseVersion(moduleVersion))
+	}
+	semverList.Sort()
+
+	var sortedVersions []string
+	for _, moduleVersion := range semverList {
+		sortedVersions = append(sortedVersions, moduleVersion.String())
+	}
+	grpcResponse.Versions = sortedVersions
+
 	return &grpcResponse, nil
 }
 

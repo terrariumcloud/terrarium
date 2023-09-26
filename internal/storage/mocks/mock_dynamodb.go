@@ -3,6 +3,7 @@ package mocks
 import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type DynamoDB struct {
@@ -26,6 +27,9 @@ type DynamoDB struct {
 	DeleteItemInvocations    int
 	DeleteItemOut            *dynamodb.DeleteItemOutput
 	DeleteItemError          error
+	ScanItemInvocations      int
+	ScanOut                  *dynamodb.ScanOutput
+	ScanError                error
 }
 
 func (mdb *DynamoDB) DescribeTable(_ context.Context, in *dynamodb.DescribeTableInput, _ ...func(*dynamodb.Options)) (*dynamodb.DescribeTableOutput, error) {
@@ -81,6 +85,24 @@ func (mdb *DynamoDB) DeleteItem(_ context.Context, in *dynamodb.DeleteItemInput,
 	return mdb.DeleteItemOut, mdb.DeleteItemError
 }
 
-func (mdb *DynamoDB) Scan(_ context.Context, in *dynamodb.ScanInput, _ ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
-	panic("Not implemented")
+func (mdb *DynamoDB) Scan(ctx context.Context, in *dynamodb.ScanInput, optFns ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+
+	mdb.ScanItemInvocations++
+	mdb.TableName = *in.TableName
+
+	mdb.ScanOut = &dynamodb.ScanOutput{
+		Items: []map[string]types.AttributeValue{
+			{
+				"Version": &types.AttributeValueMemberS{Value: "1.0.1"},
+			},
+			{
+				"Version": &types.AttributeValueMemberS{Value: "1.0.10"},
+			},
+			{
+				"Version": &types.AttributeValueMemberS{Value: "1.0.2"},
+			},
+		},
+	}
+
+	return mdb.ScanOut, mdb.ScanError
 }

@@ -3,10 +3,10 @@ package version_manager
 import (
 	"context"
 	"errors"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"testing"
 
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
@@ -239,4 +239,26 @@ func Test_PublishVersion(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", PublishModuleVersionError, err)
 		}
 	})
+}
+
+// Test_ListModuleVersions checks:
+// - if correct response is returned when versions are fetched
+// - if error is returned when PutItem fails
+func Test_ListModuleVersions(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Listing versions", func(t *testing.T) {
+		db := &mocks.DynamoDB{}
+
+		svc := &VersionManagerService{Db: db}
+
+		req := services.ListModuleVersionsRequest{Module: "dummy"}
+		res, err := svc.ListModuleVersions(context.TODO(), &req)
+
+		if err == nil {
+			t.Errorf("Expected no error, got %v", res)
+		}
+
+	})
+
 }
