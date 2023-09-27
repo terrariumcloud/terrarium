@@ -237,14 +237,15 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 		}
 	}
 	var semverList versions.List
-	var invalidSemVersions []string
 	for _, moduleVersion := range grpcResponse.Versions {
 		parsedVersion, err := versions.ParseVersion(moduleVersion)
 
 		if err != nil {
-			invalidSemVersions = append(invalidSemVersions, moduleVersion)
+			log.Printf("Skipping invalid semantic version: %v", moduleVersion)
 		} else {
-			semverList = append(semverList, parsedVersion)
+			if (parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0"))) {
+				semverList = append(semverList, parsedVersion)
+			}
 		}
 
 	}
@@ -254,7 +255,7 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 	for _, moduleVersion := range semverList {
 		sortedVersions = append(sortedVersions, moduleVersion.String())
 	}
-	grpcResponse.Versions = append(sortedVersions, invalidSemVersions...)
+	grpcResponse.Versions = sortedVersions
 
 	return &grpcResponse, nil
 }

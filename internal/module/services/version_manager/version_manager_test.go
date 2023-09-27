@@ -269,9 +269,6 @@ func Test_ListModuleVersions(t *testing.T) {
 		if res.Versions[3] != "1.0.10" {
 			t.Errorf("Expected version 1.0.10, got %v", res.Versions[3])
 		}
-		if res.Versions[4] != "v1.0.2-gamma" {
-			t.Errorf("Expected version v1.0.2-gamma, got %v", res.Versions[4])
-		}
 
 	})
 

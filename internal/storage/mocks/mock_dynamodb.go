@@ -107,6 +107,12 @@ func (mdb *DynamoDB) Scan(ctx context.Context, in *dynamodb.ScanInput, optFns ..
 			{
 				"Version": &types.AttributeValueMemberS{Value: "v1.0.2-gamma"},
 			},
+			{
+				"Version": &types.AttributeValueMemberS{Value: "0.0.0"},
+			},
+			{
+				"Version": &types.AttributeValueMemberS{Value: "0.0.0-alpha"},
+			},
 		},
 	}
 
