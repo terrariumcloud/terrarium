@@ -243,9 +243,7 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 		if err != nil {
 			log.Printf("Skipping invalid semantic version: %v", moduleVersion)
 		} else {
-			if (parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0"))) {
-				semverList = append(semverList, parsedVersion)
-			}
+			semverList = append(semverList, parsedVersion)
 		}
 
 	}

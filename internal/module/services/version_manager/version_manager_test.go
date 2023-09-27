@@ -286,17 +286,23 @@ func Test_ListModuleVersions(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		if res.Versions[0] != "1.0.1" {
-			t.Errorf("Expected version 1.0.1, got %v", res.Versions[0])
+		if res.Versions[0] != "0.0.0-alpha" {
+			t.Errorf("Expected version 0.0.0-alpha, got %v", res.Versions[0])
 		}
-		if res.Versions[1] != "1.0.2-alpha" {
-			t.Errorf("Expected version 1.0.2-alpha, got %v", res.Versions[1])
+		if res.Versions[1] != "0.0.0" {
+			t.Errorf("Expected version 0.0.0, got %v", res.Versions[1])
 		}
-		if res.Versions[2] != "1.0.2-beta" {
-			t.Errorf("Expected version 1.0.2-beta, got %v", res.Versions[2])
+		if res.Versions[2] != "1.0.1" {
+			t.Errorf("Expected version 1.0.1, got %v", res.Versions[2])
 		}
-		if res.Versions[3] != "1.0.10" {
-			t.Errorf("Expected version 1.0.10, got %v", res.Versions[3])
+		if res.Versions[3] != "1.0.2-alpha" {
+			t.Errorf("Expected version 1.0.2-alpha, got %v", res.Versions[3])
+		}
+		if res.Versions[4] != "1.0.2-beta" {
+			t.Errorf("Expected version 1.0.2-beta, got %v", res.Versions[4])
+		}
+		if res.Versions[5] != "1.0.10" {
+			t.Errorf("Expected version 1.0.10, got %v", res.Versions[5])
 		}
 
 	})
