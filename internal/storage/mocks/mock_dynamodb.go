@@ -3,7 +3,6 @@ package mocks
 import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type DynamoDB struct {
@@ -89,32 +88,6 @@ func (mdb *DynamoDB) Scan(ctx context.Context, in *dynamodb.ScanInput, optFns ..
 
 	mdb.ScanItemInvocations++
 	mdb.TableName = *in.TableName
-
-	mdb.ScanOut = &dynamodb.ScanOutput{
-		Items: []map[string]types.AttributeValue{
-			{
-				"Version": &types.AttributeValueMemberS{Value: "1.0.1"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "1.0.10"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "1.0.2-beta"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "1.0.2-alpha"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "v1.0.2-gamma"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "0.0.0"},
-			},
-			{
-				"Version": &types.AttributeValueMemberS{Value: "0.0.0-alpha"},
-			},
-		},
-	}
 
 	return mdb.ScanOut, mdb.ScanError
 }
