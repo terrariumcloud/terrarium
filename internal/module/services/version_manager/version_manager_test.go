@@ -3,6 +3,7 @@ package version_manager
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -286,17 +287,17 @@ func Test_ListModuleVersions(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-                expectedVersions = []string {
-                "0.0.0-alpha",
-                "0.0.0",
-                "1.0.1",
-                "1.0.2-alpha",
-                "1.0.2-beta",
-                "1.0.10",                
-                }
-                if !reflect.DeepEqual(res.Versions, expectedVersions) {
-                    t.Errorf("Versions do not match, got %v, want %v", res.Versions, expectedVersions)
-                }
+		expectedVersions := []string{
+			"0.0.0-alpha",
+			"0.0.0",
+			"1.0.1",
+			"1.0.2-alpha",
+			"1.0.2-beta",
+			"1.0.10",
+		}
+		if !reflect.DeepEqual(res.Versions, expectedVersions) {
+			t.Errorf("Versions do not match, got %v, want %v", res.Versions, expectedVersions)
+		}
 
 	})
 
