@@ -3,11 +3,15 @@ package version_manager
 import (
 	"context"
 	"errors"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
+	"reflect"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+
 	"google.golang.org/grpc"
 )
 
@@ -239,4 +243,62 @@ func Test_PublishVersion(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", PublishModuleVersionError, err)
 		}
 	})
+}
+
+// Test_ListModuleVersions checks:
+// - if correct response is returned when versions are fetched
+func Test_ListModuleVersions(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Listing versions", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			ScanOut: &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"Version": &types.AttributeValueMemberS{Value: "1.0.1"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "1.0.10"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "1.0.2-beta"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "1.0.2-alpha"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "v1.0.2-gamma"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "0.0.0"},
+					},
+					{
+						"Version": &types.AttributeValueMemberS{Value: "0.0.0-alpha"},
+					},
+				},
+			},
+		}
+
+		svc := &VersionManagerService{Db: db}
+
+		req := services.ListModuleVersionsRequest{Module: "dummy"}
+		res, err := svc.ListModuleVersions(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		expectedVersions := []string{
+			"0.0.0-alpha",
+			"0.0.0",
+			"1.0.1",
+			"1.0.2-alpha",
+			"1.0.2-beta",
+			"1.0.10",
+		}
+		if !reflect.DeepEqual(res.Versions, expectedVersions) {
+			t.Errorf("Versions do not match, got %v, want %v", res.Versions, expectedVersions)
+		}
+
+	})
+
 }
