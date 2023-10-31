@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
@@ -14,11 +13,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/apparentlymart/go-versions/versions"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -235,6 +236,25 @@ func (s *VersionManagerService) ListModuleVersions(ctx context.Context, request 
 			grpcResponse.Versions = append(grpcResponse.Versions, moduleVersion.Version)
 		}
 	}
+	var semverList versions.List
+	for _, moduleVersion := range grpcResponse.Versions {
+		parsedVersion, err := versions.ParseVersion(moduleVersion)
+
+		if err != nil {
+			log.Printf("Skipping invalid semantic version: %v", moduleVersion)
+		} else {
+			semverList = append(semverList, parsedVersion)
+		}
+
+	}
+	semverList.Sort()
+
+	var sortedVersions []string
+	for _, moduleVersion := range semverList {
+		sortedVersions = append(sortedVersions, moduleVersion.String())
+	}
+	grpcResponse.Versions = sortedVersions
+
 	return &grpcResponse, nil
 }
 

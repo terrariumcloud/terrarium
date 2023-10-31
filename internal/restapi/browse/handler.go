@@ -15,6 +15,7 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 
+	"github.com/apparentlymart/go-versions/versions"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
@@ -120,6 +121,18 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 
 		clientVersion := services.NewVersionManagerClient(connVersion)
 		versionResponse, err := clientVersion.ListModuleVersions(ctx, &services.ListModuleVersionsRequest{Module: moduleName})
+
+		var filteredVersions []string
+		for _, moduleVersion := range versionResponse.Versions {
+			parsedVersion := versions.MustParseVersion(moduleVersion)
+
+			if parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0")) {
+				filteredVersions = append(filteredVersions, moduleVersion)
+			}
+
+		}
+		versionResponse.Versions = filteredVersions
+
 		if err != nil {
 			log.Printf("Failed GRPC call with error: %v", err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)

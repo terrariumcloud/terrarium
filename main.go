@@ -1,9 +1,14 @@
 package main
 
-import "github.com/terrariumcloud/terrarium/cmd"
+import (
+	"log"
+
+	"github.com/terrariumcloud/terrarium/cmd"
+)
 
 var buildInformationVersion string
 
 func main() {
+	log.Println(buildInformationVersion)
 	cmd.Execute(buildInformationVersion)
 }
