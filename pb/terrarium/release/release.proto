@@ -1,0 +1,28 @@
+syntax = "proto3";
+package terrarium.release;
+
+option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/release";
+
+service Publisher {
+    rpc Publish(PublishRequest) returns (PublishResponse) {}
+}
+
+message PublishRequest {
+    string type = 2;
+    string organization = 3;
+    string name = 4;
+    string version = 5;
+    string description = 6;
+    repeated Link links = 7;
+}
+
+message Link {
+    string title = 1;
+    string url = 2;
+}
+
+
+// No return information at this stage
+message PublishResponse {
+
+}

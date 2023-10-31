@@ -1,0 +1,13 @@
+syntax = "proto3";
+package terrarium.common.paging;
+option go_package = "github.com/terrariumcloud/terrarium/internal/common/paging";
+
+message PageInfoRequest {
+  uint64 offset = 1;
+  uint64 count = 2;
+}
+
+message PageInfoResponse {
+  uint64 next_offset = 1;
+  uint64 total_count = 2;
+}
