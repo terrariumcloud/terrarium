@@ -22,7 +22,7 @@ func Test_createModuleMetadataResponse(t *testing.T) {
 			args: args{
 				moduleMetadata: &services.ModuleMetadata{
 					Organization: "cie",
-					Name:      	  "test-module",
+					Name:         "test-module",
 					Provider:     "aws",
 					Description:  "This is the description for the module it is supposedly a long text",
 					SourceUrl:    "https://github.com/...",
@@ -35,7 +35,7 @@ func Test_createModuleMetadataResponse(t *testing.T) {
 			},
 			want: &moduleItem{
 				Organization: "cie",
-				Name:      	  "test-module",
+				Name:         "test-module",
 				Provider:     "aws",
 				Description:  "This is the description for the module it is supposedly a long text",
 				SourceUrl:    "https://github.com/...",
