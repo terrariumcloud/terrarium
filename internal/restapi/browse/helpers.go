@@ -33,6 +33,7 @@ func createModuleMetadataResponse(moduleMetadata *services.ModuleMetadata, modul
 		Provider:     moduleMetadata.Provider,
 		Description:  moduleMetadata.Description,
 		SourceUrl:    moduleMetadata.SourceUrl,
+		Maturity:     moduleMetadata.Maturity.String(),
 		Versions:     moduleVersions,
 	}
 }
