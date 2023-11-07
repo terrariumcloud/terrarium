@@ -18,7 +18,7 @@ func Test_createModuleMetadataResponse(t *testing.T) {
 		want *moduleItem
 	}{
 		{
-			name: "Module Metadata Reponse",
+			name: "Module Metadata Response",
 			args: args{
 				moduleMetadata: &services.ModuleMetadata{
 					Organization: "cie",
