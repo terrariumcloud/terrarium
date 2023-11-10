@@ -1,6 +1,6 @@
 module github.com/terrariumcloud/terrarium
 
-go 1.18
+go 1.21
 
 require (
 	github.com/apparentlymart/go-versions v1.0.2
