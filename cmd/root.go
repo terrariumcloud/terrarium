@@ -20,7 +20,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	noop "go.opentelemetry.io/otel/trace"
 
 	"github.com/spf13/cobra"
@@ -75,19 +74,13 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 }
 
 func newServiceResource(name string) *resource.Resource {
-	versionInfo := buildVersion
-	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
-		log.Println("Warning: build time version overriden by environment variable")
-		versionInfo = serviceVersion
+	//versionInfo := buildVersion
+	// if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
+	// 	log.Println("Warning: build time version overriden by environment variable")
+	// 	versionInfo = serviceVersion
 
-	}
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name), semconv.ServiceVersion(versionInfo)),
-	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}	
+	// }
+	res := resource.Default()
 	return res
 }
 
