@@ -78,10 +78,10 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 func newServiceResource(name string) *resource.Resource {
 	versionInfo := buildVersion
 	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
-		log.Println("Warning: build time version overriden by environment variable")
-		versionInfo = serviceVersion
-
+	 	log.Println("Warning: build time version overriden by environment variable")
+	 	versionInfo = serviceVersion
 	}
+  
 	resources := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(name),
