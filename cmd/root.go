@@ -9,7 +9,9 @@ import (
 	"os"
 
 	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 
+	//semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
@@ -20,7 +22,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.19.0"
 	noop "go.opentelemetry.io/otel/trace"
 
 	"github.com/spf13/cobra"
@@ -81,14 +82,12 @@ func newServiceResource(name string) *resource.Resource {
 		versionInfo = serviceVersion
 
 	}
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name), semconv.ServiceVersion(versionInfo)),
+	resources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(name),
+		semconv.ServiceVersionKey.String(versionInfo),
 	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}	
-	return res
+	return resources
 }
 
 func startGRPCService(name string, service services.Service) {
