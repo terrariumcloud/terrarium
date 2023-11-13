@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	DefaultReleaseTableName = "terrarium-module-releases"
-	//DefaultReleaseEndpoint  = "release:3001"
+	DefaultReleaseTableName       = "terrarium-releases"
+	DefaultReleaseServiceEndpoint = "release:3001"
 )
 
 var (
 	ReleaseTableName                = DefaultReleaseTableName
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
-	//ReleaseEndpoint                 = DefaultReleaseEndpoint
+	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 )
 
 type ReleaseService struct {
@@ -33,14 +33,13 @@ type ReleaseService struct {
 }
 
 type ReleaseInfo struct {
-	Type             string       `json:"type" bson:"type" dynamodbav:"type"`
-	Name             string       `json:"name" bson:"name" dynamodbav:"name"`
-	Version          string       `json:"version" bson:"version" dynamodbav:"version"`
-	Date             string       `json:"date" bson:"date" dynamodbav:"date"`
-	Link             release.Link `json:"link" bson:"link" dynamodbav:"link"`
-	ShortDescription string       `json:"short_description" bson:"short_description" dynamodbav:"short_description"`
-	CreatedOn        string       `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
-	ModifiedOn       string       `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
+	Type         string       `json:"type" bson:"type" dynamodbav:"type"`
+	Organization string       `json:"organization" bson:"organization" dynamodbav:"organization"`
+	Name         string       `json:"name" bson:"name" dynamodbav:"name"`
+	Version      string       `json:"version" bson:"version" dynamodbav:"version"`
+	Description  string       `json:"description" bson:"description" dynamodbav:"description"`
+	Link         release.Link `json:"link" bson:"link" dynamodbav:"link"`
+	CreatedOn    string       `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
 }
 
 // Registers ReleaseService with grpc server
