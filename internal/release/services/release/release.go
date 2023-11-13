@@ -1,6 +1,8 @@
 package release
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -14,11 +16,13 @@ import (
 
 const (
 	DefaultReleaseTableName = "terrarium-module-releases"
+	//DefaultReleaseEndpoint  = "release:3001"
 )
 
 var (
 	ReleaseTableName                = DefaultReleaseTableName
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
+	//ReleaseEndpoint                 = DefaultReleaseEndpoint
 )
 
 type ReleaseService struct {
@@ -35,11 +39,14 @@ type ReleaseInfo struct {
 	Date             string       `json:"date" bson:"date" dynamodbav:"date"`
 	Link             release.Link `json:"link" bson:"link" dynamodbav:"link"`
 	ShortDescription string       `json:"short_description" bson:"short_description" dynamodbav:"short_description"`
+	CreatedOn        string       `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	ModifiedOn       string       `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
 }
 
 // Registers ReleaseService with grpc server
 func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
+		log.Println(err)
 		return ReleaseTableInitializationError
 	}
 

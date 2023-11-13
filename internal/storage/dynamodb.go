@@ -2,8 +2,6 @@ package storage
 
 import (
 	"context"
-	"errors"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -32,8 +30,7 @@ func NewDynamoDbClient(key string, secret string, region string) *dynamodb.Clien
 // InitializeDynamoDb - checks if table exists, in case it doesn't it creates it
 func InitializeDynamoDb(tableName string, schema *dynamodb.CreateTableInput, db DynamoDBTableCreator) error {
 	if _, err := db.DescribeTable(context.TODO(), &dynamodb.DescribeTableInput{TableName: aws.String(tableName)}); err != nil {
-		var notFoundErr *types.TableNotFoundException
-		if errors.As(err, &notFoundErr) {
+		if err != nil {
 			log.Printf("Creating DynamoDB Table: %s", tableName)
 			_, err = db.CreateTable(context.TODO(), schema)
 			if err != nil {
