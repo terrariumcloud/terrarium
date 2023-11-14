@@ -75,28 +75,28 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 }
 
 func newServiceResource(name string) *resource.Resource {
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)),
-	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}
-	versionInfo := buildVersion
-	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
-		log.Println("Warning: build time version overriden by environment variable")
-		versionInfo = serviceVersion
+    res, err := resource.Merge(
+        resource.Default(),
+        resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)),
+    )
+    if err != nil {
+        log.Fatalf("The SchemaURL of the resources is not merged.")
+    }
+    versionInfo := buildVersion
+    if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
+        log.Println("Warning: build time version overriden by environment variable")
+        versionInfo = serviceVersion
 
-	}
-	res, err = resource.Merge(
-		res,
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(versionInfo)),
-	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}
+    }
+    res, err = resource.Merge(
+        res,
+        resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(versionInfo)),
+    )
+    if err != nil {
+        log.Fatalf("The SchemaURL of the resources is not merged.")
+    }
 
-	return res
+    return res
 }
 
 func startGRPCService(name string, service services.Service) {

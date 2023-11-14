@@ -45,7 +45,11 @@ function ModuleMetadataInfo({module}: { module: ModuleMetadata }) {
                             <TableCell>{module.description}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell component={"th"} scope={"row"}>Available Versions</TableCell>
+                            <TableCell component={"th"} scope={"row"}><b>Maturity</b></TableCell>
+                            <TableCell>{module.maturity}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell component={"th"} scope={"row"}><b>Available Versions</b></TableCell>
                             <TableCell>
                                 <List component={"ul"}    sx={{
                                     display: 'flex',
