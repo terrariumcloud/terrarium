@@ -26,7 +26,7 @@ func init() {
 	gatewayCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	gatewayCmd.Flags().StringVarP(&storage.StorageServiceEndpoint, "storage", "", storage.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Storage Service")
 	gatewayCmd.Flags().StringVarP(&tag_manager.TagManagerEndpoint, "tag-manager", "", tag_manager.DefaultTagManagerEndpoint, "GRPC Endpoint for Tag Service")
-	gatewayCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "tag", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
+	gatewayCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "releases", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
 }
 
 func runGateway(cmd *cobra.Command, args []string) {
