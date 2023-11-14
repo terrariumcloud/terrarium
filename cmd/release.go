@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
+	"github.com/terrariumcloud/terrarium/internal/storage"
 
 	"github.com/spf13/cobra"
 )
@@ -15,15 +16,15 @@ var releaseServiceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(releaseServiceCmd)
-	// TODO: database
-	//releaseServiceCmd.Flags().StringVarP(&release.ReleaseTableName, "table", "t", release.DefaultReleaseTableName, "Releases table name")
+	releaseServiceCmd.Flags().StringVarP(&release.ReleaseTableName, "table", "t", release.DefaultReleaseTableName, "Releases table name")
 }
 
 func runReleaseService(cmd *cobra.Command, args []string) {
+
 	releaseServiceServer := &release.ReleaseService{
-		// Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
-		// Table:  release.ReleaseTableName,
-		// Schema: release.GetModulesSchema(release.ReleaseTableName),
+		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:  release.ReleaseTableName,
+		Schema: release.GetReleaseSchema(release.ReleaseTableName),
 	}
 
 	startGRPCService("release", releaseServiceServer)

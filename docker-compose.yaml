@@ -157,7 +157,7 @@ services:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
     - AWS_DEFAULT_REGION
-    #- OTEL_EXPORTER_OTLP_ENDPOINT
+    - OTEL_EXPORTER_OTLP_ENDPOINT
     ports:
       - 50007:3001
     networks:
