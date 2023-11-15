@@ -15,6 +15,7 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -31,10 +32,10 @@ var (
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
 	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 
-	ReleaseCreated = &terrarium.Response{Message: "Release created."}
+	ReleasePublished = &release.PublishResponse{} // No return information at this stage
 
-	MarshalReleaseError        = status.Error(codes.Unknown, "Failed to marshal publish release.")
-	PublishReleaseVersionError = status.Error(codes.Unknown, "Failed to publish release.")
+	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
+	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
 )
 
 type ReleaseService struct {
@@ -102,11 +103,11 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
 		log.Println(err)
-		return nil, PublishReleaseVersionError
+		return nil, PublishReleaseError
 	}
 
 	log.Println("New release created.")
-	return ReleaseCreated, nil
+	return ReleasePublished, nil
 }
 
 // ListReleases Retrieves all releases.
@@ -150,15 +151,15 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	return &grpcResponse, nil
 }
 
-func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseSvc.ListReleaseTypesRequest) (*releaseSvc.ListReleaseTypesResponse, error) {
+// func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseSvc.ListReleaseTypesRequest) (*releaseSvc.ListReleaseTypesResponse, error) {
 
-	return
-}
+// 	return
+// }
 
-func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseSvc.ListOrganizationRequest) (*releaseSvc.ListOrganizationResponse, error) {
+// func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseSvc.ListOrganizationRequest) (*releaseSvc.ListOrganizationResponse, error) {
 
-	return
-}
+// 	return
+// }
 
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
