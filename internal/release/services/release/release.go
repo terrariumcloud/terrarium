@@ -110,23 +110,16 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	return ReleasePublished, nil
 }
 
+// to do: latest release to be returned first
+// to do: return last N releases published in the last hours (3600 seconds => max_age_seconds)
+// now := time.Now().Unix()
+// max_age_seconds := int64(3600)
+// filter := expression.Name("created_on").Between(expression.Value(now-max_age_seconds), expression.Value(max_age_seconds))
+
 // ListReleases Retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
-
-	// filter := expression.And(
-	// 	expression.Name("type").Equal(expression.Value(request.Types)),
-	// 	expression.Name("organizations").AttributeExists())
-	// expr, err := expression.NewBuilder().WithFilter(filter).Build()
-	// if err != nil {
-	// 	log.Printf("Expression Builder failed creation: %v", err)
-	// 	return nil, err
-	// }
-
 	scanQueryInputs := &dynamodb.ScanInput{
-		// ExpressionAttributeNames:  expr.Names(),
-		// ExpressionAttributeValues: expr.Values(),
-		// FilterExpression:          expr.Filter(),
 		TableName: aws.String(ReleaseTableName),
 	}
 
@@ -140,9 +133,9 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	if response.Items != nil {
 		for _, item := range response.Items {
 			releaseInfo := &releaseSvc.Release{}
-			if err3 := attributevalue.UnmarshalMap(item, &releaseInfo); err3 != nil {
-				log.Printf("UnmarshalMap failed: %v", err3)
-				return nil, err3
+			if err1 := attributevalue.UnmarshalMap(item, &releaseInfo); err1 != nil {
+				log.Printf("UnmarshalMap failed: %v", err1)
+				return nil, err1
 			}
 			grpcResponse.Releases = append(grpcResponse.Releases, releaseInfo)
 		}
