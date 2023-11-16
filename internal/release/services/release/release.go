@@ -38,7 +38,8 @@ var (
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
 
-	TimeFormatLayout = "2006-01-02 15:04:05.999999999 -0700 MST"
+	TimeFormatLayout     = "2006-01-02 15:04:05.999999999 -0700 MST"
+	DefaultMaxAgeSeconds = uint64(86400) // 1 day in seconds
 )
 
 type ReleaseService struct {
@@ -129,6 +130,10 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
+	if request.MaxAgeSeconds == nil {
+		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
+	}
+
 	// Generate UTC string (Now - MaxAgeSeconds)
 	splitTimeISO := time.Unix(time.Now().UTC().Unix()-int64(*request.MaxAgeSeconds), 0).UTC().String()
 
@@ -169,7 +174,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 
 	// Sort list of releases based on createdAt field
 	grpcResponse.Releases = sortReleaseList(grpcResponse.Releases)
-	
+
 	return &grpcResponse, nil
 }
 
