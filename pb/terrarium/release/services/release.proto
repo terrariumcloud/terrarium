@@ -1,0 +1,57 @@
+syntax = "proto3";
+package terrarium.release.services;
+import "pb/terrarium/common/paging.proto";
+import "pb/terrarium/release/release.proto";
+
+option go_package = "github.com/terrariumcloud/terrarium/internal/release/services";
+
+service Publisher {
+  rpc Publish(terrarium.release.PublishRequest) returns (terrarium.release.PublishResponse) {}
+}
+
+service Browse {
+  rpc ListReleases(ListReleasesRequest) returns(ListReleasesResponse) {}
+  rpc ListReleaseTypes(ListReleaseTypesRequest) returns (ListReleaseTypesResponse) {}
+  rpc ListOrganization(ListOrganizationRequest) returns (ListOrganizationResponse) {}
+}
+
+message ListReleasesRequest {
+  repeated string types = 1;
+  repeated string organizations = 2;
+  optional uint64 max_age_seconds = 3;
+  optional terrarium.common.paging.PageInfoRequest page = 4;
+}
+
+message ListReleasesResponse {
+  repeated Release releases = 1;
+  terrarium.common.paging.PageInfoResponse page = 2;
+}
+
+message ListReleaseTypesRequest {
+  optional terrarium.common.paging.PageInfoRequest page = 1;
+}
+
+message ListReleaseTypesResponse {
+  repeated string types = 1;
+  terrarium.common.paging.PageInfoResponse page = 2;
+}
+
+message ListOrganizationRequest {
+  optional terrarium.common.paging.PageInfoRequest page = 1;
+}
+
+message ListOrganizationResponse {
+  repeated string organizations = 1;
+  terrarium.common.paging.PageInfoResponse page = 2;
+}
+
+
+message Release {
+  string createdAt = 1;
+  string type = 2;
+  string organization = 3;
+  string name = 4;
+  string version = 5;
+  string description = 6;
+  repeated Link links = 7;
+}

@@ -1,0 +1,43 @@
+syntax = "proto3";
+package terrarium.usage;
+
+option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/usage";
+
+service DependencyTracker {
+  rpc RegisterDeploymentUnit(RegisterDeploymentUnitRequest) returns (RegisterDeploymentUnitResponse) {}
+  rpc NotifyUsage(NotifyDependencyRequest) returns (NotifyDependencyResponse) {}
+}
+
+message RegisterDeploymentUnitRequest {
+    DeploymentUnit unit = 1;
+    repeated NotificationMethod notifications = 2;
+}
+
+message RegisterDeploymentUnitResponse {
+
+}
+
+message NotifyDependencyRequest {
+  VersionedDeploymentUnit unit = 1;
+  repeated VersionedDeploymentUnit dependencies = 2;
+}
+
+message NotifyDependencyResponse {
+
+}
+
+message DeploymentUnit {
+  string type = 1;
+  string organization = 2;
+  string name = 3;
+}
+
+message VersionedDeploymentUnit {
+  DeploymentUnit unit = 1;
+  string version = 2;
+}
+
+message NotificationMethod {
+  string type = 1;
+  string uri = 2;
+}
