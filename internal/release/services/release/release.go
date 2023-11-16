@@ -3,10 +3,12 @@ package release
 import (
 	"context"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
@@ -15,7 +17,6 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -36,6 +37,8 @@ var (
 
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
+
+	TimeFormatLayout = "2006-01-02 15:04:05.999999999 -0700 MST"
 )
 
 type ReleaseService struct {
@@ -45,14 +48,14 @@ type ReleaseService struct {
 	Schema *dynamodb.CreateTableInput
 }
 
-type ReleaseInfo struct {
+type Release struct {
 	Type         string          `json:"type" bson:"type" dynamodbav:"type"`
 	Organization string          `json:"organization" bson:"organization" dynamodbav:"organization"`
 	Name         string          `json:"name" bson:"name" dynamodbav:"name"`
 	Version      string          `json:"version" bson:"version" dynamodbav:"version"`
 	Description  string          `json:"description" bson:"description" dynamodbav:"description"`
-	Link         []*release.Link `json:"link" bson:"link" dynamodbav:"link"`
-	CreatedOn    string          `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	Links        []*release.Link `json:"links" bson:"links" dynamodbav:"links"`
+	CreatedAt    string          `json:"createdAt" bson:"createdAt" dynamodbav:"createdAt"`
 }
 
 // Registers ReleaseService with grpc server
@@ -63,6 +66,12 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	}
 
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
+
+	// Code below to be uncommented for testing ListReleases
+	// var maxAge uint64 = 72000
+	// var request = &releaseSvc.ListReleasesRequest{MaxAgeSeconds: &maxAge}
+
+	// s.ListReleases(context.TODO(), request)
 
 	return nil
 }
@@ -77,14 +86,14 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		attribute.String("release.version", request.GetVersion()),
 	)
 
-	mv := ReleaseInfo{
+	mv := Release{
 		Type:         request.GetType(),
 		Organization: request.GetOrganization(),
 		Name:         request.GetName(),
 		Version:      request.GetVersion(),
 		Description:  request.GetDescription(),
-		Link:         request.GetLinks(),
-		CreatedOn:    time.Now().UTC().String(),
+		Links:        request.GetLinks(),
+		CreatedAt:    time.Now().UTC().String(),
 	}
 
 	av, err := attributevalue.MarshalMap(mv)
@@ -119,8 +128,23 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 // ListReleases Retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
+
+	// Generate UTC string (Now - MaxAgeSeconds)
+	splitTimeISO := time.Unix(time.Now().UTC().Unix()-int64(*request.MaxAgeSeconds), 0).UTC().String()
+
+	// Construct the filter builder with a name and value.
+	filter := expression.Name("createdAt").GreaterThanEqual(expression.Value(splitTimeISO))
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
+		return nil, err
+	}
+
 	scanQueryInputs := &dynamodb.ScanInput{
-		TableName: aws.String(ReleaseTableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		TableName:                 aws.String(ReleaseTableName),
 	}
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
@@ -128,31 +152,26 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
+	log.Println("Filtered Release Count: ", len(response.Items))
 
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
-			releaseInfo := &releaseSvc.Release{}
-			if err1 := attributevalue.UnmarshalMap(item, &releaseInfo); err1 != nil {
-				log.Printf("UnmarshalMap failed: %v", err1)
-				return nil, err1
+
+			Release := &releaseSvc.Release{}
+			if err3 := attributevalue.UnmarshalMap(item, &Release); err3 != nil {
+				log.Printf("UnmarshalMap failed: %v", err3)
+				return nil, err3
 			}
-			grpcResponse.Releases = append(grpcResponse.Releases, releaseInfo)
+			grpcResponse.Releases = append(grpcResponse.Releases, Release)
 		}
 	}
 
+	// Sort list of releases based on createdAt field
+	grpcResponse.Releases = sortReleaseList(grpcResponse.Releases)
+	
 	return &grpcResponse, nil
 }
-
-// func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseSvc.ListReleaseTypesRequest) (*releaseSvc.ListReleaseTypesResponse, error) {
-
-// 	return
-// }
-
-// func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseSvc.ListOrganizationRequest) (*releaseSvc.ListOrganizationResponse, error) {
-
-// 	return
-// }
 
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
@@ -180,4 +199,23 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+// Sort a slice of releaseSvc.Release struct, using sort.SliceStable method
+func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
+	sort.SliceStable(releases, func(a, b int) bool {
+
+		TimeA, err := time.Parse(TimeFormatLayout, releases[a].CreatedAt)
+		if err != nil {
+			log.Printf("Failed to parse createdAt field: %v", err)
+		}
+
+		TimeB, err := time.Parse(TimeFormatLayout, releases[b].CreatedAt)
+		if err != nil {
+			log.Printf("Failed to parse createdAt field: %v", err)
+		}
+		return TimeA.Before(TimeB)
+	})
+
+	return releases
 }
