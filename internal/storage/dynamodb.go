@@ -16,6 +16,7 @@ type DynamoDBTableCreator interface {
 	PutItem(ctx context.Context, in *dynamodb.PutItemInput, opsFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 	UpdateItem(ctx context.Context, in *dynamodb.UpdateItemInput, opsFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
 	DeleteItem(ctx context.Context, in *dynamodb.DeleteItemInput, opsFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
+	Query(ctx context.Context, in *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
 }
 
 // Create new DynamoDB client
