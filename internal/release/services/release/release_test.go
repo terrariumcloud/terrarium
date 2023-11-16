@@ -3,6 +3,7 @@ package release
 import (
 	"context"
 	"errors"
+	"log"
 	"reflect"
 	"testing"
 
@@ -222,4 +223,126 @@ func Test_ListReleases(t *testing.T) {
 
 	})
 
+}
+
+// Test_ListLatestRelease checks:
+// - if correct response is returned when latest release is fetched
+func Test_ListLatestRelease(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Retrieving latest release", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			ScanOut: &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"CreatedAt":    &types.AttributeValueMemberS{Value: "2022-11-17 15:11:35.198401764 +0000 UTC"},
+						"Type":         &types.AttributeValueMemberS{Value: "module"},
+						"Organization": &types.AttributeValueMemberS{Value: "cie"},
+						"Name":         &types.AttributeValueMemberS{Value: "test name"},
+						"Version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"Description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"Links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"Title": &types.AttributeValueMemberS{Value: "test title"},
+										"URL":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"CreatedAt":    &types.AttributeValueMemberS{Value: "2022-11-18 16:11:35.198401764 +0000 UTC"},
+						"Type":         &types.AttributeValueMemberS{Value: "module"},
+						"Organization": &types.AttributeValueMemberS{Value: "cie"},
+						"Name":         &types.AttributeValueMemberS{Value: "test name"},
+						"Version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"Description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"Links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"Title": &types.AttributeValueMemberS{Value: "test title"},
+										"URL":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"CreatedAt":    &types.AttributeValueMemberS{Value: "2023-11-12 16:11:35.198401764 +0000 UTC"},
+						"Type":         &types.AttributeValueMemberS{Value: "module"},
+						"Organization": &types.AttributeValueMemberS{Value: "cie"},
+						"Name":         &types.AttributeValueMemberS{Value: "test name"},
+						"Version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"Description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"Links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"Title": &types.AttributeValueMemberS{Value: "test title"},
+										"URL":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		svc := &ReleaseService{Db: db}
+		req := services.ListReleasesRequest{}
+
+		res, err := svc.GetLatestRelease(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		expectedRelease := []*services.Release{
+			{
+				CreatedAt:    "2023-11-12 16:11:35.198401764 +0000 UTC",
+				Type:         "module",
+				Organization: "cie",
+				Name:         "test name",
+				Version:      "1.0.0",
+				Description:  "test desc",
+				Links: []*release.Link{
+					{
+						Title: "test title",
+						Url:   "https://example.com",
+					},
+				},
+			},
+		}
+		log.Println("Comparing retrieved release with the expected release.")
+		for i := range res.Releases {
+			if res.Releases[i].CreatedAt != expectedRelease[i].CreatedAt ||
+				res.Releases[i].Type != expectedRelease[i].Type ||
+				res.Releases[i].Organization != expectedRelease[i].Organization ||
+				res.Releases[i].Name != expectedRelease[i].Name ||
+				res.Releases[i].Version != expectedRelease[i].Version ||
+				res.Releases[i].Description != expectedRelease[i].Description ||
+				!compareLinks(res.Releases[i].Links, expectedRelease[i].Links) {
+				t.Errorf("Release at index %d does not match, got %v, want %v", i, res.Releases[i], expectedRelease[i])
+			}
+		}
+		log.Printf("Got %v, expected %v", res.Releases, expectedRelease)
+	})
+
+}
+
+// Function to compare Links
+func compareLinks(a, b []*release.Link) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Title != b[i].Title || a[i].Url != b[i].Url {
+			return false
+		}
+	}
+	return true
 }

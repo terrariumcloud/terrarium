@@ -120,12 +120,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	return ReleasePublished, nil
 }
 
-// to do: latest release to be returned first
-// to do: return last N releases published in the last hours (3600 seconds => max_age_seconds)
-// now := time.Now().Unix()
-// max_age_seconds := int64(3600)
-// filter := expression.Name("created_on").Between(expression.Value(now-max_age_seconds), expression.Value(max_age_seconds))
-
 // ListReleases Retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
@@ -178,6 +172,70 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	return &grpcResponse, nil
 }
 
+// Sort a slice of releaseSvc.Release struct, using sort.SliceStable method
+func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
+	sort.SliceStable(releases, func(a, b int) bool {
+
+		TimeA, err := time.Parse(TimeFormatLayout, releases[a].CreatedAt)
+		if err != nil {
+			log.Printf("Failed to parse createdAt field: %v", err)
+		}
+
+		TimeB, err := time.Parse(TimeFormatLayout, releases[b].CreatedAt)
+		if err != nil {
+			log.Printf("Failed to parse createdAt field: %v", err)
+		}
+		return TimeA.Before(TimeB)
+	})
+
+	return releases
+}
+
+// TODO: OPTIMIZE!!!
+// GetLatestRelease retrieves the latest release.
+func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
+	log.Printf("Getting latest published release.")
+	scanQueryInputs := &dynamodb.ScanInput{
+		TableName: aws.String(ReleaseTableName),
+	}
+
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
+	if err != nil {
+		log.Printf("ScanInput failed: %v", err)
+		return nil, err
+	}
+	log.Println(response)
+
+	if response == nil {
+		log.Println("Release not found")
+		return &releaseSvc.ListReleasesResponse{}, nil
+	}
+	// Convert DynamoDB items to a slice of custom struct
+	var releases []*releaseSvc.Release
+	for _, item := range response.Items {
+		releaseInfo := new(releaseSvc.Release)
+		if err := attributevalue.UnmarshalMap(item, &releaseInfo); err != nil {
+			log.Printf("UnmarshalMap failed: %v", err)
+			return nil, err
+		}
+
+		releases = append(releases, releaseInfo)
+	}
+	log.Println("Unmarshalled releases:", releases)
+
+	log.Println("Sorting releases...")
+	// Sort releases based on the "createdAt" attribute in descending order
+	sort.SliceStable(releases, func(i, j int) bool {
+		return releases[i].CreatedAt > releases[j].CreatedAt
+	})
+
+	// Return only the latest release
+	grpcResponse := releaseSvc.ListReleasesResponse{}
+	grpcResponse.Releases = append(grpcResponse.Releases, releases[0])
+
+	return &grpcResponse, nil
+}
+
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
@@ -204,23 +262,4 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
-}
-
-// Sort a slice of releaseSvc.Release struct, using sort.SliceStable method
-func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
-	sort.SliceStable(releases, func(a, b int) bool {
-
-		TimeA, err := time.Parse(TimeFormatLayout, releases[a].CreatedAt)
-		if err != nil {
-			log.Printf("Failed to parse createdAt field: %v", err)
-		}
-
-		TimeB, err := time.Parse(TimeFormatLayout, releases[b].CreatedAt)
-		if err != nil {
-			log.Printf("Failed to parse createdAt field: %v", err)
-		}
-		return TimeA.Before(TimeB)
-	})
-
-	return releases
 }
