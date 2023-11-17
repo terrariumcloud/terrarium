@@ -3,9 +3,12 @@ package release
 import (
 	"context"
 	"log"
+	"os"
 	"sort"
 	"time"
 
+	goteamsnotify "github.com/atc0005/go-teams-notify/v2"
+	"github.com/atc0005/go-teams-notify/v2/adaptivecard"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -66,6 +69,9 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 		return ReleaseTableInitializationError
 	}
 
+	webhookUrl := os.Getenv("WEBHOOK")
+	log.Println("inside register with server", webhookUrl)
+
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 
 	// Code below to be uncommented for testing ListReleases
@@ -116,7 +122,14 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		return nil, PublishReleaseError
 	}
 
-	log.Println("New release created.")
+	log.Println("New release created in DynamoDB.")
+
+	err = NotifyTeams(mv)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("Sent notification to teams webhook.")
+
 	return ReleasePublished, nil
 }
 
@@ -262,4 +275,57 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+func NotifyTeams(payload Release) error {
+
+	// Initialize a new Microsoft Teams client.
+	mstClient := goteamsnotify.NewTeamsClient()
+
+	// Set webhook url.
+	webhookUrl := os.Getenv("WEBHOOK")
+
+	// The title for message (first TextBlock element).
+	msgTitle := "Terrarium Release"
+
+	var LinkMessage string = "\n"
+
+	for _, link := range payload.Links {
+		if len(link.Title) > 0 {
+			LinkMessage = LinkMessage + "* **" + link.Title + "** : " + link.Url + "\n"
+		} else {
+			LinkMessage = LinkMessage + "* **URL** : " + link.Url + "\n"
+		}
+	}
+
+	// Formatted message body.
+	msgText := "New version of **" + payload.Name + "** has been released. The details for the release are as given below: \n" +
+		"* **Name** : " + payload.Name +
+		"\n* **Version** : " + payload.Version +
+		"\n* **Type** : " + payload.Type +
+		"\n* **Organization** : " + payload.Organization +
+		"\n* **Description** : " + payload.Description +
+		"\n* **CreatedAt** : " + payload.CreatedAt +
+		LinkMessage
+
+	// Create message using provided formatted title and text.
+	msg, err := adaptivecard.NewSimpleMessage(msgText, msgTitle, true)
+	if err != nil {
+		log.Printf(
+			"failed to create message: %v",
+			err,
+		)
+		return (err)
+	}
+
+	// Send the message with default timeout/retry settings.
+	if err := mstClient.Send(webhookUrl, msg); err != nil {
+		log.Printf(
+			"failed to send message: %v",
+			err,
+		)
+		return (err)
+	}
+
+	return nil
 }

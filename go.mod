@@ -29,6 +29,7 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.23.2 // indirect
+	github.com/atc0005/go-teams-notify/v2 v2.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.14 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.43 // indirect
