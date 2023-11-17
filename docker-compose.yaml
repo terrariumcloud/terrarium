@@ -149,6 +149,27 @@ services:
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
+  release:
+    build: .
+    image: terrarium:dev
+    container_name: terrarium-release
+    environment:
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_DEFAULT_REGION
+    - OTEL_EXPORTER_OTLP_ENDPOINT
+    ports:
+      - 50007:3001
+    networks:
+      - terrarium
+    command:
+      - publish
+      - "--aws-access-key-id"
+      - "$AWS_ACCESS_KEY_ID"
+      - "--aws-secret-access-key"
+      - "$AWS_SECRET_ACCESS_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
 networks:
   terrarium:
     name: terrarium

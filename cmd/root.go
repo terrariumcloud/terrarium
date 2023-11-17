@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	noop "go.opentelemetry.io/otel/trace"
 
 	"github.com/spf13/cobra"
@@ -75,28 +75,18 @@ func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 }
 
 func newServiceResource(name string) *resource.Resource {
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(name)),
-	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}
 	versionInfo := buildVersion
 	if serviceVersion, found := os.LookupEnv("OTEL_SERVICE_VERSION"); found {
 		log.Println("Warning: build time version overriden by environment variable")
 		versionInfo = serviceVersion
-
 	}
-	res, err = resource.Merge(
-		res,
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceVersionKey.String(versionInfo)),
+
+	resources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(name),
+		semconv.ServiceVersionKey.String(versionInfo),
 	)
-	if err != nil {
-		log.Fatalf("The SchemaURL of the resources is not merged.")
-	}
-
-	return res
+	return resources
 }
 
 func startGRPCService(name string, service services.Service) {

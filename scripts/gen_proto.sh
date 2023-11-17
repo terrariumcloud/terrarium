@@ -6,5 +6,8 @@ protoc --go_out=. --go_opt=module=github.com/terrariumcloud/terrarium \
     pb/terrarium/module/services/version_manager.proto \
     pb/terrarium/module/services/dependency_manager.proto \
     pb/terrarium/module/services/storage.proto \
-    pb/terrarium/module/services/tag_manager.proto 
-    
+    pb/terrarium/release/release.proto \
+    pb/terrarium/release/services/release.proto \
+    pb/terrarium/usage/usage.proto \
+    pb/terrarium/common/paging.proto
+
