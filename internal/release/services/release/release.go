@@ -80,6 +80,8 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	span.SetAttributes(
 		attribute.String("release.name", request.GetName()),
 		attribute.String("release.version", request.GetVersion()),
+		attribute.String("release.type", request.GetType()),
+		attribute.String("release.organization", request.GetOrganization()),
 	)
 
 	mv := Release{
@@ -123,7 +125,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
-		attribute.StringSlice("release.organization", request.GetOrganizations()),
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
 		attribute.Int64("release.maxAge", MaxAgeSeconds),
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
@@ -206,7 +208,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
-		attribute.StringSlice("release.organization", request.GetOrganizations()),
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
 		attribute.Int64("release.maxAge", MaxAgeSeconds),
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
