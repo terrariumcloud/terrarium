@@ -3,6 +3,7 @@ package release
 import (
 	"context"
 	"log"
+	"math"
 	"sort"
 	"time"
 
@@ -117,8 +118,15 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
+
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+
 	span.SetAttributes(
-		attribute.String("release.list", "Lists releases based on filters"),
+		attribute.StringSlice("release.organization", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
 	)
 
 	if request.MaxAgeSeconds == nil {
@@ -193,8 +201,15 @@ func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
 func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
+
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+
 	span.SetAttributes(
-		attribute.String("release", "Lists the latest release"),
+		attribute.StringSlice("release.organization", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
 	)
 
 	scanQueryInputs := &dynamodb.ScanInput{
@@ -262,4 +277,15 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+// Converts Uint64 to int64
+func convertUint64ToInt64(uint64Value uint64) int64 {
+
+	// Returning the max Int64 if the value is greater than max Int64 for spans.
+	if uint64Value > math.MaxInt64 {
+		return math.MaxInt64
+	}
+
+	return int64(uint64Value)
 }
