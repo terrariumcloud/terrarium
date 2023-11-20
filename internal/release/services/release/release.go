@@ -40,6 +40,7 @@ var (
 
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
+	ReleaseNotFound     = status.Error(codes.NotFound, "Release not found.")
 
 	TimeFormatLayout     = "2006-01-02 15:04:05.999999999 -0700 MST"
 	DefaultMaxAgeSeconds = uint64(86400) // 1 day in seconds
@@ -74,19 +75,12 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 
-	// Code below to be uncommented for testing ListReleases
-	// var maxAge uint64 = 72000
-	// var request = &releaseSvc.ListReleasesRequest{MaxAgeSeconds: &maxAge}
-
-	// s.ListReleases(context.TODO(), request)
-
 	return nil
 }
 
 // Publishes a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
 
-	log.Println("Creating new release.")
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
 		attribute.String("release.name", request.GetName()),
@@ -107,7 +101,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, MarshalReleaseError
 	}
 
@@ -118,7 +111,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, PublishReleaseError
 	}
 
@@ -137,6 +129,11 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.list", "Lists releases based on filters"),
+	)
+
 	if request.MaxAgeSeconds == nil {
 		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
 	}
@@ -148,7 +145,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	filter := expression.Name("createdAt").GreaterThanEqual(expression.Value(splitTimeISO))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
-		log.Printf("Expression Builder failed creation: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
 
@@ -161,7 +158,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
-		log.Printf("ScanInput failed: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
 	log.Println("Filtered Release Count: ", len(response.Items))
@@ -172,7 +169,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 
 			Release := &releaseSvc.Release{}
 			if err3 := attributevalue.UnmarshalMap(item, &Release); err3 != nil {
-				log.Printf("UnmarshalMap failed: %v", err3)
+				span.RecordError(err3)
 				return nil, err3
 			}
 			grpcResponse.Releases = append(grpcResponse.Releases, Release)
@@ -207,20 +204,25 @@ func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
 // TODO: OPTIMIZE!!!
 // GetLatestRelease retrieves the latest release.
 func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
-	log.Printf("Getting latest published release.")
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release", "Lists the latest release"),
+	)
+
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
-		log.Printf("ScanInput failed: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
 	log.Println(response)
 
 	if response == nil {
-		log.Println("Release not found")
+		span.RecordError(ReleaseNotFound)
 		return &releaseSvc.ListReleasesResponse{}, nil
 	}
 	// Convert DynamoDB items to a slice of custom struct
@@ -228,15 +230,13 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 	for _, item := range response.Items {
 		releaseInfo := new(releaseSvc.Release)
 		if err := attributevalue.UnmarshalMap(item, &releaseInfo); err != nil {
-			log.Printf("UnmarshalMap failed: %v", err)
+			span.RecordError(err)
 			return nil, err
 		}
 
 		releases = append(releases, releaseInfo)
 	}
-	log.Println("Unmarshalled releases:", releases)
 
-	log.Println("Sorting releases...")
 	// Sort releases based on the "createdAt" attribute in descending order
 	sort.SliceStable(releases, func(i, j int) bool {
 		return releases[i].CreatedAt > releases[j].CreatedAt
