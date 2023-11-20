@@ -95,7 +95,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, MarshalReleaseError
 	}
 
@@ -106,7 +105,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, PublishReleaseError
 	}
 
@@ -135,7 +133,6 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
 
@@ -149,7 +146,6 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 	log.Println("Filtered Release Count: ", len(response.Items))
@@ -161,7 +157,6 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 			Release := &releaseSvc.Release{}
 			if err3 := attributevalue.UnmarshalMap(item, &Release); err3 != nil {
 				span.RecordError(err3)
-				log.Printf("UnmarshalMap failed: %v", err3)
 				return nil, err3
 			}
 			grpcResponse.Releases = append(grpcResponse.Releases, Release)
@@ -209,14 +204,12 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 	log.Println(response)
 
 	if response == nil {
 		span.RecordError(ReleaseNotFound)
-		log.Println("Release not found")
 		return &releaseSvc.ListReleasesResponse{}, nil
 	}
 	// Convert DynamoDB items to a slice of custom struct
@@ -225,7 +218,6 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		releaseInfo := new(releaseSvc.Release)
 		if err := attributevalue.UnmarshalMap(item, &releaseInfo); err != nil {
 			span.RecordError(err)
-			log.Printf("UnmarshalMap failed: %v", err)
 			return nil, err
 		}
 
