@@ -68,12 +68,6 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 
-	// Code below to be uncommented for testing ListReleases
-	// var maxAge uint64 = 72000
-	// var request = &releaseSvc.ListReleasesRequest{MaxAgeSeconds: &maxAge}
-
-	// s.ListReleases(context.TODO(), request)
-
 	return nil
 }
 
