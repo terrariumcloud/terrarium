@@ -427,6 +427,98 @@ func Test_ListReleaseTypes(t *testing.T) {
 
 }
 
+// Test_ListOrganization checks:
+// - if distinct organizations are retrieved
+func Test_ListOrganization(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Listing organizations", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			ScanOut: &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-17 15:11:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-10-17 18:00:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "atlas"},
+						"name":         &types.AttributeValueMemberS{Value: "test name 2"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-20 16:00:00.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "bundle"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name bundle"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		svc := &ReleaseService{Db: db}
+
+		req := services.ListOrganizationRequest{
+			Page: &paging.PageInfoRequest{
+				Offset: 1,
+				Count:  1,
+			},
+		}
+		res, err := svc.ListOrganization(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		expectedOrgs := &services.ListOrganizationResponse{
+			Organizations: []string{"cie", "atlas"},
+		}
+
+		if !EqualSlices(res.Organizations, expectedOrgs.Organizations) {
+			t.Errorf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
+		}
+	})
+
+}
+
 // Helper functions
 
 // Function to compare Links

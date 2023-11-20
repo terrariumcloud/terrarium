@@ -289,11 +289,48 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 
 		typeValues = append(typeValues, typeStr)
 	}
-	grpcResponse := &releaseSvc.ListReleaseTypesResponse{Types: GetDistinctValues(typeValues)}
-	return grpcResponse, nil
+	releaseTypes := GetDistinctValues(typeValues)
+	return &releaseSvc.ListReleaseTypesResponse{Types: releaseTypes}, nil
 }
 
-// API: ListOrganization
+// ListOrganization is used to retrieve all distinct organizations.
+func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseSvc.ListOrganizationRequest) (*releaseSvc.ListOrganizationResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ProjectionExpression: aws.String("organization"),
+		TableName:            aws.String(ReleaseTableName),
+	}
+
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
+	if err != nil {
+		span.RecordError(err)
+		log.Printf("Couldn't scan for organization: %v", err)
+		return nil, err
+	}
+
+	orgValues := make([]string, 0, len(response.Items))
+	for _, item := range response.Items {
+		typeAttr, found := item["organization"]
+		if !found {
+			log.Println("organization attribute not found")
+			continue
+		}
+
+		var typeStr string
+		if err := attributevalue.Unmarshal(typeAttr, &typeStr); err != nil {
+			span.RecordError(err)
+			log.Printf("Error converting attribute value to string: %v", err)
+			continue
+		}
+		orgValues = append(orgValues, typeStr)
+	}
+	organizations := GetDistinctValues(orgValues)
+	return &releaseSvc.ListOrganizationResponse{Organizations: organizations}, nil
+}
 
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
