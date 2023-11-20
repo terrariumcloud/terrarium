@@ -35,8 +35,9 @@ var (
 
 	ReleasePublished = &release.PublishResponse{} // No return information at this stage
 
-	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
-	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
+	MarshalReleaseError   = status.Error(codes.Unknown, "Failed to marshal publish release.")
+	PublishReleaseError   = status.Error(codes.Unknown, "Failed to publish release.")
+	ListReleaseTypesError = status.Error(codes.Unknown, "Failed to retrieve release types")
 
 	TimeFormatLayout     = "2006-01-02 15:04:05.999999999 -0700 MST"
 	DefaultMaxAgeSeconds = uint64(86400) // 1 day in seconds
@@ -235,6 +236,64 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 
 	return &grpcResponse, nil
 }
+
+// GetDistinctValues is a helper function to filter the response and return only distinct values.
+func GetDistinctValues(resp []string) []string {
+	temp := make(map[string]bool)
+
+	for _, item := range resp {
+		temp[item] = true
+	}
+
+	var distinctList []string
+	for i := range temp {
+		distinctList = append(distinctList, i)
+	}
+
+	return distinctList
+}
+
+// ListReleaseTypes is used to retrieve all distinct release types.
+func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseSvc.ListReleaseTypesRequest) (*releaseSvc.ListReleaseTypesResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ProjectionExpression: aws.String("type"),
+		TableName:            aws.String(ReleaseTableName),
+	}
+
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
+	if err != nil {
+		span.RecordError(err)
+		log.Printf("Couldn't scan for release types: %v", err)
+		return nil, err
+	}
+
+	typeValues := make([]string, 0, len(response.Items))
+	for _, item := range response.Items {
+		typeAttr, found := item["type"]
+		if !found {
+			log.Println("type attribute not found")
+			continue
+		}
+
+		var typeStr string
+		if err := attributevalue.Unmarshal(typeAttr, &typeStr); err != nil {
+			span.RecordError(err)
+			log.Printf("Error converting attribute value to string: %v", err)
+			continue
+		}
+
+		typeValues = append(typeValues, typeStr)
+	}
+	grpcResponse := &releaseSvc.ListReleaseTypesResponse{Types: GetDistinctValues(typeValues)}
+	return grpcResponse, nil
+}
+
+// API: ListOrganization
 
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
 func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
