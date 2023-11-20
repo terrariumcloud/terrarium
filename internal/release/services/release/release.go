@@ -70,9 +70,6 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 		return ReleaseTableInitializationError
 	}
 
-	webhookUrl := os.Getenv("WEBHOOK")
-	log.Println("inside register with server", webhookUrl)
-
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 
 	return nil
@@ -118,9 +115,8 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	err = NotifyTeams(mv)
 	if err != nil {
-		return nil, err
+		span.RecordError(err)
 	}
-	log.Println("Sent notification to teams webhook.")
 
 	return ReleasePublished, nil
 }
