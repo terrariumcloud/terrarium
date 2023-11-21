@@ -20,3 +20,16 @@ func (m *MockPublisherClient) Publish(ctx context.Context, in *release.PublishRe
 	m.PublishInvocations++
 	return m.PublishResponse, m.PublishError
 }
+
+// ListReleases, ListReleaseTypes, ListOrganization
+type MockBrowseClient struct {
+	services.BrowseClient
+	ListReleaseTypesInvocations int
+	ListReleaseTypesResponse    *services.ListReleaseTypesResponse
+	ListReleaseTypesError       error
+}
+
+func (m *MockBrowseClient) ListReleaseTypes(ctx context.Context, in *services.ListReleaseTypesRequest, opts ...grpc.CallOption) (*services.ListReleaseTypesResponse, error) {
+	m.ListReleaseTypesInvocations++
+	return m.ListReleaseTypesResponse, m.ListReleaseTypesError
+}

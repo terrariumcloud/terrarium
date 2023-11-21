@@ -8,6 +8,7 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	"github.com/terrariumcloud/terrarium/internal/release/services"
 	releaseMocks "github.com/terrariumcloud/terrarium/internal/release/services/mocks"
 
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -873,6 +874,49 @@ func Test_PublishWithClient(t *testing.T) {
 
 		if client.PublishInvocations != 1 {
 			t.Errorf("Expected 1 call to Register, got %v", client.PublishInvocations)
+		}
+	})
+}
+
+// Test_ListReleaseTypesWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_ListReleaseTypesWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &services.ListReleaseTypesResponse{}
+		client := &releaseMocks.MockBrowseClient{ListReleaseTypesResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.ListReleaseTypesWithClient(context.TODO(), &services.ListReleaseTypesRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.ListReleaseTypesInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.ListReleaseTypesInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockBrowseClient{ListReleaseTypesError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.ListReleaseTypesWithClient(context.TODO(), &services.ListReleaseTypesRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.ListReleaseTypesInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.ListReleaseTypesInvocations)
 		}
 	})
 }
