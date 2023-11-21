@@ -30,6 +30,14 @@ type MockBrowseClient struct {
 	ListOrganizationInvocations int
 	ListOrganizationResponse    *services.ListOrganizationResponse
 	ListOrganizationError       error
+	ListReleasesInvocations     int
+	ListReleasesResponse        *services.ListReleasesResponse
+	ListReleasesError           error
+}
+
+func (m *MockBrowseClient) ListReleases(ctx context.Context, in *services.ListReleasesRequest, opts ...grpc.CallOption) (*services.ListReleasesResponse, error) {
+	m.ListReleasesInvocations++
+	return m.ListReleasesResponse, m.ListReleasesError
 }
 
 func (m *MockBrowseClient) ListReleaseTypes(ctx context.Context, in *services.ListReleaseTypesRequest, opts ...grpc.CallOption) (*services.ListReleaseTypesResponse, error) {
