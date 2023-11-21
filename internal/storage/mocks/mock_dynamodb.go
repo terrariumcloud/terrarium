@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
@@ -29,6 +30,9 @@ type DynamoDB struct {
 	ScanItemInvocations      int
 	ScanOut                  *dynamodb.ScanOutput
 	ScanError                error
+	QueryItemInvocations     int
+	QueryOut                 *dynamodb.QueryOutput
+	QueryError               error
 }
 
 func (mdb *DynamoDB) DescribeTable(_ context.Context, in *dynamodb.DescribeTableInput, _ ...func(*dynamodb.Options)) (*dynamodb.DescribeTableOutput, error) {
@@ -90,4 +94,11 @@ func (mdb *DynamoDB) Scan(ctx context.Context, in *dynamodb.ScanInput, optFns ..
 	mdb.TableName = *in.TableName
 
 	return mdb.ScanOut, mdb.ScanError
+}
+func (mdb *DynamoDB) Query(ctx context.Context, in *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+
+	mdb.QueryItemInvocations++
+	mdb.TableName = *in.TableName
+
+	return mdb.QueryOut, mdb.QueryError
 }
