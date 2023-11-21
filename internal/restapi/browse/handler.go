@@ -4,21 +4,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"io"
 	"log"
 	"net/http"
 	"os"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 
 	"github.com/apparentlymart/go-versions/versions"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	releaseServices "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 )
 
@@ -47,6 +52,9 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/releases", h.getReleasesHandler())
+	apiRouter.Handle("/organizations", h.getOrganizationsHandler())
+	apiRouter.Handle("/types", h.getReleaseTypesHandler())
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }
@@ -141,5 +149,110 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 
 		data := createModuleMetadataResponse(registrarResponse.GetModule(), versionResponse.Versions)
 		h.responseHandler.Write(rw, data, http.StatusOK)
+	})
+}
+
+// GetReleasesHandler will return a list of all releases published.
+func (h *browseHttpService) getReleasesHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to read request body: %v", err)
+			h.errorHandler.Write(rw, errors.New("failed to read request body"), http.StatusBadRequest)
+			return
+		}
+
+		var requestPayload releaseSvc.ListReleasesRequest
+		if err := json.Unmarshal(body, &requestPayload); err != nil {
+			log.Printf("Failed to unmarshal JSON: %v", err)
+			h.errorHandler.Write(rw, errors.New("failed to parse JSON"), http.StatusBadRequest)
+			return
+		}
+
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			log.Printf("Failed to connect to '%s': %v", release.ReleaseServiceEndpoint, err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+
+		releaseResponse, err2 := client.ListReleases(r.Context(), &releaseServices.ListReleasesRequest{
+			MaxAgeSeconds: requestPayload.MaxAgeSeconds,
+			Types:         requestPayload.Types,
+			Organizations: requestPayload.Organizations,
+		})
+
+		if err2 != nil {
+			log.Printf("Failed GRPC call with error: %v", err2)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of releases from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(createReleaseResponse(releaseResponse.Releases))
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
+	})
+}
+
+// getReleaseTypesHandler will return a list of all types available.
+func (h *browseHttpService) getReleaseTypesHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			log.Printf("Failed to connect to '%s': %v", release.ReleaseServiceEndpoint, err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+		log.Printf("Inside the handler for types")
+
+		releaseTypesResponse, err2 := client.ListReleaseTypes(r.Context(), &releaseServices.ListReleaseTypesRequest{})
+		log.Printf("after client")
+
+		if err2 != nil {
+			log.Printf("Failed GRPC call with error: %v", err2)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of release types from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(releaseTypesResponse.Types)
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
+	})
+}
+
+// getOrganizationsHandler will return a list of all organizations available.
+func (h *browseHttpService) getOrganizationsHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			log.Printf("Failed to connect to '%s': %v", release.ReleaseServiceEndpoint, err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+
+		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{})
+
+		if err2 != nil {
+			log.Printf("Failed GRPC call with error: %v", err2)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of release types from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(releaseOrganizationsResponse.Organizations)
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
 	})
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	release "github.com/terrariumcloud/terrarium/internal/release/services"
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services/release"
 
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
@@ -34,12 +36,14 @@ var (
 type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
 	terrarium.UnimplementedConsumerServer
+	release.UnimplementedBrowseServer
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
 func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
+	release.RegisterBrowseServer(grpcServer, gw)
 	return nil
 }
 
@@ -604,5 +608,56 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 			downStream.CloseSend()
 			return ForwardModuleDependenciesError
 		}
+	}
+}
+
+// Register new module with Registrar service
+func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *release.ListReleasesRequest) (*release.ListReleasesResponse, error) {
+	log.Println("ListReleases => ListReleases")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: Retrieving list of releases from release service", trace.WithAttributes(attribute.String("", request.Get)))
+
+	// attribute does not support Uint64 so converting to int64
+	// MaxAgeSeconds := releaseSvc.convertUint64ToInt64(request.GetMaxAgeSeconds())
+
+	span.SetAttributes(
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
+		// attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		log.Println(err)
+		span.RecordError(err)
+		return nil, ConnectToRegistrarError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListReleasesWithClient(ctx, request, client)
+}
+
+// RegisterWithClient calls Register on Registrar client
+func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, request *release.ListReleasesRequest, client release.BrowseClient) (*release.ListReleasesResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: register with Client", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
+	span.SetAttributes(
+		attribute.String("module.name", request.GetName()),
+	)
+
+	if res, delegateError := client.Register(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		log.Println("Done <= Registrar")
+		span.AddEvent("Successful call to Register on Registrar client.")
+		return res, nil
 	}
 }
