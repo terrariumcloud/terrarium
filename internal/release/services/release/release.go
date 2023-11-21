@@ -225,7 +225,6 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		span.RecordError(err)
 		return nil, err
 	}
-	log.Println(response)
 
 	if response == nil {
 		span.RecordError(ReleaseNotFound)
