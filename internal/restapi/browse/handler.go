@@ -15,7 +15,6 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 
@@ -111,7 +110,7 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 		defer closeClient(conn)
 
 		clientRegistrar := services.NewRegistrarClient(conn)
-
+		log.Panicln("module log blah")
 		registrarResponse, err := clientRegistrar.GetModule(ctx, &services.GetModuleRequest{Name: moduleName})
 		if err != nil {
 			log.Printf("Failed GRPC call with error: %v", err)
@@ -163,7 +162,7 @@ func (h *browseHttpService) getReleasesHandler() http.Handler {
 			return
 		}
 
-		var requestPayload releaseSvc.ListReleasesRequest
+		var requestPayload releaseServices.ListReleasesRequest
 		if err := json.Unmarshal(body, &requestPayload); err != nil {
 			log.Printf("Failed to unmarshal JSON: %v", err)
 			h.errorHandler.Write(rw, errors.New("failed to parse JSON"), http.StatusBadRequest)

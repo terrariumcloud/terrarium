@@ -47,6 +47,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
 	release.RegisterBrowseServer(grpcServer, gw)
+	//release.RegisterPublisherServer(grpcServer, gw)
 	return nil
 }
 
@@ -642,8 +643,6 @@ func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg
 
 	return gw.PublishWithClient(ctx, request, client)
 }
-
-// ---------------------------------------------------------
 
 // PublishWithClient calls Publish on Release client
 func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.PublisherClient) (*releasePkg.PublishResponse, error) {
