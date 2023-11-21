@@ -160,7 +160,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		return nil, err
 	}
 	span.SetAttributes(
-		attribute.Int64("release.count", len(response.Items))
+		attribute.Int("release.count", len(response.Items)),
 	)
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	if response.Items != nil {
@@ -215,7 +215,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-    defer span.End()
+	defer span.End()
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}
