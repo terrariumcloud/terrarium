@@ -3,7 +3,6 @@ import React from 'react';
 import './App.css';
 import Main from './pages/main/Main';
 import Browse from './pages/modules/browse/Browse';
-import Releases from './pages/modules/release/Releases';
 import ModuleInfo from './pages/modules/moduleinfo/ModuleInfo';
 import ModuleDetailDescription from './pages/modules/moduleinfo/ModuleDetailDescription';
 import ModuleDetailVersions from './pages/modules/moduleinfo/ModuleDetailVersions';
@@ -33,15 +32,15 @@ const routes = [
                 children: [
                     {
                         index: true,
-                        element: <Browse />,
+                        element: <Browse/>,
                     },
                     {
-                        path: ":org/:name/:provider",
+                        path:":org/:name/:provider",
                         element: <ModuleInfo />,
                         children: [
                             {
                                 index: true,
-                                element: <ModuleDetailDescription />,
+                                element: <ModuleDetailDescription/>,
                             },
                             {
                                 path: "description",
@@ -52,16 +51,6 @@ const routes = [
                                 element: <ModuleDetailVersions />,
                             }
                         ]
-                    },
-                ],
-            },
-            {
-                path: "releases",
-                errorElement: <ServerError />,
-                children: [
-                    {
-                        index: true,
-                        element: <Releases />,
                     },
                 ],
             },
@@ -77,12 +66,12 @@ const routes = [
 
 // import your route components too
 function App() {
-    const router = createBrowserRouter(routes)
+  const router = createBrowserRouter(routes)
 
 
-    return (
-        <RouterProvider router={router} />
-    );
+  return (
+      <RouterProvider router={router} />
+  );
 }
 
 export default App;
