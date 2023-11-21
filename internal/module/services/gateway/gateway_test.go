@@ -920,3 +920,46 @@ func Test_ListReleaseTypesWithClient(t *testing.T) {
 		}
 	})
 }
+
+// Test_ListOrganizationWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_ListOrganizationWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &services.ListOrganizationResponse{}
+		client := &releaseMocks.MockBrowseClient{ListOrganizationResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.ListOrganizationWithClient(context.TODO(), &services.ListOrganizationRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.ListOrganizationInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.ListOrganizationInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockBrowseClient{ListOrganizationError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.ListOrganizationWithClient(context.TODO(), &services.ListOrganizationRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.ListOrganizationInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.ListOrganizationInvocations)
+		}
+	})
+}
