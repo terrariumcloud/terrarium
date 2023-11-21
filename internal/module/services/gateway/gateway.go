@@ -717,3 +717,49 @@ func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, requ
 		return res, nil
 	}
 }
+
+// ListReleaseTypes makes a call to Release service
+func (gw *TerrariumGrpcGateway) ListReleaseTypes(ctx context.Context, request *release.ListReleaseTypesRequest) (*release.ListReleaseTypesResponse, error) {
+	log.Println("ListReleaseTypes => ListReleasesTypes")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: Retrieving list of distinct release types from release table", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+	defer span.End()
+
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		log.Println(err)
+		span.RecordError(err)
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListReleaseTypesWithClient(ctx, request, client)
+}
+
+// ListReleaseTypesWithClient calls ListReleaseTypes on Release client
+func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, request *release.ListReleaseTypesRequest, client release.BrowseClient) (*release.ListReleaseTypesResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: listing release types with Client", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+	span.SetAttributes(
+		attribute.String("Page", request.GetPage().String()),
+	)
+	defer span.End()
+	if res, delegateError := client.ListReleaseTypes(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		log.Println("Done <= Release")
+		span.AddEvent("Successful call to ListRelease Types on Release client.")
+		return res, nil
+	}
+}
