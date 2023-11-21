@@ -83,6 +83,7 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		attribute.String("release.type", request.GetType()),
 		attribute.String("release.organization", request.GetOrganization()),
 	)
+	defer span.End()
 
 	mv := Release{
 		Type:         request.GetType(),
@@ -111,7 +112,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		return nil, PublishReleaseError
 	}
 
-	log.Println("New release created.")
 	return ReleasePublished, nil
 }
 
@@ -130,6 +130,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
+	defer span.End()
 
 	if request.MaxAgeSeconds == nil {
 		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
@@ -158,8 +159,9 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		span.RecordError(err)
 		return nil, err
 	}
-	log.Println("Filtered Release Count: ", len(response.Items))
-
+	span.SetAttributes(
+		attribute.Int64("release.count", len(response.Items))
+	)
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
@@ -213,7 +215,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-
+    defer span.End()
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}
