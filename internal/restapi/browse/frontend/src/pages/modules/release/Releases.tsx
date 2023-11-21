@@ -1,23 +1,77 @@
 import React from 'react';
 
+import { Button, Card, CardContent, CardActions, Stack, Typography, Paper, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, IconButton, ListItemText, Checkbox } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, TimelineOppositeContent, timelineOppositeContentClasses } from '@mui/lab';
-import { Button, Card, CardContent, CardActions, Stack, Typography, Paper, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, IconButton } from '@mui/material';
-import { useFilteredReleaseList, ReleaseEntry } from '../../../data/useReleasesList'
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import { Link as RouterLink } from 'react-router-dom';
-import dummyRelease from '../../../assets/releases-list.json'
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+
+import { useFilteredReleaseList, ReleaseEntry, ReleaseLinks } from '../../../data/useReleasesList'
+import GenericSearchBar from '../../../components/search-bar/GenericSearchBar';
+
+const typesList = [
+    'Oliver Hansen',
+    'Van Henry',
+    'April Tucker',
+    'Ralph Hubbard',
+    'Virginia Andrews',
+    'Kelly Snyder',
+];
+
+const orgsList = [
+    'cie', 'spvss', 'Miriam Wagner',
+    'Bradley Wilkerson',
+    'Virginia Andrews',
+    'Kelly Snyder',
+];
+
+const ITEM_HEIGHT = 48;
+
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 5.5,
+            maxWidth: 250,
+        },
+    },
+};
 
 function Releases() {
     const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList();
-    const [type, setType] = React.useState('');
-    const [org, setOrg] = React.useState('');
 
-    const handleTypeChange = (event: SelectChangeEvent) => {
-        setType(event.target.value);
+    const [type, setType] = React.useState<string[]>([]);
+    const [org, setOrg] = React.useState<string[]>([]);
+
+    const handleTypeChange = (event: SelectChangeEvent<typeof type>) => {
+        const {
+            target: { value },
+        } = event;
+        setType(
+            // On autofill we get a stringified value.
+            typeof value === 'string' ? value.split(',') : value,
+        );
     };
-    const handleOrgChange = (event: SelectChangeEvent) => {
-        setOrg(event.target.value);
+
+    const handleOrgChange = (event: SelectChangeEvent<typeof org>) => {
+        const {
+            target: { value },
+        } = event;
+        setOrg(
+            // On autofill we get a stringified value.
+            typeof value === 'string' ? value.split(',') : value,
+        );
     };
+
+    const LinkButton = ({ linkObj }: { linkObj: ReleaseLinks }) => {
+        let domain, disabled = false
+        try {
+            if (!/^https?:\/\//i.test(linkObj.Url)) linkObj.Url = 'http://' + linkObj.Url;
+
+            domain = (new URL(linkObj.Url)).hostname.replace('www.', '')
+        } catch {
+            domain = "Invalid-Link"
+            disabled = true
+        }
+        return (<Button size="small" href={linkObj.Url} disabled={disabled}>{linkObj.Title ? linkObj.Title : domain}</Button>)
+    }
 
     const ReleaseCard = ({ module }: { module: ReleaseEntry }) => {
         return (
@@ -38,14 +92,14 @@ function Releases() {
                 <TimelineContent>
                     <Card >
                         <CardContent>
-                            <Typography color="text.primary" variant='h6' display={'inline'}>{module.name}</Typography> 
+                            <Typography color="text.primary" variant='h6' display={'inline'}>{module.name}</Typography>
                             <Typography color="text.secondary" variant='subtitle1' display={'inline'}>{` | ${module.Organization} | ${module.type}`}</Typography>
-                            <Typography variant='body2'>{`${module.version}`}</Typography>
-                            <Typography variant='body2'>{`${module.description}`}</Typography>
+                            <Typography variant='body2'>{`Version: ${module.version}`}</Typography>
+                            {module.description && <><br /><Typography variant='body2'>{`${module.description}`}</Typography></>}
                         </CardContent>
                         <CardActions>
-                            <Button size="small" href={""}>Source</Button>
-                            <Button size="small" component={RouterLink} to={'/'}>Module Info</Button>
+                            {module.links?.length &&
+                                module.links.map((linkObject, index) => { return <LinkButton linkObj={linkObject} key={index} /> })}
                         </CardActions>
                     </Card>
                 </TimelineContent>
@@ -59,42 +113,50 @@ function Releases() {
                 <Typography color="text.primary" variant='h5'>Latest Releases to Terrarium</Typography>
             </div>
             <Stack spacing={2} style={{ marginTop: ".8em", marginBottom: ".8em" }}>
+
+                {/* Filters Section */}
                 <Paper sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap' }}>
                     <div className="headingcolor">
                         Filter Releases
                     </div>
-                    <div className="flex wrap" style={{ justifyContent: 'center', alignItems: "baseline", paddingBottom: "8px" }}>
-                        <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+                    <div className="flex wrap" style={{ justifyContent: 'center', alignItems: "baseline", paddingBottom: "8px", backgroundColor: "rgba(66, 165, 245, 0.15)" }}>
+                        <GenericSearchBar filterValue={filterText} setFilter={setFilterText} />
+                        <FormControl variant="standard" sx={{ m: 1, minWidth: 120, maxWidth: 300 }}>
                             <InputLabel id="type-filter-label">Type</InputLabel>
                             <Select
                                 labelId="type-filter-label"
                                 value={type}
                                 label="Type"
-                                autoWidth
                                 onChange={handleTypeChange}
+                                multiple
+                                renderValue={(selected) => selected.join(', ')}
+                                MenuProps={MenuProps}
                             >
-                                <MenuItem value="all">
-                                    <em>All</em>
-                                </MenuItem>
-                                <MenuItem value="bundle">Bundles</MenuItem>
-                                <MenuItem value="module">Modules</MenuItem>
+                                {typesList.map((typeEntry) => (
+                                    <MenuItem key={typeEntry} value={typeEntry}>
+                                        <Checkbox checked={type.indexOf(typeEntry) > -1} />
+                                        <ListItemText primary={typeEntry} />
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
-                        <FormControl variant="standard" sx={{ m: 1, minWidth: 180 }}>
-                            <InputLabel id="type-filter-label">Organization</InputLabel>
+                        <FormControl variant="standard" sx={{ m: 1, minWidth: 180, maxWidth: 300 }}>
+                            <InputLabel id="org-filter-label">Organization</InputLabel>
                             <Select
-                                labelId="type-filter-label"
+                                labelId="org-filter-label"
                                 value={org}
                                 label="Org.."
-                                autoWidth
                                 onChange={handleOrgChange}
+                                multiple
+                                renderValue={(selected) => selected.join(', ')}
+                                MenuProps={MenuProps}
                             >
-                                <MenuItem value="all">
-                                    <em>All</em>
-                                </MenuItem>
-                                <MenuItem value="cie">cie</MenuItem>
-                                <MenuItem value="brooklyn">brooklyn</MenuItem>
-                                <MenuItem value="mediacloud">mediacloud</MenuItem>
+                                {orgsList.map((orgEntry) => (
+                                    <MenuItem key={orgEntry} value={orgEntry}>
+                                        <Checkbox checked={org.indexOf(orgEntry) > -1} />
+                                        <ListItemText primary={orgEntry} />
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                         <IconButton sx={{
@@ -104,10 +166,12 @@ function Releases() {
                                 backgroundColor: "#1976d2",
                             }
                         }} aria-label="delete">
-                            <SearchRoundedIcon />
+                            <RefreshRoundedIcon />
                         </IconButton>
                     </div>
                 </Paper>
+
+                {/* Release Timeline Section */}
                 <Timeline
                     sx={{
                         [`& .${timelineOppositeContentClasses.root}`]: {
@@ -115,7 +179,7 @@ function Releases() {
                         },
                     }}
                 >
-                    {dummyRelease.map((mod, index) => { return <ReleaseCard module={mod} key={index} /> })}
+                    {filteredModuleList.map((mod, index) => { return <ReleaseCard module={mod} key={index} /> })}
                 </Timeline>
             </Stack>
         </>
