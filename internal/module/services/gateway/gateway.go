@@ -39,7 +39,7 @@ type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
 	terrarium.UnimplementedConsumerServer
 	release.UnimplementedBrowseServer
-	releasePkg.UnimplementedPublisherServer
+	releasepkg releasePkg.UnimplementedPublisherServer
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
@@ -638,13 +638,13 @@ func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg
 
 	defer conn.Close()
 
-	client := release.NewPublisherClient(conn)
+	client := releasePkg.NewPublisherClient(conn)
 
 	return gw.PublishWithClient(ctx, request, client)
 }
 
 // PublishWithClient calls Publish on Release client
-func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client release.PublisherClient) (*releasePkg.PublishResponse, error) {
+func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.PublisherClient) (*releasePkg.PublishResponse, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: publish with Client", trace.WithAttributes(attribute.String("Release Name", request.GetName())))
 	span.SetAttributes(
@@ -674,15 +674,16 @@ func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *relea
 	span.AddEvent("gateway: Retrieving list of releases from release service", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
 
 	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := releaseSvc.convertUint64ToInt64(request.GetMaxAgeSeconds())
+	// MaxAgeSeconds := releaseSvc.convertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
-		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		// attribute.Int64("release.maxAge", MaxAgeSeconds),
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
 	defer span.End()
+
 	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
 
 	if err != nil {
