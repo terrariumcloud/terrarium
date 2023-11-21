@@ -643,6 +643,8 @@ func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg
 	return gw.PublishWithClient(ctx, request, client)
 }
 
+// ---------------------------------------------------------
+
 // PublishWithClient calls Publish on Release client
 func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.PublisherClient) (*releasePkg.PublishResponse, error) {
 	span := trace.SpanFromContext(ctx)
@@ -753,13 +755,61 @@ func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, 
 		attribute.String("Page", request.GetPage().String()),
 	)
 	defer span.End()
+
 	if res, delegateError := client.ListReleaseTypes(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
 		span.RecordError(delegateError)
 		return nil, delegateError
 	} else {
 		log.Println("Done <= Release")
-		span.AddEvent("Successful call to ListRelease Types on Release client.")
+		span.AddEvent("Successful call to ListReleaseTypes on Release client.")
+		return res, nil
+	}
+}
+
+// ListOrganization makes a call to Release service
+func (gw *TerrariumGrpcGateway) ListOrganization(ctx context.Context, request *release.ListOrganizationRequest) (*release.ListOrganizationResponse, error) {
+	log.Println("ListOrganization => ListOrganization")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: Retrieving list of distinct organizations from release table", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+	defer span.End()
+
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		log.Println(err)
+		span.RecordError(err)
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListOrganizationWithClient(ctx, request, client)
+}
+
+// ListOrganizationWithClient calls ListReleaseTypes on Release client
+func (gw *TerrariumGrpcGateway) ListOrganizationWithClient(ctx context.Context, request *release.ListOrganizationRequest, client release.BrowseClient) (*release.ListOrganizationResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("gateway: listing organizations with Client", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+	span.SetAttributes(
+		attribute.String("Page", request.GetPage().String()),
+	)
+	defer span.End()
+
+	if res, delegateError := client.ListOrganization(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		log.Println("Done <= Release")
+		span.AddEvent("Successful call to ListOrganization on Release client.")
 		return res, nil
 	}
 }
