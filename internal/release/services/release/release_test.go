@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
+	"github.com/terrariumcloud/terrarium/internal/common/paging"
 	"github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
@@ -334,6 +335,192 @@ func Test_ListLatestRelease(t *testing.T) {
 
 }
 
+// Test_ListReleaseType checks:
+// - if distinct release types are retrieved
+func Test_ListReleaseTypes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Listing release types", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			ScanOut: &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-17 15:11:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-10-17 18:00:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "atlas"},
+						"name":         &types.AttributeValueMemberS{Value: "test name 2"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-20 16:00:00.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "bundle"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name bundle"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		svc := &ReleaseService{Db: db}
+
+		req := services.ListReleaseTypesRequest{
+			Page: &paging.PageInfoRequest{
+				Offset: 1,
+				Count:  1,
+			},
+		}
+		res, err := svc.ListReleaseTypes(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		expectedReleaseTypes := &services.ListReleaseTypesResponse{
+			Types: []string{"module", "bundle"},
+		}
+
+		if !EqualSlices(res.Types, expectedReleaseTypes.Types) {
+			t.Errorf("Got %v, want %v", res.Types, expectedReleaseTypes.Types)
+		}
+	})
+
+}
+
+// Test_ListOrganization checks:
+// - if distinct organizations are retrieved
+func Test_ListOrganization(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Listing organizations", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			ScanOut: &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-17 15:11:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-10-17 18:00:35.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "module"},
+						"organization": &types.AttributeValueMemberS{Value: "atlas"},
+						"name":         &types.AttributeValueMemberS{Value: "test name 2"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+					{
+						"createdAt":    &types.AttributeValueMemberS{Value: "2022-11-20 16:00:00.198401764 +0000 UTC"},
+						"type":         &types.AttributeValueMemberS{Value: "bundle"},
+						"organization": &types.AttributeValueMemberS{Value: "cie"},
+						"name":         &types.AttributeValueMemberS{Value: "test name bundle"},
+						"version":      &types.AttributeValueMemberS{Value: "1.0.0"},
+						"description":  &types.AttributeValueMemberS{Value: "test desc"},
+						"links": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberM{
+									Value: map[string]types.AttributeValue{
+										"title": &types.AttributeValueMemberS{Value: "test title"},
+										"url":   &types.AttributeValueMemberS{Value: "https://example.com"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		svc := &ReleaseService{Db: db}
+
+		req := services.ListOrganizationRequest{
+			Page: &paging.PageInfoRequest{
+				Offset: 1,
+				Count:  1,
+			},
+		}
+		res, err := svc.ListOrganization(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		expectedOrgs := &services.ListOrganizationResponse{
+			Organizations: []string{"cie", "atlas"},
+		}
+
+		if !EqualSlices(res.Organizations, expectedOrgs.Organizations) {
+			t.Errorf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
+		}
+	})
+
+}
+
+// Helper functions
+
 // Function to compare Links
 func compareLinks(a, b []*release.Link) bool {
 	if len(a) != len(b) {
@@ -345,4 +532,24 @@ func compareLinks(a, b []*release.Link) bool {
 		}
 	}
 	return true
+}
+
+// EqualSlices checks if two slices are equal redardless of the items order.
+func EqualSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	aMap := make(map[string]int)
+	bMap := make(map[string]int)
+
+	for _, v := range a {
+		aMap[v]++
+	}
+
+	for _, v := range b {
+		bMap[v]++
+	}
+
+	return reflect.DeepEqual(aMap, bMap)
 }
