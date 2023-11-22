@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
 )
 
@@ -24,6 +25,7 @@ func init() {
 	//)
 	browseCmd.Flags().StringVarP(&registrar.RegistrarServiceEndpoint, "registrar", "", registrar.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
 	browseCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	browseCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "release", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
 	rootCmd.AddCommand(browseCmd)
 }
 
