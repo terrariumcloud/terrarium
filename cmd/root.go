@@ -138,9 +138,6 @@ func startGRPCService(name string, service services.Service) {
 
 func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
 	log.Printf("Starting %s", name)
-	for _, envVar := range os.Environ() {
-		log.Println("test", envVar)
-	}
 
 	ctx := context.Background()
 
