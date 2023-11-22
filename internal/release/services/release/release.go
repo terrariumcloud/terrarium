@@ -46,6 +46,7 @@ var (
 
 type ReleaseService struct {
 	releaseSvc.UnimplementedPublisherServer
+	releaseSvc.UnimplementedBrowseServer
 	Db     storage.DynamoDBTableCreator
 	Table  string
 	Schema *dynamodb.CreateTableInput
@@ -69,6 +70,7 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	}
 
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
+	releaseSvc.RegisterBrowseServer(grpcServer, s)
 
 	// Code below to be uncommented for testing ListReleases
 	// var maxAge uint64 = 72000
@@ -329,7 +331,7 @@ func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseS
 		for _, item := range response.Items {
 			typeAttr, found := item["organization"]
 			if !found {
-				log.Println("organizatiob attribte not found")
+				log.Println("organization attribte not found")
 				continue
 			}
 

@@ -515,6 +515,8 @@ func Test_ListOrganization(t *testing.T) {
 		if !EqualSlices(res.Organizations, expectedOrgs.Organizations) {
 			t.Errorf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
 		}
+		log.Printf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
+
 	})
 
 }

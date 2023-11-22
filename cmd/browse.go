@@ -16,13 +16,13 @@ var browseCmd = &cobra.Command{
 }
 
 func init() {
-	//browseCmd.Flags().StringVarP(
-	//	&mountPath,
-	//	"mount-path",
-	//	"m",
-	//	"modules",
-	//	"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
-	//)
+	// browseCmd.Flags().StringVarP(
+	// 	&mountPath,
+	// 	"mount-path",
+	// 	"m",
+	// 	"modules",
+	// 	"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
+	// )
 	browseCmd.Flags().StringVarP(&registrar.RegistrarServiceEndpoint, "registrar", "", registrar.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Registrar Service")
 	browseCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	browseCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "release", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
