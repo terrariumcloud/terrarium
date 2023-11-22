@@ -1,15 +1,16 @@
 package release
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"sort"
 	"time"
 
-	goteamsnotify "github.com/atc0005/go-teams-notify/v2"
-	"github.com/atc0005/go-teams-notify/v2/adaptivecard"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -115,7 +116,7 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		return nil, PublishReleaseError
 	}
 
-	err = NotifyTeams(mv)
+	err = NotifyWebhook(mv)
 	if err != nil {
 		span.RecordError(err)
 	}
@@ -290,47 +291,93 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 	}
 }
 
-func NotifyTeams(payload Release) error {
+// Function to send notifications to webhook
+func NotifyWebhook(payload Release) error {
 
-	// Initialize a new Microsoft Teams client.
-	mstClient := goteamsnotify.NewTeamsClient()
+	var URls []map[string]interface{}
 
 	// Set webhook url.
 	webhookUrl := os.Getenv("WEBHOOK")
 
-	// The title for message (first TextBlock element).
-	msgTitle := "Terrarium Release"
-
-	var LinkMessage string = "\n"
-
+	// Creating Urls based on the provided links
 	for _, link := range payload.Links {
-		if len(link.Title) > 0 {
-			LinkMessage = LinkMessage + "* **" + link.Title + "** : " + link.Url + "\n"
-		} else {
-			LinkMessage = LinkMessage + "* **URL** : " + link.Url + "\n"
+
+		// Provide default title of url if not present
+		name := "url"
+		if link.Title != "" {
+			name = link.Title
 		}
+
+		// Skip the iterations if url is not provided
+		if link.Url == "" {
+			continue
+		}
+
+		action := map[string]interface{}{
+			"@type": "OpenUri",
+			"name":  name,
+			"targets": []map[string]interface{}{
+				{
+					"os":  "default",
+					"uri": &link.Url,
+				},
+			},
+		}
+		URls = append(URls, action)
 	}
 
-	// Formatted message body.
-	msgText := "New version of **" + payload.Name + "** has been released. The details for the release are as given below: \n" +
-		"* **Name** : " + payload.Name +
-		"\n* **Version** : " + payload.Version +
-		"\n* **Type** : " + payload.Type +
-		"\n* **Organization** : " + payload.Organization +
-		"\n* **Description** : " + payload.Description +
-		"\n* **CreatedAt** : " + payload.CreatedAt +
-		LinkMessage
+	// Create the payload data
+	jsonData := map[string]interface{}{
+		"@type":      "MessageCard",
+		"@context":   "",
+		"themeColor": "00d761",
+		"summary":    "Release Notification",
+		"sections": []map[string]interface{}{
+			{
+				"activityTitle": "Release Notification",
+				"facts": []map[string]interface{}{
+					{
+						"name":  "Name",
+						"value": payload.Name,
+					},
+					{
+						"name":  "Type",
+						"value": payload.Type,
+					},
+					{
+						"name":  "Organization",
+						"value": payload.Organization,
+					},
+					{
+						"name":  "Description",
+						"value": payload.Description,
+					},
+					{
+						"name":  "Version",
+						"value": payload.Version,
+					},
+					{
+						"name":  "CreatedAt",
+						"value": payload.CreatedAt,
+					},
+				},
+				"markdown": true,
+			},
+		},
+		"potentialAction": URls,
+	}
 
-	// Create message using provided formatted title and text.
-	msg, err := adaptivecard.NewSimpleMessage(msgText, msgTitle, true)
+	jsonBytes, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
-		return (err)
+		return err
 	}
 
-	// Send the message with default timeout/retry settings.
-	if err := mstClient.Send(webhookUrl, msg); err != nil {
-		return (err)
+	// Send the notifcation to the Webhook
+	resp, err := http.Post(webhookUrl, "application/json", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return err
 	}
+	defer resp.Body.Close()
 
 	return nil
 }
