@@ -2,8 +2,14 @@ package release
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 
@@ -345,4 +351,78 @@ func compareLinks(a, b []*release.Link) bool {
 		}
 	}
 	return true
+}
+
+func Test_NotifyWebhook(t *testing.T) {
+	t.Run("notifying webhook about latest release", func(t *testing.T) {
+		resultsChan := make(chan bool, 1)
+		payload := Release{
+			Type:         "bundle",
+			Organization: "CIE",
+			Name:         "chaos-bundle",
+			Version:      "2.3.41",
+			Description:  "Chaos bundle has new changes!",
+			CreatedAt:    "2023-11-16 09:40:25.852712836 +0000 UTC",
+			Links: []*release.Link{
+				{
+					Title: "Github link",
+					Url:   "https://github-chf01.synamedia.com/Saas-Enablement/chaos-bundle",
+				},
+				{
+					Title: "Documentation link",
+					Url:   "https://github-chf01.synamedia.com/Saas-Enablement/chaos-bundle/tree/main/docs",
+				},
+				{
+					Title: "spvss link",
+					Url:   "https://github-chf01.synamedia.com/spvss-ivp",
+				},
+				{
+					Title: "",
+					Url:   "https://github-chf01.synamedia.synamedia.aflah.lalalcom/spvss-ivp",
+				},
+				{
+					Title: "spvss link",
+					Url:   "",
+				},
+			},
+		}
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				resultsChan <- false
+				http.Error(w, "Error reading request body", http.StatusInternalServerError)
+				return
+			}
+
+			var requestData map[string]interface{}
+			if err := json.Unmarshal(body, &requestData); err != nil {
+				resultsChan <- false
+				http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+				return
+			}
+			resultsChan <- true
+		}))
+		defer ts.Close()
+
+		os.Setenv("WEBHOOK", ts.URL)
+
+		err := NotifyWebhook(payload)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		result := <-resultsChan
+		if result {
+			fmt.Println("passed")
+		} else {
+			t.Errorf("Expected no error but found error")
+		}
+
+		close(resultsChan)
+
+	})
+
 }
