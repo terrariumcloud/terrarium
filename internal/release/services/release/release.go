@@ -7,8 +7,10 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -294,7 +296,10 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 // Function to send notifications to webhook
 func NotifyWebhook(payload Release) error {
 
-	var URls []map[string]interface{}
+	var (
+		URls  []map[string]interface{}
+		title string
+	)
 
 	// Set webhook url
 	webhookUrl := os.Getenv("WEBHOOK")
@@ -302,20 +307,31 @@ func NotifyWebhook(payload Release) error {
 	// Creating Urls based on the provided links
 	for _, link := range payload.Links {
 
-		// If the title is not provided, set the default title to "url"
-		name := "url"
-		if link.Title != "" {
-			name = link.Title
-		}
-
 		// Skip the iterations if the url is not provided
 		if link.Url == "" {
 			continue
 		}
 
+		// If the title is not provided use the host name from the URL
+		if link.Title == "" {
+			parsedURL, err := url.Parse(link.Url)
+			if err != nil {
+				panic(err)
+			}
+
+			// Extract and modify the host name
+			hostNameParts := strings.Split(parsedURL.Hostname(), ".")
+			if len(hostNameParts) >= 2 {
+				title = strings.Join(hostNameParts[:len(hostNameParts)-1], ".")
+			}
+
+		} else {
+			title = link.Title
+		}
+
 		action := map[string]interface{}{
 			"@type": "OpenUri",
-			"name":  name,
+			"name":  title,
 			"targets": []map[string]interface{}{
 				{
 					"os":  "default",
