@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/terrariumcloud/terrarium/internal/common/paging"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
@@ -51,9 +52,9 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
-	apiRouter.Handle("/releases", h.getReleasesHandler())
-	apiRouter.Handle("/organizations", h.getOrganizationsHandler())
-	apiRouter.Handle("/types", h.getReleaseTypesHandler())
+	apiRouter.Handle("/release", h.getReleasesHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/organizations", h.getOrganizationsHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }
@@ -241,7 +242,12 @@ func (h *browseHttpService) getOrganizationsHandler() http.Handler {
 
 		client := releaseServices.NewBrowseClient(conn)
 
-		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{})
+		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{
+			Page: &paging.PageInfoRequest{
+				Offset: 1,
+				Count:  1,
+			},
+		})
 
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
