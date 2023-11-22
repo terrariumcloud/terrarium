@@ -296,19 +296,19 @@ func NotifyWebhook(payload Release) error {
 
 	var URls []map[string]interface{}
 
-	// Set webhook url.
+	// Set webhook url
 	webhookUrl := os.Getenv("WEBHOOK")
 
 	// Creating Urls based on the provided links
 	for _, link := range payload.Links {
 
-		// Provide default title of url if not present
+		// If the title is not provided, set the default title to "url"
 		name := "url"
 		if link.Title != "" {
 			name = link.Title
 		}
 
-		// Skip the iterations if url is not provided
+		// Skip the iterations if the url is not provided
 		if link.Url == "" {
 			continue
 		}
@@ -326,7 +326,7 @@ func NotifyWebhook(payload Release) error {
 		URls = append(URls, action)
 	}
 
-	// Create the payload data
+	// Create the JSON data
 	jsonData := map[string]interface{}{
 		"@type":      "MessageCard",
 		"@context":   "",
@@ -372,7 +372,7 @@ func NotifyWebhook(payload Release) error {
 		return err
 	}
 
-	// Send the notifcation to the Webhook
+	// Send the notification to the Webhook
 	resp, err := http.Post(webhookUrl, "application/json", bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
