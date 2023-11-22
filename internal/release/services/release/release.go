@@ -261,8 +261,11 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 	)
 
 	scanQueryInputs := &dynamodb.ScanInput{
-		ProjectionExpression: aws.String("type"),
-		TableName:            aws.String(ReleaseTableName),
+		ProjectionExpression: aws.String("#t"),
+		ExpressionAttributeNames: map[string]string{
+			"#t": "type",
+		},
+		TableName: aws.String(ReleaseTableName),
 	}
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
