@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	releaseService "github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
-
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -67,6 +68,28 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 
 	services.RegisterVersionManagerServer(grpcServer, s)
 
+	// For testing with Debug and Release using VSCODE
+	// conn, err := services.CreateGRPCConnection(releaseService.ReleaseServiceEndpoint)
+	// if err != nil {
+	// 	log.Printf("Failed to connect to '%s': %v", releaseService.ReleaseServiceEndpoint, err)
+	// 	return err
+	// }
+	// defer conn.Close()
+
+	// releaseClient := release.NewReleasePublisherClient(conn)
+
+	// req := &release.PublishRequest{
+	// 	Name:    "Arunav",
+	// 	Version: "1.2.3",
+	// }
+
+	// _, err = releaseClient.Publish(context.Background(), req)
+
+	// if err != nil {
+	// 	log.Printf("Failed to publish release: %v", err)
+	// 	return err
+	// }
+
 	return nil
 }
 
@@ -102,6 +125,27 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 		span.RecordError(err)
 		log.Println(err)
 		return nil, CreateModuleVersionError
+	}
+
+	conn, err := services.CreateGRPCConnection(releaseService.ReleaseServiceEndpoint)
+	if err != nil {
+		log.Printf("Failed to connect to '%s': %v", releaseService.ReleaseServiceEndpoint, err)
+		return nil, err
+	}
+	defer conn.Close()
+
+	releaseClient := release.NewReleasePublisherClient(conn)
+
+	// TODO: To add Pranav's logic for only publishing official releases.
+	req := &release.PublishRequest{
+		Name:    request.Module.GetName(),
+		Version: request.Module.GetVersion(),
+	}
+
+	_, err = releaseClient.Publish(context.Background(), req)
+
+	if err != nil {
+		log.Printf("Failed to publish release: %v", err)
 	}
 
 	log.Println("New version created.")

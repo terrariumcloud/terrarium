@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
@@ -76,6 +77,12 @@ func Test_BeginVersion(t *testing.T) {
 		db := &mocks.DynamoDB{}
 
 		svc := &VersionManagerService{Db: db}
+
+		release_service := &release.ReleaseService{Db: db}
+
+		s := grpc.NewServer(*new([]grpc.ServerOption)...)
+
+		err := release_service.RegisterWithServer(s)
 
 		req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v1.0.0"}}
 
