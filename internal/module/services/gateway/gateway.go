@@ -39,7 +39,7 @@ type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
 	terrarium.UnimplementedConsumerServer
 	release.UnimplementedBrowseServer
-	releasepkg releasePkg.UnimplementedPublisherServer
+	releasePkg releasePkg.UnimplementedPublisherServer
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
@@ -47,7 +47,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
 	release.RegisterBrowseServer(grpcServer, gw)
-	//release.RegisterPublisherServer(grpcServer, gw)
+	//releasePkg.RegisterPublisherServer(grpcServer, gw)
 	return nil
 }
 
