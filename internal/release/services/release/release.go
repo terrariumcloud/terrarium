@@ -1,10 +1,17 @@
 package release
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"math"
+	"net/http"
+	"net/url"
+	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -36,9 +43,9 @@ var (
 
 	ReleasePublished = &release.PublishResponse{} // No return information at this stage
 
-	MarshalReleaseError   = status.Error(codes.Unknown, "Failed to marshal publish release.")
-	PublishReleaseError   = status.Error(codes.Unknown, "Failed to publish release.")
-	ListReleaseTypesError = status.Error(codes.Unknown, "Failed to retrieve release types")
+	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
+	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
+	ReleaseNotFound     = status.Error(codes.NotFound, "Release not found.")
 
 	TimeFormatLayout     = "2006-01-02 15:04:05.999999999 -0700 MST"
 	DefaultMaxAgeSeconds = uint64(86400) // 1 day in seconds
@@ -82,12 +89,14 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 // Publishes a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
 
-	log.Println("Creating new release.")
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
 		attribute.String("release.name", request.GetName()),
 		attribute.String("release.version", request.GetVersion()),
+		attribute.String("release.type", request.GetType()),
+		attribute.String("release.organization", request.GetOrganization()),
 	)
+	defer span.End()
 
 	mv := Release{
 		Type:         request.GetType(),
@@ -103,7 +112,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, MarshalReleaseError
 	}
 
@@ -114,17 +122,33 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
-		log.Println(err)
 		return nil, PublishReleaseError
 	}
 
-	log.Println("New release created.")
+	err = NotifyWebhook(mv)
+	if err != nil {
+		span.RecordError(err)
+	}
+
 	return ReleasePublished, nil
 }
 
 // ListReleases Retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
+
+	span := trace.SpanFromContext(ctx)
+
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+
+	span.SetAttributes(
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
+	)
+	defer span.End()
 
 	if request.MaxAgeSeconds == nil {
 		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
@@ -137,7 +161,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	filter := expression.Name("createdAt").GreaterThanEqual(expression.Value(splitTimeISO))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
-		log.Printf("Expression Builder failed creation: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
 
@@ -150,18 +174,19 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
-		log.Printf("ScanInput failed: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
-	log.Println("Filtered Release Count: ", len(response.Items))
-
+	span.SetAttributes(
+		attribute.Int("release.count", len(response.Items)),
+	)
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	if response.Items != nil {
 		for _, item := range response.Items {
 
 			Release := &releaseSvc.Release{}
 			if err3 := attributevalue.UnmarshalMap(item, &Release); err3 != nil {
-				log.Printf("UnmarshalMap failed: %v", err3)
+				span.RecordError(err3)
 				return nil, err3
 			}
 			grpcResponse.Releases = append(grpcResponse.Releases, Release)
@@ -196,39 +221,51 @@ func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
 // TODO: OPTIMIZE!!!
 // GetLatestRelease retrieves the latest release.
 func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
-	log.Printf("Getting latest published release.")
+
+	span := trace.SpanFromContext(ctx)
+
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+
+	span.SetAttributes(
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
+	)
+	defer span.End()
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}
 
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
-		log.Printf("ScanInput failed: %v", err)
+		span.RecordError(err)
 		return nil, err
 	}
-	log.Println(response)
 
 	if response == nil {
-		log.Println("Release not found")
+		span.RecordError(ReleaseNotFound)
 		return &releaseSvc.ListReleasesResponse{}, nil
 	}
-
+	// Convert DynamoDB items to a slice of custom struct
 	var releases []*releaseSvc.Release
 	for _, item := range response.Items {
 		releaseInfo := new(releaseSvc.Release)
 		if err := attributevalue.UnmarshalMap(item, &releaseInfo); err != nil {
-			log.Printf("UnmarshalMap failed: %v", err)
+			span.RecordError(err)
 			return nil, err
 		}
 
 		releases = append(releases, releaseInfo)
 	}
 
-	log.Println("Sorting releases...")
+	// Sort releases based on the "createdAt" attribute in descending order
 	sort.SliceStable(releases, func(i, j int) bool {
 		return releases[i].CreatedAt > releases[j].CreatedAt
 	})
 
+	// Return only the latest release
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	grpcResponse.Releases = append(grpcResponse.Releases, releases[0])
 
@@ -371,4 +408,120 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+// Function to send notifications to webhook
+func NotifyWebhook(payload Release) error {
+
+	var (
+		URls  []map[string]interface{}
+		title string
+	)
+
+	// Set webhook url
+	webhookUrl := os.Getenv("WEBHOOK")
+
+	// Creating Urls based on the provided links
+	for _, link := range payload.Links {
+
+		// Skip the iterations if the url is not provided
+		if link.Url == "" {
+			continue
+		}
+
+		// If the title is not provided use the host name from the URL
+		if link.Title == "" {
+			parsedURL, err := url.Parse(link.Url)
+			if err != nil {
+				panic(err)
+			}
+
+			// Extract and modify the host name
+			hostNameParts := strings.Split(parsedURL.Hostname(), ".")
+			if len(hostNameParts) >= 2 {
+				title = strings.Join(hostNameParts[:len(hostNameParts)-1], ".")
+			}
+
+		} else {
+			title = link.Title
+		}
+
+		action := map[string]interface{}{
+			"@type": "OpenUri",
+			"name":  title,
+			"targets": []map[string]interface{}{
+				{
+					"os":  "default",
+					"uri": &link.Url,
+				},
+			},
+		}
+		URls = append(URls, action)
+	}
+
+	// Create the JSON data
+	jsonData := map[string]interface{}{
+		"@type":      "MessageCard",
+		"@context":   "",
+		"themeColor": "00d761",
+		"summary":    "Release Notification",
+		"sections": []map[string]interface{}{
+			{
+				"activityTitle": "Release Notification",
+				"facts": []map[string]interface{}{
+					{
+						"name":  "Name",
+						"value": payload.Name,
+					},
+					{
+						"name":  "Type",
+						"value": payload.Type,
+					},
+					{
+						"name":  "Organization",
+						"value": payload.Organization,
+					},
+					{
+						"name":  "Description",
+						"value": payload.Description,
+					},
+					{
+						"name":  "Version",
+						"value": payload.Version,
+					},
+					{
+						"name":  "CreatedAt",
+						"value": payload.CreatedAt,
+					},
+				},
+				"markdown": true,
+			},
+		},
+		"potentialAction": URls,
+	}
+
+	jsonBytes, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Send the notification to the Webhook
+	resp, err := http.Post(webhookUrl, "application/json", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+// Converts Uint64 to int64
+func convertUint64ToInt64(uint64Value uint64) int64 {
+
+	// Returning the max Int64 if the value is greater than max Int64 for spans.
+	if uint64Value > math.MaxInt64 {
+		return math.MaxInt64
+	}
+
+	return int64(uint64Value)
 }
