@@ -14,7 +14,7 @@ export interface ReleaseResponse {
     releases: ReleaseEntry[]
 }
 
-export interface ReleaseLinks { Title?: string; Url: string; }
+export interface ReleaseLinks { Title?: string; Url?: string; }
 
 export interface ReleaseEntry {
     name: string
@@ -23,7 +23,7 @@ export interface ReleaseEntry {
     Organization: string
     type: string
     version: string
-    links?: { Title?: string; Url: string; }[]
+    links?: { Title?: string; Url?: string; }[]
 }
 
 export const useReleaseList = (): ReleaseEntry[] => {
@@ -43,18 +43,30 @@ export const useReleaseList = (): ReleaseEntry[] => {
     return releases
 }
 
-export const useFilteredReleaseList = (): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void)] => {
+export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: string[]): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void)] => {
     const releases = useReleaseList()
     const [filterText, setFilterText] = useState<string>("")
-    const filteredReleases = releases
+
+    const releasesFilteredonTypes = releases
+        .filter((releaseInfo) => {
+            if (!selectedTypes.length) return true
+            return selectedTypes.includes(releaseInfo.type)
+        })
+    const releasesFilteredonTypesOrgs = releasesFilteredonTypes
+        .filter((releaseInfo) => {
+            if (!selectedOrgs.length) return true
+            return selectedOrgs.includes(releaseInfo.Organization)
+        })
+    const filteredReleases = releasesFilteredonTypesOrgs
         .filter((releaseInfo) => {
             const filterValue = filterText.toLowerCase()
 
             if (filterText === "") {
                 return true
             }
+
             const releaseSearchText = releaseInfo.Organization + " "
-                + releaseInfo.name + " " + releaseInfo.type
+                + releaseInfo.name + " " + releaseInfo.type + " " + releaseInfo.version
             console.log("Release Information", releaseInfo)
             return releaseSearchText.toLowerCase().includes(filterValue)
         })

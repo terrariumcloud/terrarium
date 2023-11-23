@@ -47,7 +47,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     },
 }));
 
-export default function GenericSearchBar({ filterValue, setFilter }: { filterValue?: string | null, setFilter?: null | ((value: (((prevState: string) => string) | string)) => void) }) {
+export default function SimpleSearchBar({ filterValue, setFilter }: { filterValue?: string | null, setFilter?: null | ((value: (((prevState: string) => string) | string)) => void) }) {
     return (
         <>
             <Toolbar>

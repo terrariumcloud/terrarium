@@ -5,13 +5,13 @@
         "description": "Irure dolore commodo enim consectetur nisi voluptate ea labore sunt duis magna fugiat officia qui. Adipisicing est ex dolor ipsum ex consequat Lorem et occaecat irure. Ex duis incididunt occaecat pariatur do. Ad veniam ex veniam Lorem ut adipisicing tempor eu occaecat culpa.Nostrud excepteur excepteur eu eu.",
         "links": [
             {
-                "Title": "test title",
+                "Title": "API Documentaions",
                 "Url": "google"
             }
         ],
         "Organization": "spvss-ivp",
         "type": "bundle",
-        "version": "23.4.9"
+        "version": "24.4.9"
     },
     {
         "name": "pranavdk-module-2",
@@ -62,6 +62,19 @@
         "links": [
             {
                 "Url": "https://github.com/terrariumcloud/terrarium/pull/49"
+            }
+        ],
+        "Organization": "spvss-ivp",
+        "type": "module",
+        "version": "23.4.9"
+    },
+    {
+        "name": "new-module-5",
+        "createdAt": "2023-11-16 06:10:58.092855 +0000 UTC",
+        "description": "Magna amet id eu Lorem pariatur nostrud culpa ex qui quis dolor proident est consequat. Eu in excepteur quis deserunt in. Reprehenderit ut sunt aliquip laborum exercitation in incididunt voluptate exercitation do.",
+        "links": [
+            {
+                "Title": "github.com/terrariumcloud/terrarium/pull/49"
             }
         ],
         "Organization": "spvss-ivp",

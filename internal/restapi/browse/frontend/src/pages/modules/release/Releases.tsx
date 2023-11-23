@@ -2,26 +2,12 @@ import React from 'react';
 
 import { Button, Card, CardContent, CardActions, Stack, Typography, Paper, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, IconButton, ListItemText, Checkbox } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, TimelineOppositeContent, timelineOppositeContentClasses } from '@mui/lab';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 
 import { useFilteredReleaseList, ReleaseEntry, ReleaseLinks } from '../../../data/useReleasesList'
-import GenericSearchBar from '../../../components/search-bar/GenericSearchBar';
-
-const typesList = [
-    'Oliver Hansen',
-    'Van Henry',
-    'April Tucker',
-    'Ralph Hubbard',
-    'Virginia Andrews',
-    'Kelly Snyder',
-];
-
-const orgsList = [
-    'cie', 'spvss', 'Miriam Wagner',
-    'Bradley Wilkerson',
-    'Virginia Andrews',
-    'Kelly Snyder',
-];
+import GenericSearchBar from '../../../components/search-bar/SimpleSearchBar';
+import { useReleaseOrgList } from '../../../data/useReleaseOrgsList';
+import { useReleaseTypeList } from '../../../data/useReleaseTypesList';
 
 const ITEM_HEIGHT = 48;
 
@@ -35,12 +21,15 @@ const MenuProps = {
 };
 
 function Releases() {
-    const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList();
+    const typesList = useReleaseTypeList()
+    const orgsList = useReleaseOrgList()
 
-    const [type, setType] = React.useState<string[]>([]);
-    const [org, setOrg] = React.useState<string[]>([]);
+    const [selectedTypes, setType] = React.useState<string[]>([]);
+    const [selectedOrg, setOrg] = React.useState<string[]>([]);
 
-    const handleTypeChange = (event: SelectChangeEvent<typeof type>) => {
+    const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList(selectedTypes, selectedOrg);
+
+    const handleTypeChange = (event: SelectChangeEvent<typeof selectedTypes>) => {
         const {
             target: { value },
         } = event;
@@ -50,7 +39,7 @@ function Releases() {
         );
     };
 
-    const handleOrgChange = (event: SelectChangeEvent<typeof org>) => {
+    const handleOrgChange = (event: SelectChangeEvent<typeof selectedOrg>) => {
         const {
             target: { value },
         } = event;
@@ -60,17 +49,26 @@ function Releases() {
         );
     };
 
+    const resetFilters = () => {
+        setType([])
+        setOrg([])
+        setFilterText("")
+    }
+
     const LinkButton = ({ linkObj }: { linkObj: ReleaseLinks }) => {
         let domain, disabled = false
         try {
-            if (!/^https?:\/\//i.test(linkObj.Url)) linkObj.Url = 'http://' + linkObj.Url;
-
-            domain = (new URL(linkObj.Url)).hostname.replace('www.', '')
+            if (linkObj.Url) {
+                domain = (new URL(linkObj.Url)).hostname.replace('www.', '')
+            } else {
+                domain = "no-url"
+                disabled = true
+            }
         } catch {
-            domain = "Invalid-Link"
+            domain = "invalid-url"
             disabled = true
         }
-        return (<Button size="small" href={linkObj.Url} disabled={disabled}>{linkObj.Title ? linkObj.Title : domain}</Button>)
+        return (<Button size="small" href={linkObj.Url} disabled={disabled}>{linkObj.Title ? disabled ? `${linkObj.Title} (${domain})` : linkObj.Title : domain}</Button>)
     }
 
     const ReleaseCard = ({ module }: { module: ReleaseEntry }) => {
@@ -125,7 +123,7 @@ function Releases() {
                             <InputLabel id="type-filter-label">Type</InputLabel>
                             <Select
                                 labelId="type-filter-label"
-                                value={type}
+                                value={selectedTypes}
                                 label="Type"
                                 onChange={handleTypeChange}
                                 multiple
@@ -134,7 +132,7 @@ function Releases() {
                             >
                                 {typesList.map((typeEntry) => (
                                     <MenuItem key={typeEntry} value={typeEntry}>
-                                        <Checkbox checked={type.indexOf(typeEntry) > -1} />
+                                        <Checkbox checked={selectedTypes.indexOf(typeEntry) > -1} />
                                         <ListItemText primary={typeEntry} />
                                     </MenuItem>
                                 ))}
@@ -144,7 +142,7 @@ function Releases() {
                             <InputLabel id="org-filter-label">Organization</InputLabel>
                             <Select
                                 labelId="org-filter-label"
-                                value={org}
+                                value={selectedOrg}
                                 label="Org.."
                                 onChange={handleOrgChange}
                                 multiple
@@ -153,20 +151,20 @@ function Releases() {
                             >
                                 {orgsList.map((orgEntry) => (
                                     <MenuItem key={orgEntry} value={orgEntry}>
-                                        <Checkbox checked={org.indexOf(orgEntry) > -1} />
+                                        <Checkbox checked={selectedOrg.indexOf(orgEntry) > -1} />
                                         <ListItemText primary={orgEntry} />
                                     </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
-                        <IconButton sx={{
+                        <IconButton title="Reset Filters" onClick={resetFilters} sx={{
                             color: 'white',
                             backgroundColor: '#1976d27d',
                             '&:hover': {
                                 backgroundColor: "#1976d2",
                             }
                         }} aria-label="delete">
-                            <RefreshRoundedIcon />
+                            <RotateLeftIcon />
                         </IconButton>
                     </div>
                 </Paper>

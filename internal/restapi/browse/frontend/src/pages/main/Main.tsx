@@ -69,7 +69,7 @@ function Main() {
                 <Grid item xs={7} >
                     <Typography variant="h5" align='left' gutterBottom>Releases</Typography>
                     <Typography variant="body2" gutterBottom>
-                        Keep track of latest releases. It will include all terraform release but also bundles and more. 
+                        Keep track of latest releases. It will include all terraform releases but also bundles and more. 
                     </Typography>
                     <br/>
                     <Button variant="contained" fullWidth component={RouterLink} to="releases">Browse Recent Releases</Button>
