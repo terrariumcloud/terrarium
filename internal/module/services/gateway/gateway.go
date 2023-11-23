@@ -47,8 +47,8 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
 	release.RegisterBrowseServer(grpcServer, gw)
-	// uncomment once the protocol definition is updated: (release)PublisherServer -> ReleasePublisherServer
-	// releasePkg.RegisterPublisherServer(grpcServer, gw)
+	// uncomment once merged
+	// release.RegisterReleasePublisherServer(grpcServer, gw)
 	return nil
 }
 
@@ -618,20 +618,9 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 
 // Publish a new release with Release service
 func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg.PublishRequest) (*releasePkg.PublishResponse, error) {
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: publishing new Release with Release service", trace.WithAttributes(attribute.String("Release Name", request.GetName())))
-	span.SetAttributes(
-		attribute.String("release.name", request.GetName()),
-		attribute.String("release.version", request.GetVersion()),
-		attribute.String("release.type", request.GetType()),
-		attribute.String("release.organization", request.GetOrganization()),
-	)
-	defer span.End()
-
 	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
 
 	if err != nil {
-		span.RecordError(err)
 		return nil, ConnectToReleaseError
 	}
 
@@ -666,24 +655,9 @@ func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *
 
 // ListReleases makes a call to Release service
 func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *release.ListReleasesRequest) (*release.ListReleasesResponse, error) {
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: Retrieving list of releases from release service", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
-
-	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := releaseSvc.ConvertUint64ToInt64(request.GetMaxAgeSeconds())
-
-	span.SetAttributes(
-		attribute.StringSlice("release.organizations", request.GetOrganizations()),
-		attribute.Int64("release.maxAge", MaxAgeSeconds),
-		attribute.StringSlice("release.types", request.GetTypes()),
-		attribute.String("release.page", request.GetPage().String()),
-	)
-	defer span.End()
-
 	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
 
 	if err != nil {
-		span.RecordError(err)
 		return nil, ConnectToReleaseError
 	}
 
@@ -696,12 +670,19 @@ func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *relea
 
 // ListReleasesWithClient calls ListRelease on Release client
 func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, request *release.ListReleasesRequest, client release.BrowseClient) (*release.ListReleasesResponse, error) {
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := releaseSvc.ConvertUint64ToInt64(request.GetMaxAgeSeconds())
+
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: listing releases with Client", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+	span.AddEvent("gateway: retrieving releases from release service", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
 	span.SetAttributes(
-		attribute.String("Page", request.GetPage().String()),
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
 	)
 	defer span.End()
+
 	if res, delegateError := client.ListReleases(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
 		span.RecordError(delegateError)
@@ -714,18 +695,9 @@ func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, requ
 
 // ListReleaseTypes makes a call to Release service
 func (gw *TerrariumGrpcGateway) ListReleaseTypes(ctx context.Context, request *release.ListReleaseTypesRequest) (*release.ListReleaseTypesResponse, error) {
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: Retrieving list of distinct release types from release table", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
-
-	span.SetAttributes(
-		attribute.String("release.page", request.GetPage().String()),
-	)
-	defer span.End()
-
 	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
 
 	if err != nil {
-		span.RecordError(err)
 		return nil, ConnectToReleaseError
 	}
 
@@ -739,9 +711,9 @@ func (gw *TerrariumGrpcGateway) ListReleaseTypes(ctx context.Context, request *r
 // ListReleaseTypesWithClient calls ListReleaseTypes on Release client
 func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, request *release.ListReleaseTypesRequest, client release.BrowseClient) (*release.ListReleaseTypesResponse, error) {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: listing release types with Client", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+	span.AddEvent("gateway: retrieving list of distinct release types", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
 	span.SetAttributes(
-		attribute.String("Page", request.GetPage().String()),
+		attribute.String("release.page", request.GetPage().String()),
 	)
 	defer span.End()
 
@@ -757,18 +729,9 @@ func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, 
 
 // ListOrganization makes a call to Release service
 func (gw *TerrariumGrpcGateway) ListOrganization(ctx context.Context, request *release.ListOrganizationRequest) (*release.ListOrganizationResponse, error) {
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: Retrieving list of distinct organizations from release table", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
-
-	span.SetAttributes(
-		attribute.String("release.page", request.GetPage().String()),
-	)
-	defer span.End()
-
 	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
 
 	if err != nil {
-		span.RecordError(err)
 		return nil, ConnectToReleaseError
 	}
 
@@ -782,9 +745,9 @@ func (gw *TerrariumGrpcGateway) ListOrganization(ctx context.Context, request *r
 // ListOrganizationWithClient calls ListReleaseTypes on Release client
 func (gw *TerrariumGrpcGateway) ListOrganizationWithClient(ctx context.Context, request *release.ListOrganizationRequest, client release.BrowseClient) (*release.ListOrganizationResponse, error) {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("gateway: listing organizations with Client", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
+	span.AddEvent("gateway: listing distinct organizations", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
 	span.SetAttributes(
-		attribute.String("Page", request.GetPage().String()),
+		attribute.String("release.page", request.GetPage().String()),
 	)
 	defer span.End()
 
