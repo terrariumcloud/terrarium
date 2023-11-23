@@ -1,10 +1,16 @@
 package release
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"math"
+	"net/http"
+	"net/url"
+	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -110,6 +116,11 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	if _, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
 		return nil, PublishReleaseError
+	}
+
+	err = NotifyWebhook(mv)
+	if err != nil {
+		span.RecordError(err)
 	}
 
 	return ReleasePublished, nil
@@ -280,6 +291,111 @@ func GetReleaseSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+// Function to send notifications to webhook
+func NotifyWebhook(payload Release) error {
+
+	var (
+		URls  []map[string]interface{}
+		title string
+	)
+
+	// Set webhook url
+	webhookUrl := os.Getenv("WEBHOOK")
+
+	// Creating Urls based on the provided links
+	for _, link := range payload.Links {
+
+		// Skip the iterations if the url is not provided
+		if link.Url == "" {
+			continue
+		}
+
+		// If the title is not provided use the host name from the URL
+		if link.Title == "" {
+			parsedURL, err := url.Parse(link.Url)
+			if err != nil {
+				panic(err)
+			}
+
+			// Extract and modify the host name
+			hostNameParts := strings.Split(parsedURL.Hostname(), ".")
+			if len(hostNameParts) >= 2 {
+				title = strings.Join(hostNameParts[:len(hostNameParts)-1], ".")
+			}
+
+		} else {
+			title = link.Title
+		}
+
+		action := map[string]interface{}{
+			"@type": "OpenUri",
+			"name":  title,
+			"targets": []map[string]interface{}{
+				{
+					"os":  "default",
+					"uri": &link.Url,
+				},
+			},
+		}
+		URls = append(URls, action)
+	}
+
+	// Create the JSON data
+	jsonData := map[string]interface{}{
+		"@type":      "MessageCard",
+		"@context":   "",
+		"themeColor": "00d761",
+		"summary":    "Release Notification",
+		"sections": []map[string]interface{}{
+			{
+				"activityTitle": "Release Notification",
+				"facts": []map[string]interface{}{
+					{
+						"name":  "Name",
+						"value": payload.Name,
+					},
+					{
+						"name":  "Type",
+						"value": payload.Type,
+					},
+					{
+						"name":  "Organization",
+						"value": payload.Organization,
+					},
+					{
+						"name":  "Description",
+						"value": payload.Description,
+					},
+					{
+						"name":  "Version",
+						"value": payload.Version,
+					},
+					{
+						"name":  "CreatedAt",
+						"value": payload.CreatedAt,
+					},
+				},
+				"markdown": true,
+			},
+		},
+		"potentialAction": URls,
+	}
+
+	jsonBytes, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Send the notification to the Webhook
+	resp, err := http.Post(webhookUrl, "application/json", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
 // Converts Uint64 to int64
