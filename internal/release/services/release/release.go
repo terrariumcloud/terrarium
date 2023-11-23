@@ -135,7 +135,7 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 	span := trace.SpanFromContext(ctx)
 
 	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+	MaxAgeSeconds := ConvertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
@@ -219,7 +219,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 	span := trace.SpanFromContext(ctx)
 
 	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+	MaxAgeSeconds := ConvertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
@@ -510,7 +510,7 @@ func NotifyWebhook(payload Release) error {
 }
 
 // Converts Uint64 to int64
-func convertUint64ToInt64(uint64Value uint64) int64 {
+func ConvertUint64ToInt64(uint64Value uint64) int64 {
 
 	// Returning the max Int64 if the value is greater than max Int64 for spans.
 	if uint64Value > math.MaxInt64 {

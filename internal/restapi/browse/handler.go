@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/terrariumcloud/terrarium/internal/common/paging"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
@@ -232,12 +231,7 @@ func (h *browseHttpService) getOrganizationsHandler() http.Handler {
 
 		client := releaseServices.NewBrowseClient(conn)
 
-		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{
-			Page: &paging.PageInfoRequest{
-				Offset: 1,
-				Count:  1,
-			},
-		})
+		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{})
 
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)

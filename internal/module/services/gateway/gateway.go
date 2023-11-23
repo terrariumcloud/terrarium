@@ -670,11 +670,11 @@ func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *relea
 	span.AddEvent("gateway: Retrieving list of releases from release service", trace.WithAttributes(attribute.String("Page", request.GetPage().String())))
 
 	// attribute does not support Uint64 so converting to int64
-	//MaxAgeSeconds := releaseSvc.convertUint64ToInt64(request.GetMaxAgeSeconds())
+	MaxAgeSeconds := releaseSvc.ConvertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
-		//attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
