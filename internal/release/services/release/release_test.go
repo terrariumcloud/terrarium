@@ -2,10 +2,6 @@ package release
 
 import (
 	"context"
-<<<<<<< HEAD
-	"errors"
-	"log"
-=======
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,17 +10,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
->>>>>>> 489a19e006a010820513abe0d255ac0cea262ed7
 	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
-<<<<<<< HEAD
 	"github.com/terrariumcloud/terrarium/internal/common/paging"
-=======
->>>>>>> 489a19e006a010820513abe0d255ac0cea262ed7
 	"github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
@@ -518,7 +510,6 @@ func Test_ListOrganization(t *testing.T) {
 		}
 		res, err := svc.ListOrganization(context.TODO(), &req)
 
-
 		expectedOrgs := &services.ListOrganizationResponse{
 			Organizations: []string{"cie", "atlas"},
 		}
@@ -529,6 +520,7 @@ func Test_ListOrganization(t *testing.T) {
 	})
 
 }
+
 // Function to compare Links
 func compareLinks(a, b []*release.Link) bool {
 	if len(a) != len(b) {
