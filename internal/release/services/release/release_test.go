@@ -510,6 +510,10 @@ func Test_ListOrganization(t *testing.T) {
 		}
 		res, err := svc.ListOrganization(context.TODO(), &req)
 
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
 		expectedOrgs := &services.ListOrganizationResponse{
 			Organizations: []string{"cie", "atlas"},
 		}

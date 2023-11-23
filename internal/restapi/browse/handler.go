@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel/attribute"
@@ -52,7 +52,7 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
-	apiRouter.Handle("/release", h.getReleasesHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/releases/{age}", h.getReleasesHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/organizations", h.getOrganizationsHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
@@ -111,7 +111,6 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 		defer closeClient(conn)
 
 		clientRegistrar := services.NewRegistrarClient(conn)
-		log.Panicln("module log blah")
 		registrarResponse, err := clientRegistrar.GetModule(ctx, &services.GetModuleRequest{Name: moduleName})
 		if err != nil {
 			log.Printf("Failed GRPC call with error: %v", err)
@@ -155,18 +154,11 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 // GetReleasesHandler will return a list of all releases published.
 func (h *browseHttpService) getReleasesHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-
-		body, err := io.ReadAll(r.Body)
+		params := mux.Vars(r)
+		ageStr := params["age"]
+		maxAge, err := strconv.ParseUint(ageStr, 10, 64)
 		if err != nil {
-			log.Printf("Failed to read request body: %v", err)
-			h.errorHandler.Write(rw, errors.New("failed to read request body"), http.StatusBadRequest)
-			return
-		}
-
-		var requestPayload releaseServices.ListReleasesRequest
-		if err := json.Unmarshal(body, &requestPayload); err != nil {
-			log.Printf("Failed to unmarshal JSON: %v", err)
-			h.errorHandler.Write(rw, errors.New("failed to parse JSON"), http.StatusBadRequest)
+			fmt.Println("Error converting age to uint64:", err)
 			return
 		}
 
@@ -181,9 +173,7 @@ func (h *browseHttpService) getReleasesHandler() http.Handler {
 		client := releaseServices.NewBrowseClient(conn)
 
 		releaseResponse, err2 := client.ListReleases(r.Context(), &releaseServices.ListReleasesRequest{
-			MaxAgeSeconds: requestPayload.MaxAgeSeconds,
-			Types:         requestPayload.Types,
-			Organizations: requestPayload.Organizations,
+			MaxAgeSeconds: &maxAge,
 		})
 
 		if err2 != nil {
