@@ -21,7 +21,6 @@ func (m *MockPublisherClient) Publish(ctx context.Context, in *release.PublishRe
 	return m.PublishResponse, m.PublishError
 }
 
-// ListReleases, ListReleaseTypes, ListOrganization
 type MockBrowseClient struct {
 	services.BrowseClient
 	ListReleaseTypesInvocations int

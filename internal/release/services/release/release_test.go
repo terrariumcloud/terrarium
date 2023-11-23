@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -324,7 +323,6 @@ func Test_ListLatestRelease(t *testing.T) {
 				},
 			},
 		}
-		log.Println("Comparing retrieved release with the expected release.")
 		for i := range res.Releases {
 			if res.Releases[i].CreatedAt != expectedRelease[i].CreatedAt ||
 				res.Releases[i].Type != expectedRelease[i].Type ||
@@ -336,7 +334,6 @@ func Test_ListLatestRelease(t *testing.T) {
 				t.Errorf("Release at index %d does not match, got %v, want %v", i, res.Releases[i], expectedRelease[i])
 			}
 		}
-		log.Printf("Got %v, expected %v", res.Releases, expectedRelease)
 	})
 
 }
@@ -521,13 +518,11 @@ func Test_ListOrganization(t *testing.T) {
 		if !EqualSlices(res.Organizations, expectedOrgs.Organizations) {
 			t.Errorf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
 		}
-		log.Printf("Got %v, want %v", res.Organizations, expectedOrgs.Organizations)
-
 	})
 
 }
 
-// Function to compare Links
+// A helper function to compare Links.
 func compareLinks(a, b []*release.Link) bool {
 	if len(a) != len(b) {
 		return false

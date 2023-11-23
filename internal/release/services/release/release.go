@@ -41,8 +41,7 @@ var (
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
 	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 
-	ReleasePublished = &release.PublishResponse{} // No return information at this stage
-
+	ReleasePublished    = &release.PublishResponse{}
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
 	ReleaseNotFound     = status.Error(codes.NotFound, "Release not found.")
@@ -69,7 +68,7 @@ type Release struct {
 	CreatedAt    string          `json:"createdAt" bson:"createdAt" dynamodbav:"createdAt"`
 }
 
-// Registers ReleaseService with grpc server
+// RegisterWithServer registers ReleaseService with grpc server
 func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		log.Println(err)
@@ -79,16 +78,10 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 	releaseSvc.RegisterBrowseServer(grpcServer, s)
 
-	// Code below to be uncommented for testing ListReleases
-	// var maxAge uint64 = 72000
-	// var request = &releaseSvc.ListReleasesRequest{MaxAgeSeconds: &maxAge}
-
-	// s.ListReleases(context.TODO(), request)
-
 	return nil
 }
 
-// Publishes a new release.
+// Publish is used to publish a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
@@ -135,7 +128,7 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	return ReleasePublished, nil
 }
 
-// ListReleases Retrieves all releases.
+// ListReleases retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
@@ -220,7 +213,6 @@ func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
 	return releases
 }
 
-// TODO: OPTIMIZE!!!
 // GetLatestRelease retrieves the latest release.
 func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
@@ -250,7 +242,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		span.RecordError(ReleaseNotFound)
 		return &releaseSvc.ListReleasesResponse{}, nil
 	}
-	// Convert DynamoDB items to a slice of custom struct
+
 	var releases []*releaseSvc.Release
 	for _, item := range response.Items {
 		releaseInfo := new(releaseSvc.Release)
@@ -267,7 +259,6 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		return releases[i].CreatedAt > releases[j].CreatedAt
 	})
 
-	// Return only the latest release
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	grpcResponse.Releases = append(grpcResponse.Releases, releases[0])
 
@@ -308,7 +299,6 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 
@@ -329,7 +319,7 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 
 			if err := attributevalue.Unmarshal(typeAttr, &typeStr); err != nil {
 				span.RecordError(err)
-				log.Printf("Marshal error: %v", err)
+				log.Printf("Failed to unmarshal types: %v", err)
 				continue
 			}
 
@@ -356,7 +346,6 @@ func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseS
 	response, err := s.Db.Scan(ctx, scanQueryInputs)
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 
@@ -371,13 +360,13 @@ func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseS
 		for _, item := range response.Items {
 			typeAttr, found := item["organization"]
 			if !found {
-				log.Println("organization attribte not found")
+				log.Println("organization attribute not found")
 				continue
 			}
 
 			if err := attributevalue.Unmarshal(typeAttr, &orgStr); err != nil {
 				span.RecordError(err)
-				log.Printf("Marshal error: %v", err)
+				log.Printf("Failed to unmarshal organizations: %v", err)
 				continue
 			}
 			orgValues = append(orgValues, orgStr)

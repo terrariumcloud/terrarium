@@ -29,11 +29,9 @@ export interface ReleaseEntry {
 export const useReleaseList = (): ReleaseEntry[] => {
     const releaseListURI = "/api/releases"
     const [releases, setReleases] = useState<ReleaseEntry[]>([])
-    // const [releasesCount, setReleasesCount] = useState<number>(0)
     useEffect(() => {
         fetch(releaseListURI)
             .then((response) => {
-                // return response.json();
                 return dummyReleaseResponseData
             })
             .then((response: ReleaseResponse) => {

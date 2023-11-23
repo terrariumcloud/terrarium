@@ -22,11 +22,9 @@ export interface ReleaseTypeEntry {
 export const useReleaseTypeList = (): string[] => {
     const releaseTypeListURI = "/api/release/types"
     const [releaseTypes, setReleaseTypes] = useState<string[]>([])
-    // const [releaseTypesCount, setReleaseTypesCount] = useState<number>(0)
     useEffect(() => {
         fetch(releaseTypeListURI)
             .then((response) => {
-                // return response.json();
                 return dummyReleaseTypeResponseData
             })
             .then((response: ReleaseTypeResponse) => {

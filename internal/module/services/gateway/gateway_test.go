@@ -833,8 +833,6 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 	})
 }
 
-// Release
-
 // Test_PublishWithClient checks:
 // - if correct response is returned when client returns response
 // - if error is returned when client returns error
