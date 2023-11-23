@@ -2,10 +2,11 @@ package v1
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
-	"net/http"
 )
 
 func GetModuleNameFromRequest(r *http.Request) string {
