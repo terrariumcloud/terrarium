@@ -41,7 +41,7 @@ var (
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
 	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 
-	ReleasePublished    = &release.PublishResponse{}
+	ReleasePublished = &release.PublishResponse{}
 
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
@@ -82,7 +82,6 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	return nil
 }
 
-
 // Publish is used to publish a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
 
@@ -93,7 +92,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		attribute.String("release.type", request.GetType()),
 		attribute.String("release.organization", request.GetOrganization()),
 	)
-	defer span.End()
 
 	mv := Release{
 		Type:         request.GetType(),
@@ -145,7 +143,6 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
 
 	if request.MaxAgeSeconds == nil {
 		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
@@ -229,7 +226,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
+
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}

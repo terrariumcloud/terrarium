@@ -639,7 +639,6 @@ func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *
 		attribute.String("release.type", request.GetType()),
 		attribute.String("release.organization", request.GetOrganization()),
 	)
-	defer span.End()
 
 	if res, delegateError := client.Publish(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
@@ -677,7 +676,6 @@ func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, requ
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
 
 	if res, delegateError := client.ListReleases(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
@@ -709,7 +707,6 @@ func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, 
 	span.SetAttributes(
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
 
 	if res, delegateError := client.ListReleaseTypes(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)
@@ -741,7 +738,6 @@ func (gw *TerrariumGrpcGateway) ListOrganizationWithClient(ctx context.Context, 
 	span.SetAttributes(
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
 
 	if res, delegateError := client.ListOrganization(ctx, request); delegateError != nil {
 		log.Printf("Failed: %v", delegateError)

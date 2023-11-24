@@ -19,3 +19,4 @@ vendor/
 .env
 .vscode/
 .DS_Store
+restart_terrarium.sh
