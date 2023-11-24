@@ -24,31 +24,31 @@ const MenuProps = {
 const timeFilters = [
     {
         label: "Hour",
-        value: "3600"
+        value: "1h"
     },
     {
         label: "Day",
-        value: "86400"
+        value: "24h"
     },
     {
         label: "Week",
-        value: "604800"
+        value: "168h"
     },
     {
         label: "Month",
-        value: "2630000"
+        value: "730h"
     },
     {
         label: "3 Months",
-        value: "7890000"
+        value: "2190h"
     },
     {
         label: "6 Months",
-        value: "15780000"
+        value: "4380h"
     },
     {
         label: "Year",
-        value: "31536000"
+        value: "8760h"
     },
 ]
 
