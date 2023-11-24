@@ -2,14 +2,17 @@ package version_manager
 
 import (
 	"context"
+	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	"log"
+	"strings"
 	"time"
 
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-	releaseService "github.com/terrariumcloud/terrarium/internal/release/services/release"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
-	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,6 +46,7 @@ var (
 	CreateModuleVersionError               = status.Error(codes.Unknown, "Failed to create module version.")
 	AbortModuleVersionError                = status.Error(codes.Unknown, "Failed to abort module version.")
 	PublishModuleVersionError              = status.Error(codes.Unknown, "Failed to publish module version.")
+	PublishReleaseVersionError             = status.Error(codes.Unknown, "Failed to publish release version.")
 )
 
 type VersionManagerService struct {
@@ -68,27 +72,15 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 
 	services.RegisterVersionManagerServer(grpcServer, s)
 
-	// For testing with Debug and Release using VSCODE
-	// conn, err := services.CreateGRPCConnection(releaseService.ReleaseServiceEndpoint)
-	// if err != nil {
-	// 	log.Printf("Failed to connect to '%s': %v", releaseService.ReleaseServiceEndpoint, err)
-	// 	return err
-	// }
-	// defer conn.Close()
+	// Create release service struct.
+	rs := &release.ReleaseService{
+		Db:     s.Db,
+		Table:  release.ReleaseTableName,
+		Schema: release.GetReleaseSchema(release.ReleaseTableName),
+	}
 
-	// releaseClient := release.NewReleasePublisherClient(conn)
-
-	// req := &release.PublishRequest{
-	// 	Name:    "Arunav",
-	// 	Version: "1.2.3",
-	// }
-
-	// _, err = releaseClient.Publish(context.Background(), req)
-
-	// if err != nil {
-	// 	log.Printf("Failed to publish release: %v", err)
-	// 	return err
-	// }
+	// Register with publisher.
+	releaseSvc.RegisterPublisherServer(grpcServer, rs)
 
 	return nil
 }
@@ -127,25 +119,28 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 		return nil, CreateModuleVersionError
 	}
 
-	conn, err := services.CreateGRPCConnection(releaseService.ReleaseServiceEndpoint)
-	if err != nil {
-		log.Printf("Failed to connect to '%s': %v", releaseService.ReleaseServiceEndpoint, err)
-		return nil, err
-	}
-	defer conn.Close()
+	parsedVersion := versions.MustParseVersion(strings.ReplaceAll(request.Module.GetVersion(), "v", ""))
 
-	releaseClient := release.NewReleasePublisherClient(conn)
+	// Check if official version.
+	if parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0")) {
 
-	// TODO: To add Pranav's logic for only publishing official releases.
-	req := &release.PublishRequest{
-		Name:    request.Module.GetName(),
-		Version: request.Module.GetVersion(),
-	}
+		// Create release service struct.
+		rs := &release.ReleaseService{
+			Db:     s.Db,
+			Table:  release.ReleaseTableName,
+			Schema: release.GetReleaseSchema(release.ReleaseTableName),
+		}
 
-	_, err = releaseClient.Publish(context.Background(), req)
+		// Publish the release.
+		_, err = rs.Publish(ctx, &releasePkg.PublishRequest{
+			Name:    request.Module.GetName(),
+			Version: request.Module.GetVersion(),
+		})
 
-	if err != nil {
-		log.Printf("Failed to publish release: %v", err)
+		if err != nil {
+			log.Printf("Failed to publish release: %v", err)
+			return nil, PublishReleaseVersionError
+		}
 	}
 
 	log.Println("New version created.")
