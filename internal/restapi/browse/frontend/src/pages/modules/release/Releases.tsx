@@ -9,8 +9,9 @@ import GenericSearchBar from '../../../components/search-bar/SimpleSearchBar';
 import { useReleaseOrgList } from '../../../data/useReleaseOrgsList';
 import { useReleaseTypeList } from '../../../data/useReleaseTypesList';
 
-const ITEM_HEIGHT = 48;
+import '../../../styles/releases.css';
 
+const ITEM_HEIGHT = 48;
 const MenuProps = {
     PaperProps: {
         style: {
@@ -20,14 +21,46 @@ const MenuProps = {
     },
 };
 
+const timeFilters = [
+    {
+        label: "Hour",
+        value: "3600"
+    },
+    {
+        label: "Day",
+        value: "86400"
+    },
+    {
+        label: "Week",
+        value: "604800"
+    },
+    {
+        label: "Month",
+        value: "2630000"
+    },
+    {
+        label: "3 Months",
+        value: "7890000"
+    },
+    {
+        label: "6 Months",
+        value: "15780000"
+    },
+    {
+        label: "Year",
+        value: "31536000"
+    },
+]
+
 function Releases() {
     const typesList = useReleaseTypeList()
     const orgsList = useReleaseOrgList()
 
     const [selectedTypes, setType] = React.useState<string[]>([]);
     const [selectedOrg, setOrg] = React.useState<string[]>([]);
+    const [selectedTime, setTime] = React.useState('604800');
 
-    const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList(selectedTypes, selectedOrg);
+    const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList(selectedTypes, selectedOrg, selectedTime);
 
     const handleTypeChange = (event: SelectChangeEvent<typeof selectedTypes>) => {
         const {
@@ -49,6 +82,10 @@ function Releases() {
         );
     };
 
+    const handleTimeChange = (event: SelectChangeEvent<string>) => {
+        setTime(event.target.value);
+    };
+
     const resetFilters = () => {
         setType([])
         setOrg([])
@@ -58,8 +95,8 @@ function Releases() {
     const LinkButton = ({ linkObj }: { linkObj: ReleaseLinks }) => {
         let domain, disabled = false
         try {
-            if (linkObj.Url) {
-                domain = (new URL(linkObj.Url)).hostname.replace('www.', '')
+            if (linkObj.url) {
+                domain = (new URL(linkObj.url)).hostname.replace('www.', '')
             } else {
                 domain = "no-url"
                 disabled = true
@@ -68,7 +105,11 @@ function Releases() {
             domain = "invalid-url"
             disabled = true
         }
-        return (<Button size="small" href={linkObj.Url} disabled={disabled}>{linkObj.Title ? disabled ? `${linkObj.Title} (${domain})` : linkObj.Title : domain}</Button>)
+        return (<Button variant="outlined" size="small" href={linkObj.url} disabled={disabled} style={{ margin: '8px' }}>
+            <div className='word-wrapper'>
+                {linkObj.title ? disabled ? `${linkObj.title} (${domain})` : linkObj.title : domain}
+            </div>
+        </Button>)
     }
 
     const ReleaseCard = ({ module }: { module: ReleaseEntry }) => {
@@ -91,11 +132,11 @@ function Releases() {
                     <Card >
                         <CardContent>
                             <Typography color="text.primary" variant='h6' display={'inline'}>{module.name}</Typography>
-                            <Typography color="text.secondary" variant='subtitle1' display={'inline'}>{` | ${module.Organization} | ${module.type}`}</Typography>
+                            <Typography color="text.secondary" variant='subtitle1' display={'inline'}>{module.organization && ` | ${module.organization}`}{module.type && ` | ${module.type}`}</Typography>
                             <Typography variant='body2'>{`Version: ${module.version}`}</Typography>
                             {module.description && <><br /><Typography variant='body2'>{`${module.description}`}</Typography></>}
                         </CardContent>
-                        <CardActions>
+                        <CardActions className='wrap'>
                             {module.links?.length &&
                                 module.links.map((linkObject, index) => { return <LinkButton linkObj={linkObject} key={index} /> })}
                         </CardActions>
@@ -107,8 +148,32 @@ function Releases() {
 
     return (
         <>
-            <div style={{ paddingTop: "10px" }}>
-                <Typography color="text.primary" variant='h5'>Latest Releases to Terrarium</Typography>
+            <div className='flex' style={{ paddingTop: "10px" }}>
+                <Typography color="text.primary" variant='h5' sx={{ flexGrow: '1' }}>
+                    Latest Releases to Terrarium
+                </Typography>
+                <div className='flex' style={{ alignItems: 'baseline' }}>
+                    <Typography color="grey" variant='body1' sx={{ p: '4px 0px 4px 0px' }}>
+                        From the Past
+                    </Typography>
+                    <FormControl variant="standard" sx={{ ml: 1, minWidth: '80px' }}>
+                        <Select
+                            sx={{
+                                color: "grey",
+                                "& .MuiSvgIcon-root": {
+                                    color: "grey",
+                                },
+                            }}
+                            labelId="time-select-label"
+                            id="time-select"
+                            value={selectedTime}
+                            label="Time"
+                            onChange={handleTimeChange}
+                        >
+                            {timeFilters.map((timeEntry) => (<MenuItem value={timeEntry.value}>{timeEntry.label}</MenuItem>))}
+                        </Select>
+                    </FormControl>
+                </div>
             </div>
             <Stack spacing={2} style={{ marginTop: ".8em", marginBottom: ".8em" }}>
 

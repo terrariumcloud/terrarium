@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import dummyReleases from '../assets/releases-list.json'
 
-const dummyReleaseResponseData = {
-    "releases": dummyReleases,
-}
+// const dummyReleaseResponseData = {
+//     "releases": [
+//         "bundle",
+//         "module"
+//     ],
+// }
 
 export interface ReleaseResponseData {
     releases: ReleaseEntry[]
@@ -14,35 +16,36 @@ export interface ReleaseResponse {
     releases: ReleaseEntry[]
 }
 
-export interface ReleaseLinks { Title?: string; Url?: string; }
+export interface ReleaseLinks { title?: string; url?: string; }
 
 export interface ReleaseEntry {
     name: string
     createdAt: string
     description?: string
-    Organization: string
+    organization: string
     type: string
     version: string
-    links?: { Title?: string; Url?: string; }[]
+    links?: { title?: string; url?: string; }[]
 }
 
-export const useReleaseList = (): ReleaseEntry[] => {
-    const releaseListURI = "/api/releases"
+export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
+    const releaseListURI = "/api/releases/" + selectedTime
     const [releases, setReleases] = useState<ReleaseEntry[]>([])
     useEffect(() => {
         fetch(releaseListURI)
             .then((response) => {
-                return dummyReleaseResponseData
+                return response.json();
+                // return dummyReleaseResponseData
             })
             .then((response: ReleaseResponse) => {
-                setReleases(response.releases);
+                setReleases(response.releases.reverse());
             })
-    }, [])
+    }, [releaseListURI])
     return releases
 }
 
-export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: string[]): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void)] => {
-    const releases = useReleaseList()
+export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: string[], selectedTime: string): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void)] => {
+    const releases = useReleaseList(selectedTime)
     const [filterText, setFilterText] = useState<string>("")
 
     const releasesFilteredonTypes = releases
@@ -53,7 +56,7 @@ export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: st
     const releasesFilteredonTypesOrgs = releasesFilteredonTypes
         .filter((releaseInfo) => {
             if (!selectedOrgs.length) return true
-            return selectedOrgs.includes(releaseInfo.Organization)
+            return selectedOrgs.includes(releaseInfo.organization)
         })
     const filteredReleases = releasesFilteredonTypesOrgs
         .filter((releaseInfo) => {
@@ -63,7 +66,7 @@ export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: st
                 return true
             }
 
-            const releaseSearchText = releaseInfo.Organization + " "
+            const releaseSearchText = releaseInfo.organization + " "
                 + releaseInfo.name + " " + releaseInfo.type + " " + releaseInfo.version
             console.log("Release Information", releaseInfo)
             return releaseSearchText.toLowerCase().includes(filterValue)

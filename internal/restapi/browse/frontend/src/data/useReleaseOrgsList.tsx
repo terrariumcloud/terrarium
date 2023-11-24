@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react';
-import dummyReleaseOrgs from '../assets/release-orgs-list.json'
 
-const dummyReleaseOrgResponseData = {
-    "releaseOrgs": dummyReleaseOrgs,
-}
-
-export interface ReleaseOrgResponse {
-    releaseOrgs: string[]
-}
+// const dummyReleaseOrgResponseData = {
+//     "releaseOrgs": [
+//         "saas",
+//         "spvss-ivp",
+//         "cie"
+//     ],
+// }
 
 export const useReleaseOrgList = (): string[] => {
-    const releaseOrgListURI = "/api/release/organizations"
+    const releaseOrgListURI = "/api/organizations"
     const [releaseOrgs, setReleaseOrgs] = useState<string[]>([])
     useEffect(() => {
         fetch(releaseOrgListURI)
             .then((response) => {
-                return dummyReleaseOrgResponseData
+                return response.json();
+                // return dummyReleaseOrgResponseData
             })
-            .then((response: ReleaseOrgResponse) => {
-                setReleaseOrgs(response.releaseOrgs);
+            .then((response: string[]) => {
+                setReleaseOrgs(response);
             })
     }, [])
     return releaseOrgs

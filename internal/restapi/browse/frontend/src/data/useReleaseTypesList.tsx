@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import dummyReleaseTypes from '../assets/release-types-list.json'
 
-const dummyReleaseTypeResponseData = {
-    "releaseTypes": dummyReleaseTypes,
-}
-
-export interface ReleaseTypeResponse {
-    releaseTypes: string[]
-}
+// const dummyReleaseTypeResponseData = {
+//     "releaseTypes": [
+//         "bundle",
+//         "module"
+//     ],
+// }
 
 export interface ReleaseTypeEntry {
     name: string
@@ -20,15 +18,16 @@ export interface ReleaseTypeEntry {
 }
 
 export const useReleaseTypeList = (): string[] => {
-    const releaseTypeListURI = "/api/release/types"
+    const releaseTypeListURI = "/api/types"
     const [releaseTypes, setReleaseTypes] = useState<string[]>([])
     useEffect(() => {
         fetch(releaseTypeListURI)
             .then((response) => {
-                return dummyReleaseTypeResponseData
+                return response.json();
+                // return dummyReleaseTypeResponseData
             })
-            .then((response: ReleaseTypeResponse) => {
-                setReleaseTypes(response.releaseTypes);
+            .then((response: string[]) => {
+                setReleaseTypes(response);
             })
     }, [])
     return releaseTypes
