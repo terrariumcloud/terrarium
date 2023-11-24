@@ -52,6 +52,7 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/releases/{age}", h.getReleasesHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/releases", h.getReleasesHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/organizations", h.getOrganizationsHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
@@ -153,12 +154,18 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 // GetReleasesHandler will return a list of all releases published.
 func (h *browseHttpService) getReleasesHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
-		ageStr := params["age"]
+		var maxAge uint64
+
+		ageStr := mux.Vars(r)["age"]
+		if ageStr == "" {
+			fmt.Println("Age not found setting default age to 7 days")
+			maxAge = 604800
+		}
+
 		maxAge, err := strconv.ParseUint(ageStr, 10, 64)
 		if err != nil {
-			fmt.Println("Error converting age to uint64:", err)
-			return
+			fmt.Println("Error converting age to uint64 setting default value to 7 days", err)
+			maxAge = 604800
 		}
 
 		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
@@ -200,10 +207,8 @@ func (h *browseHttpService) getReleaseTypesHandler() http.Handler {
 		defer closeClient(conn)
 
 		client := releaseServices.NewBrowseClient(conn)
-		log.Printf("Inside the handler for types")
 
 		releaseTypesResponse, err2 := client.ListReleaseTypes(r.Context(), &releaseServices.ListReleaseTypesRequest{})
-		log.Printf("after client")
 
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
