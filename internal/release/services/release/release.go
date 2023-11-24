@@ -42,6 +42,7 @@ var (
 	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 
 	ReleasePublished    = &release.PublishResponse{}
+
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
 	ReleaseNotFound     = status.Error(codes.NotFound, "Release not found.")
@@ -80,6 +81,7 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 	return nil
 }
+
 
 // Publish is used to publish a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {

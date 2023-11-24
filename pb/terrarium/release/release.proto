@@ -3,7 +3,7 @@ package terrarium.release;
 
 option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/release";
 
-service Publisher {
+service ReleasePublisher {
     rpc Publish(PublishRequest) returns (PublishResponse) {}
 }
 

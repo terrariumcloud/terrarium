@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
 
 	"github.com/terrariumcloud/terrarium/internal/common/paging"
 	"github.com/terrariumcloud/terrarium/internal/release/services"
@@ -323,6 +325,7 @@ func Test_ListLatestRelease(t *testing.T) {
 				},
 			},
 		}
+
 		for i := range res.Releases {
 			if res.Releases[i].CreatedAt != expectedRelease[i].CreatedAt ||
 				res.Releases[i].Type != expectedRelease[i].Type ||
@@ -627,5 +630,5 @@ func EqualSlices(a, b []string) bool {
 	}
 
 	return reflect.DeepEqual(aMap, bMap)
-
 }
+
