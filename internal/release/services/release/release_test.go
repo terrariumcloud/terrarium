@@ -549,19 +549,19 @@ func Test_NotifyWebhook(t *testing.T) {
 			Links: []*release.Link{
 				{
 					Title: "Github link",
-					Url:   "https://github-chf01.synamedia.com/Saas-Enablement/chaos-bundle",
+					Url:   "https://github.com/laos-bundle",
 				},
 				{
 					Title: "Documentation link",
-					Url:   "https://github-chf01.synamedia.com/Saas-Enablement/chaos-bundle/tree/main/docs",
+					Url:   "https://github.com/chaos/tree/main/docs",
 				},
 				{
 					Title: "spvss link",
-					Url:   "https://github-chf01.synamedia.com/spvss-ivp",
+					Url:   "https://github.com/ivp",
 				},
 				{
 					Title: "",
-					Url:   "https://github-chf01.synamedia.synamedia.aflah.lalalcom/spvss-ivp",
+					Url:   "https://github.test/spvss-ivp",
 				},
 				{
 					Title: "spvss link",
@@ -610,7 +610,7 @@ func Test_NotifyWebhook(t *testing.T) {
 
 }
 
-// EqualSlices checks if two slices are equal redardless of the items order.
+// EqualSlices checks if two slices are equal regardless of the items order.
 func EqualSlices(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel/attribute"
@@ -156,16 +156,11 @@ func (h *browseHttpService) getReleasesHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		var maxAge uint64
 
-		ageStr := mux.Vars(r)["age"]
-		if ageStr == "" {
-			fmt.Println("Age not found setting default age to 7 days")
-			maxAge = 604800
-		}
-
-		maxAge, err := strconv.ParseUint(ageStr, 10, 64)
-		if err != nil {
-			fmt.Println("Error converting age to uint64 setting default value to 7 days", err)
-			maxAge = 604800
+		parsedAge, err := time.ParseDuration(mux.Vars(r)["age"])
+		if err != nil || parsedAge.Seconds() < 3600 {
+			maxAge = 3600
+		} else {
+			maxAge = uint64(parsedAge.Seconds())
 		}
 
 		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
