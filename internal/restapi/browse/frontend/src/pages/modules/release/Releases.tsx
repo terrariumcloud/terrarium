@@ -58,7 +58,7 @@ function Releases() {
 
     const [selectedTypes, setType] = React.useState<string[]>([]);
     const [selectedOrg, setOrg] = React.useState<string[]>([]);
-    const [selectedTime, setTime] = React.useState('604800');
+    const [selectedTime, setTime] = React.useState('168h');
 
     const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList(selectedTypes, selectedOrg, selectedTime);
 
