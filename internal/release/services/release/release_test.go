@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-
 
 	"github.com/terrariumcloud/terrarium/internal/common/paging"
 	"github.com/terrariumcloud/terrarium/internal/release/services"
@@ -631,4 +629,3 @@ func EqualSlices(a, b []string) bool {
 
 	return reflect.DeepEqual(aMap, bMap)
 }
-

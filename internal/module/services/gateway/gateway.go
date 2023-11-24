@@ -39,7 +39,7 @@ type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
 	terrarium.UnimplementedConsumerServer
 	release.UnimplementedBrowseServer
-	releasePkg releasePkg.UnimplementedPublisherServer
+	releasePkg.UnimplementedReleasePublisherServer
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
@@ -47,8 +47,7 @@ func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegist
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
 	release.RegisterBrowseServer(grpcServer, gw)
-	// uncomment once merged
-	// release.RegisterReleasePublisherServer(grpcServer, gw)
+	releasePkg.RegisterReleasePublisherServer(grpcServer, gw)
 	return nil
 }
 
@@ -626,13 +625,13 @@ func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg
 
 	defer conn.Close()
 
-	client := releasePkg.NewPublisherClient(conn)
+	client := releasePkg.NewReleasePublisherClient(conn)
 
 	return gw.PublishWithClient(ctx, request, client)
 }
 
 // PublishWithClient calls Publish on Release client
-func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.PublisherClient) (*releasePkg.PublishResponse, error) {
+func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.ReleasePublisherClient) (*releasePkg.PublishResponse, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: publish with Client", trace.WithAttributes(attribute.String("Release Name", request.GetName())))
 	span.SetAttributes(
