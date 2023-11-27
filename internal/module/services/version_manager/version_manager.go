@@ -2,12 +2,11 @@ package version_manager
 
 import (
 	"context"
-	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	"log"
 	"strings"
 	"time"
 
-	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
+	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
@@ -47,6 +46,7 @@ var (
 	AbortModuleVersionError                = status.Error(codes.Unknown, "Failed to abort module version.")
 	PublishModuleVersionError              = status.Error(codes.Unknown, "Failed to publish module version.")
 	PublishReleaseVersionError             = status.Error(codes.Unknown, "Failed to publish release version.")
+	DevelopmentVersion                     = versions.MustParseVersion("0.0.0")
 )
 
 type VersionManagerService struct {
@@ -71,17 +71,6 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 	}
 
 	services.RegisterVersionManagerServer(grpcServer, s)
-
-	// Create release service struct.
-	rs := &release.ReleaseService{
-		Db:     s.Db,
-		Table:  release.ReleaseTableName,
-		Schema: release.GetReleaseSchema(release.ReleaseTableName),
-	}
-
-	// Register with publisher.
-	releaseSvc.RegisterPublisherServer(grpcServer, rs)
-
 	return nil
 }
 
@@ -117,30 +106,6 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 		span.RecordError(err)
 		log.Println(err)
 		return nil, CreateModuleVersionError
-	}
-
-	parsedVersion := versions.MustParseVersion(strings.ReplaceAll(request.Module.GetVersion(), "v", ""))
-
-	// Check if official version.
-	if parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0")) {
-
-		// Create release service struct.
-		rs := &release.ReleaseService{
-			Db:     s.Db,
-			Table:  release.ReleaseTableName,
-			Schema: release.GetReleaseSchema(release.ReleaseTableName),
-		}
-
-		// Publish the release.
-		_, err = rs.Publish(ctx, &releasePkg.PublishRequest{
-			Name:    request.Module.GetName(),
-			Version: request.Module.GetVersion(),
-		})
-
-		if err != nil {
-			log.Printf("Failed to publish release: %v", err)
-			return nil, PublishReleaseVersionError
-		}
 	}
 
 	log.Println("New version created.")
@@ -195,6 +160,7 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *servi
 }
 
 // PublishVersion Updates Module Version to published with Version Manager service
+// And publishes a
 func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing module version.")
 
@@ -203,7 +169,6 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
 	)
-
 	moduleKey, err := s.GetModuleKey(request.Module)
 	if err != nil {
 		span.RecordError(err)
@@ -231,6 +196,36 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		span.RecordError(err)
 		log.Println(err)
 		return nil, PublishModuleVersionError
+	}
+
+	// PUBLISH RELEASE
+	parsedVersion, err := versions.ParseVersion(strings.ReplaceAll(request.Module.GetVersion(), "v", ""))
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	if parsedVersion.GreaterThan(DevelopmentVersion) {
+		// TODO: remove or refactor
+		rs := &release.ReleaseService{
+			Db:     s.Db,
+			Table:  release.ReleaseTableName,
+			Schema: release.GetReleaseSchema(release.ReleaseTableName),
+		}
+
+		moduleAddress := strings.Split(request.Module.GetName(), "/")
+		orgName := moduleAddress[0]
+		_, err = rs.Publish(ctx, &releasePkg.PublishRequest{
+			Name:         request.Module.GetName(),
+			Version:      request.Module.GetVersion(),
+			Type:         *aws.String("module"),
+			Organization: orgName,
+		})
+
+		if err != nil {
+			log.Printf("Failed to publish release: %v", err)
+			return nil, PublishReleaseVersionError
+		}
 	}
 
 	log.Println("Module version published.")
