@@ -24,9 +24,10 @@ func init() {
 func runVersionManager(cmd *cobra.Command, args []string) {
 
 	versionManagerServer := &version_manager.VersionManagerService{
-		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
-		Table:  version_manager.VersionsTableName,
-		Schema: version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
+		Db:                     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:                  version_manager.VersionsTableName,
+		Schema:                 version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
+		ReleaseServiceEndpoint: release.ReleaseServiceEndpoint,
 	}
 
 	startGRPCService("version-manager", versionManagerServer)

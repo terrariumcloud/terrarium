@@ -9,7 +9,7 @@ import (
 	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/release/services/release"
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
@@ -51,9 +51,10 @@ var (
 
 type VersionManagerService struct {
 	services.UnimplementedVersionManagerServer
-	Db     storage.DynamoDBTableCreator
-	Table  string
-	Schema *dynamodb.CreateTableInput
+	Db                     storage.DynamoDBTableCreator
+	Table                  string
+	Schema                 *dynamodb.CreateTableInput
+	ReleaseServiceEndpoint string
 }
 
 type ModuleVersion struct {
@@ -69,7 +70,6 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 		log.Println(err)
 		return ModuleVersionsTableInitializationError
 	}
-
 	services.RegisterVersionManagerServer(grpcServer, s)
 	return nil
 }
@@ -160,7 +160,7 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *servi
 }
 
 // PublishVersion Updates Module Version to published with Version Manager service
-// And publishes a
+// And publishes a release.
 func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing module version.")
 
@@ -206,23 +206,25 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 	}
 
 	if parsedVersion.GreaterThan(DevelopmentVersion) {
-		// TODO: remove or refactor
-		rs := &release.ReleaseService{
-			Db:     s.Db,
-			Table:  release.ReleaseTableName,
-			Schema: release.GetReleaseSchema(release.ReleaseTableName),
-		}
-
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
 		orgName := moduleAddress[0]
-		_, err = rs.Publish(ctx, &releasePkg.PublishRequest{
+
+		connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint)
+		if err != nil {
+			span.RecordError(err)
+			log.Printf("Failed to connect to '%s': %v", s.ReleaseServiceEndpoint, err)
+		}
+		defer closeClient(connVersion)
+
+		client := releaseSvc.NewPublisherClient(connVersion)
+		_, err1 := client.Publish(ctx, &releasePkg.PublishRequest{
 			Name:         request.Module.GetName(),
 			Version:      request.Module.GetVersion(),
 			Type:         *aws.String("module"),
 			Organization: orgName,
 		})
 
-		if err != nil {
+		if err1 != nil {
 			log.Printf("Failed to publish release: %v", err)
 			return nil, PublishReleaseVersionError
 		}
