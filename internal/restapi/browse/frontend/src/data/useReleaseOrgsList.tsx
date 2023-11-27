@@ -7,7 +7,6 @@ export const useReleaseOrgList = (): string[] => {
         fetch(releaseOrgListURI)
             .then((response) => {
                 return response.json();
-                // return dummyReleaseOrgResponseData
             })
             .then((response: string[]) => {
                 setReleaseOrgs(response);

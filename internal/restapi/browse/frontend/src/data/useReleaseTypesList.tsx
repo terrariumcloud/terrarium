@@ -17,7 +17,6 @@ export const useReleaseTypeList = (): string[] => {
         fetch(releaseTypeListURI)
             .then((response) => {
                 return response.json();
-                // return dummyReleaseTypeResponseData
             })
             .then((response: string[]) => {
                 setReleaseTypes(response);

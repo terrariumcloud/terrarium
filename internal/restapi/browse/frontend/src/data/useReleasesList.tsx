@@ -28,7 +28,6 @@ export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
         fetch(releaseListURI)
             .then((response) => {
                 return response.json();
-                // return dummyReleaseResponseData
             })
             .then((response: ReleaseResponse) => {
                 setReleases(response.releases.reverse());
