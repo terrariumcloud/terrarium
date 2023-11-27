@@ -22,7 +22,8 @@ export interface ReleaseEntry {
 }
 
 export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
-    const releaseListURI = "/api/releases/" + selectedTime
+    const ageQuery = "age=" + selectedTime
+    const releaseListURI = "/api/releases?" + ageQuery
     const [releases, setReleases] = useState<ReleaseEntry[]>([])
     useEffect(() => {
         fetch(releaseListURI)
@@ -30,6 +31,7 @@ export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
                 return response.json();
             })
             .then((response: ReleaseResponse) => {
+                if (response.releases == null) response.releases = []
                 setReleases(response.releases.reverse());
             })
     }, [releaseListURI])
