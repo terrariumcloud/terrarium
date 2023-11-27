@@ -60,7 +60,7 @@ export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: st
 
             const releaseSearchText = releaseInfo.organization + " "
                 + releaseInfo.name + " " + releaseInfo.type + " " + releaseInfo.version
-            console.log("Release Information", releaseInfo)
+
             return releaseSearchText.toLowerCase().includes(filterValue)
         })
     return [filteredReleases, filterText, setFilterText]

@@ -47,7 +47,7 @@ export const useFilteredModuleList = ():[ModuleEntry[], string, ((value: (((prev
             const moduleSearchText = moduleInfo.organization + " "
                 + moduleInfo.name + " "
                 + moduleInfo.provider
-            console.log("Module Information", moduleInfo)
+
             return moduleSearchText.toLowerCase().includes(filterValue)
         })
     return [filteredModules, filterText, setFilterText]
