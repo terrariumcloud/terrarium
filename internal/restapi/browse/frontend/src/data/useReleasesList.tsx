@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
 
-// const dummyReleaseResponseData = {
-//     "releases": [
-//         "bundle",
-//         "module"
-//     ],
-// }
-
 export interface ReleaseResponseData {
     releases: ReleaseEntry[]
     count: number

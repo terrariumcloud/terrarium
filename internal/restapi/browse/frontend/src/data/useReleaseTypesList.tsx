@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
 
-// const dummyReleaseTypeResponseData = {
-//     "releaseTypes": [
-//         "bundle",
-//         "module"
-//     ],
-// }
-
 export interface ReleaseTypeEntry {
     name: string
     createdAt: string
