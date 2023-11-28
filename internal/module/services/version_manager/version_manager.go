@@ -71,6 +71,7 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 		return ModuleVersionsTableInitializationError
 	}
 	services.RegisterVersionManagerServer(grpcServer, s)
+
 	return nil
 }
 
@@ -225,7 +226,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		})
 
 		if err1 != nil {
-			log.Printf("Failed to publish release: %v", err)
+			span.RecordError(err)
 			return nil, PublishReleaseVersionError
 		}
 	}
@@ -319,5 +320,12 @@ func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 		},
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
+	}
+}
+
+func closeClient(conn *grpc.ClientConn) {
+	err := conn.Close()
+	if err != nil {
+
 	}
 }
