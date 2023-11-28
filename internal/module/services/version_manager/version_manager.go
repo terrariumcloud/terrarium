@@ -3,12 +3,15 @@ package version_manager
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
+	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,13 +45,15 @@ var (
 	CreateModuleVersionError               = status.Error(codes.Unknown, "Failed to create module version.")
 	AbortModuleVersionError                = status.Error(codes.Unknown, "Failed to abort module version.")
 	PublishModuleVersionError              = status.Error(codes.Unknown, "Failed to publish module version.")
+	DevelopmentVersion                     = versions.MustParseVersion("0.0.0")
 )
 
 type VersionManagerService struct {
 	services.UnimplementedVersionManagerServer
-	Db     storage.DynamoDBTableCreator
-	Table  string
-	Schema *dynamodb.CreateTableInput
+	Db                     storage.DynamoDBTableCreator
+	Table                  string
+	Schema                 *dynamodb.CreateTableInput
+	ReleaseServiceEndpoint string
 }
 
 type ModuleVersion struct {
@@ -64,7 +69,6 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 		log.Println(err)
 		return ModuleVersionsTableInitializationError
 	}
-
 	services.RegisterVersionManagerServer(grpcServer, s)
 
 	return nil
@@ -156,6 +160,7 @@ func (s *VersionManagerService) AbortVersion(ctx context.Context, request *servi
 }
 
 // PublishVersion Updates Module Version to published with Version Manager service
+// And publishes a release.
 func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing module version.")
 
@@ -164,7 +169,6 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		attribute.String("module.name", request.Module.GetName()),
 		attribute.String("module.version", request.Module.GetVersion()),
 	)
-
 	moduleKey, err := s.GetModuleKey(request.Module)
 	if err != nil {
 		span.RecordError(err)
@@ -192,6 +196,35 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		span.RecordError(err)
 		log.Println(err)
 		return nil, PublishModuleVersionError
+	}
+
+	// PUBLISH RELEASE
+	parsedVersion, err := versions.ParseVersion(strings.ReplaceAll(request.Module.GetVersion(), "v", ""))
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	if parsedVersion.GreaterThan(DevelopmentVersion) && s.ReleaseServiceEndpoint != "" {
+		moduleAddress := strings.Split(request.Module.GetName(), "/")
+		orgName := moduleAddress[0]
+
+		if connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint); err != nil {
+			span.RecordError(err)
+			log.Printf("Failed to connect to '%s': %v", s.ReleaseServiceEndpoint, err)
+		} else {
+			defer closeClient(connVersion)
+
+			client := releaseSvc.NewPublisherClient(connVersion)
+			if _, err := client.Publish(ctx, &releasePkg.PublishRequest{
+				Name:         request.Module.GetName(),
+				Version:      request.Module.GetVersion(),
+				Type:         "module",
+				Organization: orgName,
+			}); err != nil {
+				span.RecordError(err)
+			}
+		}
 	}
 
 	log.Println("Module version published.")
@@ -284,4 +317,8 @@ func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+func closeClient(conn *grpc.ClientConn) {
+	_ = conn.Close()
 }
