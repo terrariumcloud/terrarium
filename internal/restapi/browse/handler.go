@@ -70,9 +70,6 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		span.SetAttributes(
-			attribute.String("module.List", "lists all modules"),
-		)
 
 		conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
@@ -213,9 +210,6 @@ func (h *browseHttpService) getReleaseTypesHandler() http.Handler {
 
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		span.SetAttributes(
-			attribute.String("release.types", "Get all types"),
-		)
 
 		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
 		if err != nil {
@@ -248,9 +242,6 @@ func (h *browseHttpService) getOrganizationsHandler() http.Handler {
 
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		span.SetAttributes(
-			attribute.String("release.organizations", "Get all organizations"),
-		)
 
 		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
 		if err != nil {
