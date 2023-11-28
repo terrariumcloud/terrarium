@@ -322,8 +322,5 @@ func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 }
 
 func closeClient(conn *grpc.ClientConn) {
-	err := conn.Close()
-	if err != nil {
-
-	}
+	_ = conn.Close()
 }
