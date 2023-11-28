@@ -206,7 +206,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		return nil, err
 	}
 
-	if parsedVersion.GreaterThan(DevelopmentVersion) {
+	if parsedVersion.GreaterThan(DevelopmentVersion) && s.ReleaseServiceEndpoint != "" {
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
 		orgName := moduleAddress[0]
 
