@@ -210,24 +210,22 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
 		orgName := moduleAddress[0]
 
-		connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint)
-		if err != nil {
+		
+		if connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint); err != nil {
 			span.RecordError(err)
 			log.Printf("Failed to connect to '%s': %v", s.ReleaseServiceEndpoint, err)
-		}
-		defer closeClient(connVersion)
+		} else {
+			defer closeClient(connVersion)
 
-		client := releaseSvc.NewPublisherClient(connVersion)
-		_, err1 := client.Publish(ctx, &releasePkg.PublishRequest{
-			Name:         request.Module.GetName(),
-			Version:      request.Module.GetVersion(),
-			Type:         *aws.String("module"),
-			Organization: orgName,
-		})
-
-		if err1 != nil {
-			span.RecordError(err)
-			return nil, PublishReleaseVersionError
+			client := releaseSvc.NewPublisherClient(connVersion)
+			if _, err := client.Publish(ctx, &releasePkg.PublishRequest{
+				Name:         request.Module.GetName(),
+				Version:      request.Module.GetVersion(),
+				Type:         "module",
+				Organization: orgName,
+			}); err != nil {
+				span.RecordError(err)
+			}
 		}
 	}
 
