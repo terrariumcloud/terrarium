@@ -45,7 +45,6 @@ var (
 	CreateModuleVersionError               = status.Error(codes.Unknown, "Failed to create module version.")
 	AbortModuleVersionError                = status.Error(codes.Unknown, "Failed to abort module version.")
 	PublishModuleVersionError              = status.Error(codes.Unknown, "Failed to publish module version.")
-	PublishReleaseVersionError             = status.Error(codes.Unknown, "Failed to publish release version.")
 	DevelopmentVersion                     = versions.MustParseVersion("0.0.0")
 )
 
