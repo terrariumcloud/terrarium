@@ -11,8 +11,11 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	release "github.com/terrariumcloud/terrarium/internal/release/services"
+	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services/release"
 
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -26,6 +29,7 @@ var (
 	ConnectToVersionManagerError      = status.Error(codes.Unavailable, "Failed to connect to Version manager service.")
 	ConnectToStorageError             = status.Error(codes.Unavailable, "Failed to connect to Storage service.")
 	ConnectToDependencyManagerError   = status.Error(codes.Unavailable, "Failed to connect to Dependency manager service.")
+	ConnectToReleaseError             = status.Error(codes.Unavailable, "Failed to connect to Release service.")
 	UnknownVersionManagerActionError  = status.Error(codes.InvalidArgument, "Unknown Version manager action requested.")
 	ForwardModuleDependenciesError    = status.Error(codes.Unknown, "Failed to send module dependencies.")
 	ForwardContainerDependenciesError = status.Error(codes.Unknown, "Failed to send module dependencies.")
@@ -34,12 +38,16 @@ var (
 type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
 	terrarium.UnimplementedConsumerServer
+	release.UnimplementedBrowseServer
+	releasePkg.UnimplementedReleasePublisherServer
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
 func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	terrarium.RegisterPublisherServer(grpcServer, gw)
 	terrarium.RegisterConsumerServer(grpcServer, gw)
+	release.RegisterBrowseServer(grpcServer, gw)
+	releasePkg.RegisterReleasePublisherServer(grpcServer, gw)
 	return nil
 }
 
@@ -604,5 +612,138 @@ func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *te
 			downStream.CloseSend()
 			return ForwardModuleDependenciesError
 		}
+	}
+}
+
+// Publish a new release with Release service
+func (gw *TerrariumGrpcGateway) Publish(ctx context.Context, request *releasePkg.PublishRequest) (*releasePkg.PublishResponse, error) {
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := releasePkg.NewReleasePublisherClient(conn)
+
+	return gw.PublishWithClient(ctx, request, client)
+}
+
+// PublishWithClient calls Publish on Release client
+func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *releasePkg.PublishRequest, client releasePkg.ReleasePublisherClient) (*releasePkg.PublishResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.name", request.GetName()),
+		attribute.String("release.version", request.GetVersion()),
+		attribute.String("release.type", request.GetType()),
+		attribute.String("release.organization", request.GetOrganization()),
+	)
+
+	if res, delegateError := client.Publish(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		return res, nil
+	}
+}
+
+// ListReleases makes a call to Release service
+func (gw *TerrariumGrpcGateway) ListReleases(ctx context.Context, request *release.ListReleasesRequest) (*release.ListReleasesResponse, error) {
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListReleasesWithClient(ctx, request, client)
+}
+
+// ListReleasesWithClient calls ListRelease on Release client
+func (gw *TerrariumGrpcGateway) ListReleasesWithClient(ctx context.Context, request *release.ListReleasesRequest, client release.BrowseClient) (*release.ListReleasesResponse, error) {
+	// attribute does not support Uint64 so converting to int64
+	MaxAgeSeconds := releaseSvc.ConvertUint64ToInt64(request.GetMaxAgeSeconds())
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.StringSlice("release.organizations", request.GetOrganizations()),
+		attribute.Int64("release.maxAge", MaxAgeSeconds),
+		attribute.StringSlice("release.types", request.GetTypes()),
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	if res, delegateError := client.ListReleases(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		return res, nil
+	}
+}
+
+// ListReleaseTypes makes a call to Release service
+func (gw *TerrariumGrpcGateway) ListReleaseTypes(ctx context.Context, request *release.ListReleaseTypesRequest) (*release.ListReleaseTypesResponse, error) {
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListReleaseTypesWithClient(ctx, request, client)
+}
+
+// ListReleaseTypesWithClient calls ListReleaseTypes on Release client
+func (gw *TerrariumGrpcGateway) ListReleaseTypesWithClient(ctx context.Context, request *release.ListReleaseTypesRequest, client release.BrowseClient) (*release.ListReleaseTypesResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	if res, delegateError := client.ListReleaseTypes(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		return res, nil
+	}
+}
+
+// ListOrganization makes a call to Release service
+func (gw *TerrariumGrpcGateway) ListOrganization(ctx context.Context, request *release.ListOrganizationRequest) (*release.ListOrganizationResponse, error) {
+	conn, err := services.CreateGRPCConnection(releaseSvc.ReleaseServiceEndpoint)
+
+	if err != nil {
+		return nil, ConnectToReleaseError
+	}
+
+	defer conn.Close()
+
+	client := release.NewBrowseClient(conn)
+
+	return gw.ListOrganizationWithClient(ctx, request, client)
+}
+
+// ListOrganizationWithClient calls ListReleaseTypes on Release client
+func (gw *TerrariumGrpcGateway) ListOrganizationWithClient(ctx context.Context, request *release.ListOrganizationRequest, client release.BrowseClient) (*release.ListOrganizationResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	if res, delegateError := client.ListOrganization(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		return res, nil
 	}
 }

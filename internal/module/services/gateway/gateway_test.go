@@ -3,12 +3,16 @@ package gateway
 import (
 	"context"
 	"errors"
-	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
-	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"io"
 	"testing"
 
+	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
+	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	"github.com/terrariumcloud/terrarium/internal/release/services"
+	releaseMocks "github.com/terrariumcloud/terrarium/internal/release/services/mocks"
+
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 )
 
 // Test_RegisterWithClient checks:
@@ -825,6 +829,178 @@ func Test_RetrieveModuleDependenciesWithClient(t *testing.T) {
 
 		if err != ForwardModuleDependenciesError {
 			t.Errorf("Expected %v, got %v.", ForwardModuleDependenciesError, err)
+		}
+	})
+}
+
+// Test_PublishWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_PublishWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &release.PublishResponse{}
+		client := &releaseMocks.MockPublisherClient{PublishResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.PublishWithClient(context.TODO(), &release.PublishRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.PublishInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.PublishInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockPublisherClient{PublishError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.PublishWithClient(context.TODO(), &release.PublishRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.PublishInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.PublishInvocations)
+		}
+	})
+}
+
+// Test_ListReleaseTypesWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_ListReleaseTypesWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &services.ListReleaseTypesResponse{}
+		client := &releaseMocks.MockBrowseClient{ListReleaseTypesResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.ListReleaseTypesWithClient(context.TODO(), &services.ListReleaseTypesRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.ListReleaseTypesInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.ListReleaseTypesInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockBrowseClient{ListReleaseTypesError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.ListReleaseTypesWithClient(context.TODO(), &services.ListReleaseTypesRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.ListReleaseTypesInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.ListReleaseTypesInvocations)
+		}
+	})
+}
+
+// Test_ListOrganizationWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_ListOrganizationWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &services.ListOrganizationResponse{}
+		client := &releaseMocks.MockBrowseClient{ListOrganizationResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.ListOrganizationWithClient(context.TODO(), &services.ListOrganizationRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.ListOrganizationInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.ListOrganizationInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockBrowseClient{ListOrganizationError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.ListOrganizationWithClient(context.TODO(), &services.ListOrganizationRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.ListOrganizationInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.ListOrganizationInvocations)
+		}
+	})
+}
+
+// Test_ListReleasesWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_ListReleasesWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &services.ListReleasesResponse{}
+		client := &releaseMocks.MockBrowseClient{ListReleasesResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.ListReleasesWithClient(context.TODO(), &services.ListReleasesRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.ListReleasesInvocations != 1 {
+			t.Errorf("Expected 1 call to Release, got %v", client.ListReleasesInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &releaseMocks.MockBrowseClient{ListReleasesError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.ListReleasesWithClient(context.TODO(), &services.ListReleasesRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.ListReleasesInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.ListReleasesInvocations)
 		}
 	})
 }

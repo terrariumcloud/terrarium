@@ -40,7 +40,7 @@ var (
 	ReleaseTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for releases.")
 	ReleaseServiceEndpoint          = DefaultReleaseServiceEndpoint
 
-	ReleasePublished = &release.PublishResponse{} // No return information at this stage
+	ReleasePublished = &release.PublishResponse{}
 
 	MarshalReleaseError = status.Error(codes.Unknown, "Failed to marshal publish release.")
 	PublishReleaseError = status.Error(codes.Unknown, "Failed to publish release.")
@@ -52,6 +52,7 @@ var (
 
 type ReleaseService struct {
 	releaseSvc.UnimplementedPublisherServer
+	releaseSvc.UnimplementedBrowseServer
 	Db     storage.DynamoDBTableCreator
 	Table  string
 	Schema *dynamodb.CreateTableInput
@@ -67,7 +68,7 @@ type Release struct {
 	CreatedAt    string          `json:"createdAt" bson:"createdAt" dynamodbav:"createdAt"`
 }
 
-// Registers ReleaseService with grpc server
+// RegisterWithServer registers ReleaseService with grpc server
 func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		log.Println(err)
@@ -75,11 +76,12 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	}
 
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
+	releaseSvc.RegisterBrowseServer(grpcServer, s)
 
 	return nil
 }
 
-// Publishes a new release.
+// Publish is used to publish a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
@@ -89,7 +91,6 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		attribute.String("release.type", request.GetType()),
 		attribute.String("release.organization", request.GetOrganization()),
 	)
-	defer span.End()
 
 	mv := Release{
 		Type:         request.GetType(),
@@ -126,14 +127,14 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	return ReleasePublished, nil
 }
 
-// ListReleases Retrieves all releases.
+// ListReleases retrieves all releases.
 // Only releases that have been published should be reported.
 func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
 
 	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+	MaxAgeSeconds := ConvertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
@@ -141,7 +142,6 @@ func (s *ReleaseService) ListReleases(ctx context.Context, request *releaseSvc.L
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
 
 	if request.MaxAgeSeconds == nil {
 		request.MaxAgeSeconds = &DefaultMaxAgeSeconds
@@ -211,14 +211,13 @@ func sortReleaseList(releases []*releaseSvc.Release) []*releaseSvc.Release {
 	return releases
 }
 
-// TODO: OPTIMIZE!!!
 // GetLatestRelease retrieves the latest release.
 func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseSvc.ListReleasesRequest) (*releaseSvc.ListReleasesResponse, error) {
 
 	span := trace.SpanFromContext(ctx)
 
 	// attribute does not support Uint64 so converting to int64
-	MaxAgeSeconds := convertUint64ToInt64(request.GetMaxAgeSeconds())
+	MaxAgeSeconds := ConvertUint64ToInt64(request.GetMaxAgeSeconds())
 
 	span.SetAttributes(
 		attribute.StringSlice("release.organizations", request.GetOrganizations()),
@@ -226,7 +225,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		attribute.StringSlice("release.types", request.GetTypes()),
 		attribute.String("release.page", request.GetPage().String()),
 	)
-	defer span.End()
+
 	scanQueryInputs := &dynamodb.ScanInput{
 		TableName: aws.String(ReleaseTableName),
 	}
@@ -241,7 +240,7 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		span.RecordError(ReleaseNotFound)
 		return &releaseSvc.ListReleasesResponse{}, nil
 	}
-	// Convert DynamoDB items to a slice of custom struct
+
 	var releases []*releaseSvc.Release
 	for _, item := range response.Items {
 		releaseInfo := new(releaseSvc.Release)
@@ -258,11 +257,116 @@ func (s *ReleaseService) GetLatestRelease(ctx context.Context, request *releaseS
 		return releases[i].CreatedAt > releases[j].CreatedAt
 	})
 
-	// Return only the latest release
 	grpcResponse := releaseSvc.ListReleasesResponse{}
 	grpcResponse.Releases = append(grpcResponse.Releases, releases[0])
 
 	return &grpcResponse, nil
+}
+
+// GetDistinctValues is a helper function to filter the response and return only distinct values.
+func GetDistinctValues(resp []string) []string {
+	temp := make(map[string]bool)
+
+	for _, item := range resp {
+		temp[item] = true
+	}
+
+	var distinctList []string
+	for i := range temp {
+		distinctList = append(distinctList, i)
+	}
+
+	return distinctList
+}
+
+// ListReleaseTypes is used to retrieve all distinct release types.
+func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseSvc.ListReleaseTypesRequest) (*releaseSvc.ListReleaseTypesResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ProjectionExpression: aws.String("#t"),
+		ExpressionAttributeNames: map[string]string{
+			"#t": "type",
+		},
+		TableName: aws.String(ReleaseTableName),
+	}
+
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	typeValues := make([]string, 0, len(response.Items))
+	typeStr := ""
+
+	if response.Items != nil {
+		for _, item := range response.Items {
+			typeAttr, found := item["type"]
+			if !found {
+				log.Println("type attribute not found")
+				continue
+			}
+
+			if err := attributevalue.Unmarshal(typeAttr, &typeStr); err != nil {
+				span.RecordError(err)
+				log.Printf("Failed to unmarshal types: %v", err)
+				continue
+			}
+			if typeStr != "" {
+				typeValues = append(typeValues, typeStr)
+			}
+		}
+	}
+	grpcResponse := &releaseSvc.ListReleaseTypesResponse{Types: GetDistinctValues(typeValues)}
+	return grpcResponse, nil
+
+}
+
+// ListOrganization is used to retrieve all distinct organizations.
+func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseSvc.ListOrganizationRequest) (*releaseSvc.ListOrganizationResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("release.page", request.GetPage().String()),
+	)
+
+	scanQueryInputs := &dynamodb.ScanInput{
+		ProjectionExpression: aws.String("organization"),
+		TableName:            aws.String(ReleaseTableName),
+	}
+
+	response, err := s.Db.Scan(ctx, scanQueryInputs)
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	orgValues := make([]string, 0, len(response.Items))
+	orgStr := ""
+
+	if response.Items != nil {
+		for _, item := range response.Items {
+			typeAttr, found := item["organization"]
+			if !found {
+				log.Println("organization attribute not found")
+				continue
+			}
+
+			if err := attributevalue.Unmarshal(typeAttr, &orgStr); err != nil {
+				span.RecordError(err)
+				log.Printf("Failed to unmarshal organizations: %v", err)
+				continue
+			}
+			if orgStr != "" {
+				orgValues = append(orgValues, orgStr)
+			}
+		}
+	}
+	grpcResponse := &releaseSvc.ListOrganizationResponse{Organizations: GetDistinctValues(orgValues)}
+	return grpcResponse, nil
 }
 
 // GetReleaseSchema returns CreateTableInput that can be used to create table if it does not exist
@@ -399,7 +503,7 @@ func NotifyWebhook(payload Release) error {
 }
 
 // Converts Uint64 to int64
-func convertUint64ToInt64(uint64Value uint64) int64 {
+func ConvertUint64ToInt64(uint64Value uint64) int64 {
 
 	// Returning the max Int64 if the value is greater than max Int64 for spans.
 	if uint64Value > math.MaxInt64 {

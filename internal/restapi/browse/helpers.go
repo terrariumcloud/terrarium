@@ -2,6 +2,7 @@ package browse
 
 import (
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	release "github.com/terrariumcloud/terrarium/internal/release/services"
 
 	"google.golang.org/grpc"
 )
@@ -35,6 +36,16 @@ func createModuleMetadataResponse(moduleMetadata *services.ModuleMetadata, modul
 		SourceUrl:    moduleMetadata.SourceUrl,
 		Maturity:     moduleMetadata.Maturity.String(),
 		Versions:     moduleVersions,
+	}
+}
+
+type releaseResponse struct {
+	Releases []*release.Release `json:"releases"`
+}
+
+func createReleaseResponse(releases []*release.Release) *releaseResponse {
+	return &releaseResponse{
+		Releases: releases,
 	}
 }
 

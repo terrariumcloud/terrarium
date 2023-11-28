@@ -4,21 +4,25 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
 
 	"github.com/apparentlymart/go-versions/versions"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	releaseServices "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 )
 
@@ -47,6 +51,9 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.StrictSlash(true)
 	apiRouter.Handle("/modules/{organization_name}/{name}/{provider}", h.getModuleMetadataHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/modules", h.getModuleListHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/releases", h.getReleasesHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/organizations", h.getOrganizationsHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }
@@ -60,9 +67,13 @@ func (h *browseHttpService) healthHandler() http.Handler {
 // GetModuleListHandler will return a list of all published module.
 func (h *browseHttpService) getModuleListHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+
 		conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -73,7 +84,7 @@ func (h *browseHttpService) getModuleListHandler() http.Handler {
 		registrarResponse, err2 := client.ListModules(r.Context(), &services.ListModulesRequest{})
 
 		if err2 != nil {
-			log.Printf("Failed GRPC call with error: %v", err2)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -96,24 +107,23 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 
 		conn, err := services.CreateGRPCConnection(registrar.RegistrarServiceEndpoint)
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", registrar.RegistrarServiceEndpoint, err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the registrar backend service"), http.StatusInternalServerError)
 			return
 		}
 		defer closeClient(conn)
 
 		clientRegistrar := services.NewRegistrarClient(conn)
-
 		registrarResponse, err := clientRegistrar.GetModule(ctx, &services.GetModuleRequest{Name: moduleName})
 		if err != nil {
-			log.Printf("Failed GRPC call with error: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of modules from backend service"), http.StatusInternalServerError)
 			return
 		}
 
 		connVersion, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
 		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -134,12 +144,126 @@ func (h *browseHttpService) getModuleMetadataHandler() http.Handler {
 		versionResponse.Versions = filteredVersions
 
 		if err != nil {
-			log.Printf("Failed GRPC call with error: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
 			return
 		}
 
 		data := createModuleMetadataResponse(registrarResponse.GetModule(), versionResponse.Versions)
 		h.responseHandler.Write(rw, data, http.StatusOK)
+	})
+}
+
+// GetReleasesHandler will return a list of all releases published.
+func (h *browseHttpService) getReleasesHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		var maxAge uint64
+
+		values := r.URL.Query()
+		age := values.Get("age")
+
+		parsedAge, err := time.ParseDuration(age)
+		if err != nil || parsedAge.Seconds() < 3600 {
+			maxAge = 3600
+		} else {
+			maxAge = uint64(parsedAge.Seconds())
+		}
+
+		MaxAgeSeconds := release.ConvertUint64ToInt64(maxAge)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		span.SetAttributes(
+			attribute.Int64("release.maxAge", MaxAgeSeconds),
+		)
+
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+
+		releaseResponse, err2 := client.ListReleases(r.Context(), &releaseServices.ListReleasesRequest{
+			MaxAgeSeconds: &maxAge,
+		})
+
+		if err2 != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of releases from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(createReleaseResponse(releaseResponse.Releases))
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
+	})
+}
+
+// getReleaseTypesHandler will return a list of all types available.
+func (h *browseHttpService) getReleaseTypesHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+
+		releaseTypesResponse, err2 := client.ListReleaseTypes(r.Context(), &releaseServices.ListReleaseTypesRequest{})
+
+		if err2 != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of release types from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(releaseTypesResponse.Types)
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
+	})
+}
+
+// getOrganizationsHandler will return a list of all organizations available.
+func (h *browseHttpService) getOrganizationsHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+
+		conn, err := services.CreateGRPCConnection(release.ReleaseServiceEndpoint)
+		if err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed connecting to the release backend service"), http.StatusInternalServerError)
+			return
+		}
+		defer closeClient(conn)
+
+		client := releaseServices.NewBrowseClient(conn)
+
+		releaseOrganizationsResponse, err2 := client.ListOrganization(r.Context(), &releaseServices.ListOrganizationRequest{})
+
+		if err2 != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of release types from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		data, _ := json.Marshal(releaseOrganizationsResponse.Organizations)
+
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
 	})
 }
