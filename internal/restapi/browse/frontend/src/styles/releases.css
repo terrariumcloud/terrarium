@@ -5,3 +5,6 @@
     white-space: nowrap;
 }
 
+.MuiCircularProgress-root {
+    align-self: center;
+}

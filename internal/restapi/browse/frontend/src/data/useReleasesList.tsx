@@ -21,11 +21,12 @@ export interface ReleaseEntry {
     links?: { title?: string; url?: string; }[]
 }
 
-export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
+export const useReleaseList = (selectedTime: string, setIsLoading: ((value: (((prevState: boolean) => boolean) | boolean)) => void)): ReleaseEntry[] => {
     const ageQuery = "age=" + selectedTime
     const releaseListURI = "/api/releases?" + ageQuery
     const [releases, setReleases] = useState<ReleaseEntry[]>([])
     useEffect(() => {
+        setIsLoading(true)
         fetch(releaseListURI)
             .then((response) => {
                 return response.json();
@@ -33,14 +34,20 @@ export const useReleaseList = (selectedTime: string): ReleaseEntry[] => {
             .then((response: ReleaseResponse) => {
                 if (response.releases == null) response.releases = []
                 setReleases(response.releases.reverse());
+                setIsLoading(false)
+            }).catch(() => {
+                setIsLoading(false)
             })
-    }, [releaseListURI])
+    }, [releaseListURI, setIsLoading])
     return releases
 }
 
-export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: string[], selectedTime: string): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void)] => {
-    const releases = useReleaseList(selectedTime)
-    const [filterText, setFilterText] = useState<string>("")
+export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: string[], selectedTime: string): [ReleaseEntry[], string, ((value: (((prevState: string) => string) | string)) => void), boolean] => {
+
+    const [filterText, setFilterText] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const releases = useReleaseList(selectedTime, setIsLoading)
 
     const releasesFilteredonTypes = releases
         .filter((releaseInfo) => {
@@ -65,5 +72,5 @@ export const useFilteredReleaseList = (selectedTypes: string[], selectedOrgs: st
 
             return releaseSearchText.toLowerCase().includes(filterValue)
         })
-    return [filteredReleases, filterText, setFilterText]
+    return [filteredReleases, filterText, setFilterText, isLoading]
 }

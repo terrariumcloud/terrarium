@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, Card, CardContent, CardActions, Stack, Typography, Paper, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, IconButton, ListItemText, Checkbox } from '@mui/material';
+import { Button, Card, CardContent, CardActions, Stack, Typography, Paper, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, IconButton, ListItemText, Checkbox, CircularProgress } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, TimelineOppositeContent, timelineOppositeContentClasses } from '@mui/lab';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 
@@ -60,7 +60,7 @@ function Releases() {
     const [selectedOrg, setOrg] = React.useState<string[]>([]);
     const [selectedTime, setTime] = React.useState('168h');
 
-    const [filteredModuleList, filterText, setFilterText] = useFilteredReleaseList(selectedTypes, selectedOrg, selectedTime);
+    const [filteredModuleList, filterText, setFilterText, isLoading] = useFilteredReleaseList(selectedTypes, selectedOrg, selectedTime);
 
     const handleTypeChange = (event: SelectChangeEvent<typeof selectedTypes>) => {
         const {
@@ -184,7 +184,7 @@ function Releases() {
                     </div>
                     <div className="flex wrap" style={{ justifyContent: 'center', alignItems: "baseline", paddingBottom: "8px", backgroundColor: "rgba(66, 165, 245, 0.15)" }}>
                         <GenericSearchBar filterValue={filterText} setFilter={setFilterText} />
-                        <FormControl variant="standard" sx={{ m: 1, minWidth: 120, maxWidth: 300 }}>
+                        <FormControl variant="standard" sx={{ m: 1, minWidth: 140, maxWidth: 300 }}>
                             <InputLabel id="type-filter-label">Type</InputLabel>
                             <Select
                                 labelId="type-filter-label"
@@ -235,15 +235,18 @@ function Releases() {
                 </Paper>
 
                 {/* Release Timeline Section */}
-                <Timeline
-                    sx={{
-                        [`& .${timelineOppositeContentClasses.root}`]: {
-                            flex: 0.15,
-                        },
-                    }}
-                >
-                    {filteredModuleList.map((mod, index) => { return <ReleaseCard module={mod} key={index} /> })}
-                </Timeline>
+                {isLoading && <CircularProgress />}
+                {!isLoading &&
+                    <Timeline
+                        sx={{
+                            [`& .${timelineOppositeContentClasses.root}`]: {
+                                flex: 0.15,
+                            },
+                        }}
+                    >
+                        {filteredModuleList.map((mod, index) => { return <ReleaseCard module={mod} key={index} /> })}
+                    </Timeline>
+                }
             </Stack>
         </>
     );
