@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -301,10 +300,6 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 		return nil, err
 	}
 
-	if response.Items == nil || len(response.Items) < 1 {
-		return nil, fmt.Errorf("nothing to retrieve '%v'", request.GetPage())
-	}
-
 	typeValues := make([]string, 0, len(response.Items))
 	typeStr := ""
 
@@ -347,10 +342,6 @@ func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseS
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
-	}
-
-	if response.Items == nil || len(response.Items) < 1 {
-		return nil, fmt.Errorf("nothing to retrieve '%v'", request.GetPage())
 	}
 
 	orgValues := make([]string, 0, len(response.Items))
