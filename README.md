@@ -24,3 +24,7 @@ ___More to follow___
 License
 ---
 [Apache 2.0 License](./LICENSE)
+
+Contributors
+---
+* @AlexanderWiechert  
