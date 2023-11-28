@@ -210,7 +210,6 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
 		orgName := moduleAddress[0]
 
-		
 		if connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint); err != nil {
 			span.RecordError(err)
 			log.Printf("Failed to connect to '%s': %v", s.ReleaseServiceEndpoint, err)

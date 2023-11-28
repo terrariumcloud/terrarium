@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 
@@ -73,7 +72,7 @@ func Test_RegisterVersionManagerWithServer(t *testing.T) {
 func Test_BeginVersion(t *testing.T) {
 	t.Parallel()
 
-	t.Run("when new official version is created", func(t *testing.T) {
+	t.Run("when new version is created", func(t *testing.T) {
 		db := &mocks.DynamoDB{}
 
 		svc := &VersionManagerService{Db: db}
@@ -86,34 +85,8 @@ func Test_BeginVersion(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if db.PutItemInvocations != 2 {
-			t.Errorf("Expected 2 call to PutItem, got %v", db.PutItemInvocations)
-		}
-
-		if db.TableName != release.ReleaseTableName {
-			t.Errorf("Expected tableName to be %v, got %v.", VersionsTableName, db.TableName)
-		}
-
-		if res != VersionCreated {
-			t.Errorf("Expected %v, got %v.", VersionCreated, res)
-		}
-	})
-
-	t.Run("when new development version is created", func(t *testing.T) {
-		db := &mocks.DynamoDB{}
-
-		svc := &VersionManagerService{Db: db}
-
-		req := &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "test", Version: "v0.0.0-dev"}}
-
-		res, err := svc.BeginVersion(context.TODO(), req)
-
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
 		if db.PutItemInvocations != 1 {
-			t.Errorf("Expected 2 call to PutItem, got %v", db.PutItemInvocations)
+			t.Errorf("Expected 1 call to PutItem, got %v", db.PutItemInvocations)
 		}
 
 		if db.TableName != VersionsTableName {
