@@ -321,8 +321,9 @@ func (s *ReleaseService) ListReleaseTypes(ctx context.Context, request *releaseS
 				log.Printf("Failed to unmarshal types: %v", err)
 				continue
 			}
-
-			typeValues = append(typeValues, typeStr)
+			if typeStr != "" {
+				typeValues = append(typeValues, typeStr)
+			}
 		}
 	}
 	grpcResponse := &releaseSvc.ListReleaseTypesResponse{Types: GetDistinctValues(typeValues)}
@@ -368,7 +369,9 @@ func (s *ReleaseService) ListOrganization(ctx context.Context, request *releaseS
 				log.Printf("Failed to unmarshal organizations: %v", err)
 				continue
 			}
-			orgValues = append(orgValues, orgStr)
+			if orgStr != "" {
+				orgValues = append(orgValues, orgStr)
+			}
 		}
 	}
 	grpcResponse := &releaseSvc.ListOrganizationResponse{Organizations: GetDistinctValues(orgValues)}
