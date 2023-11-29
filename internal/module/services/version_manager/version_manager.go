@@ -50,10 +50,10 @@ var (
 
 type VersionManagerService struct {
 	services.UnimplementedVersionManagerServer
-	Db                     storage.DynamoDBTableCreator
-	Table                  string
-	Schema                 *dynamodb.CreateTableInput
-	ReleaseServiceEndpoint string
+	Db             storage.DynamoDBTableCreator
+	Table          string
+	Schema         *dynamodb.CreateTableInput
+	ReleaseService releaseSvc.PublisherClient
 }
 
 type ModuleVersion struct {
@@ -205,25 +205,17 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		return nil, err
 	}
 
-	if parsedVersion.GreaterThan(DevelopmentVersion) && s.ReleaseServiceEndpoint != "" {
+	if parsedVersion.GreaterThan(DevelopmentVersion) && s.ReleaseService != nil {
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
 		orgName := moduleAddress[0]
 
-		if connVersion, err := services.CreateGRPCConnection(s.ReleaseServiceEndpoint); err != nil {
+		if _, err := s.ReleaseService.Publish(ctx, &releasePkg.PublishRequest{
+			Name:         request.Module.GetName(),
+			Version:      request.Module.GetVersion(),
+			Type:         "module",
+			Organization: orgName,
+		}); err != nil {
 			span.RecordError(err)
-			log.Printf("Failed to connect to '%s': %v", s.ReleaseServiceEndpoint, err)
-		} else {
-			defer closeClient(connVersion)
-
-			client := releaseSvc.NewPublisherClient(connVersion)
-			if _, err := client.Publish(ctx, &releasePkg.PublishRequest{
-				Name:         request.Module.GetName(),
-				Version:      request.Module.GetVersion(),
-				Type:         "module",
-				Organization: orgName,
-			}); err != nil {
-				span.RecordError(err)
-			}
 		}
 	}
 
@@ -317,8 +309,4 @@ func GetModuleVersionsSchema(table string) *dynamodb.CreateTableInput {
 		TableName:   aws.String(table),
 		BillingMode: types.BillingModePayPerRequest,
 	}
-}
-
-func closeClient(conn *grpc.ClientConn) {
-	_ = conn.Close()
 }

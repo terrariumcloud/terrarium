@@ -16,18 +16,17 @@ var versionManagerCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionManagerCmd)
-	rootCmd.AddCommand(releaseServiceCmd)
 	versionManagerCmd.Flags().StringVarP(&version_manager.VersionsTableName, "table", "t", version_manager.DefaultVersionsTableName, "Module versions table name")
-	releaseServiceCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "release", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
+	versionManagerCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "release", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
 }
 
 func runVersionManager(cmd *cobra.Command, args []string) {
 
 	versionManagerServer := &version_manager.VersionManagerService{
-		Db:                     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
-		Table:                  version_manager.VersionsTableName,
-		Schema:                 version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
-		ReleaseServiceEndpoint: release.ReleaseServiceEndpoint,
+		Db:             storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Table:          version_manager.VersionsTableName,
+		Schema:         version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
+		ReleaseService: release.NewPublisherGrpcClient(release.ReleaseServiceEndpoint),
 	}
 
 	startGRPCService("version-manager", versionManagerServer)

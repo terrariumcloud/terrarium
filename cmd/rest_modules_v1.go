@@ -32,6 +32,7 @@ func init() {
 
 func runRESTModulesV1Server(cmd *cobra.Command, args []string) {
 
-	restAPIServer := modulesv1.New()
+	restAPIServer := modulesv1.New(version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint), storage.NewStorageGrpcClient(storage.StorageServiceEndpoint))
+
 	startRESTAPIService("rest-modules-v1", mountPath, restAPIServer)
 }

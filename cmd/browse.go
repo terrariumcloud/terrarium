@@ -24,6 +24,8 @@ func init() {
 
 func runBrowseServer(cmd *cobra.Command, args []string) {
 
-	restAPIServer := browse.New()
+	restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
+		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
+		release.NewBrowseGrpcClient(release.ReleaseServiceEndpoint))
 	startRESTAPIService("browse", "", restAPIServer)
 }
