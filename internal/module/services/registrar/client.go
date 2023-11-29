@@ -16,34 +16,34 @@ func NewRegistrarGrpcClient(endpoint string) services.RegistrarClient {
 }
 
 func (r registrarGrpcClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if connVersion, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
-		defer func() { _ = connVersion.Close() }()
+		defer func() { _ = conn.Close() }()
 
-		client := services.NewRegistrarClient(connVersion)
+		client := services.NewRegistrarClient(conn)
 		return client.Register(ctx, in, opts...)
 	}
 }
 
 func (r registrarGrpcClient) ListModules(ctx context.Context, in *services.ListModulesRequest, opts ...grpc.CallOption) (*services.ListModulesResponse, error) {
-	if connVersion, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
-		defer func() { _ = connVersion.Close() }()
+		defer func() { _ = conn.Close() }()
 
-		client := services.NewRegistrarClient(connVersion)
+		client := services.NewRegistrarClient(conn)
 		return client.ListModules(ctx, in, opts...)
 	}
 }
 
 func (r registrarGrpcClient) GetModule(ctx context.Context, in *services.GetModuleRequest, opts ...grpc.CallOption) (*services.GetModuleResponse, error) {
-	if connVersion, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
-		defer func() { _ = connVersion.Close() }()
+		defer func() { _ = conn.Close() }()
 
-		client := services.NewRegistrarClient(connVersion)
+		client := services.NewRegistrarClient(conn)
 		return client.GetModule(ctx, in, opts...)
 	}
 }
