@@ -97,14 +97,13 @@ var allInOneCmd = &cobra.Command{
 
 		startAllInOneGrpcServices(services, allInOneInternalEndpoint)
 
-		registrar.RegistrarServiceEndpoint = allInOneInternalEndpoint
-		dependency_manager.DependencyManagerEndpoint = allInOneInternalEndpoint
-		version_manager.VersionManagerEndpoint = allInOneInternalEndpoint
-		storage2.StorageServiceEndpoint = allInOneInternalEndpoint
-		tag_manager.TagManagerEndpoint = allInOneInternalEndpoint
-		release.ReleaseServiceEndpoint = allInOneInternalEndpoint
-
-		gatewayServer := &gateway.TerrariumGrpcGateway{}
+		gatewayServer := gateway.New(registrar.NewRegistrarGrpcClient(allInOneInternalEndpoint),
+			tag_manager.NewTagManagerGrpcClient(allInOneInternalEndpoint),
+			version_manager.NewVersionManagerGrpcClient(allInOneInternalEndpoint),
+			storage2.NewStorageGrpcClient(allInOneInternalEndpoint),
+			dependency_manager.NewDependencyManagerGrpcClient(allInOneInternalEndpoint),
+			release.NewPublisherGrpcClient(allInOneInternalEndpoint),
+		)
 		startAllInOneGrpcServices([]services2.Service{gatewayServer}, allInOneGrpcGatewayEndpoint)
 
 		restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(allInOneInternalEndpoint),
