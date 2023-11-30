@@ -8,7 +8,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50001:3001
     networks:
@@ -29,7 +29,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50002:3001
     networks:
@@ -50,7 +50,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50006:3001
     networks:
@@ -73,7 +73,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50008:3001
     networks:
@@ -94,7 +94,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50003:3001
     networks:
@@ -115,7 +115,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50004:3001
     networks:
@@ -136,7 +136,7 @@ services:
      - AWS_ACCESS_KEY_ID
      - AWS_SECRET_ACCESS_KEY
      - AWS_DEFAULT_REGION
-     - OTEL_EXPORTER_OTLP_ENDPOINT
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50005:3001
     networks:
@@ -157,7 +157,7 @@ services:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
     - AWS_DEFAULT_REGION
-    - OTEL_EXPORTER_OTLP_ENDPOINT
+    - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
     ports:
       - 50007:3001
     networks:
@@ -170,6 +170,16 @@ services:
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
+  jaeger:
+    image: jaegertracing/all-in-one:1
+    container_name: jaeger
+    ports:
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+    networks:
+      - terrarium
+
 networks:
   terrarium:
     name: terrarium
