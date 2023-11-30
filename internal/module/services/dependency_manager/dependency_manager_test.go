@@ -123,10 +123,13 @@ func Test_RegisterDependencyManagerWithServer(t *testing.T) {
 		// - Module dependencies will fail...
 		// - Container dependencies
 		expectedDescribeTableInvocations := 1
-		expectedCreateTableInvocations := 0
+		expectedCreateTableInvocations := 1
 		expectedError := ModuleDependenciesTableInitializationError
 
-		db := &mocks.DynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{errors.New("some error")},
+			CreateTableError:    errors.New("some error"),
+		}
 
 		dms := &DependencyManagerService{Db: db}
 
