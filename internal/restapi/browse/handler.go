@@ -229,7 +229,11 @@ func (h *browseHttpService) getReleaseTypesHandler() http.Handler {
 			return
 		}
 
-		data, _ := json.Marshal(releaseTypesResponse.Types)
+		types := releaseTypesResponse.Types
+		if types == nil {
+			types = make([]string, 0)
+		}
+		data, _ := json.Marshal(types)
 
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
@@ -260,8 +264,11 @@ func (h *browseHttpService) getOrganizationsHandler() http.Handler {
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of release types from backend service"), http.StatusInternalServerError)
 			return
 		}
-
-		data, _ := json.Marshal(releaseOrganizationsResponse.Organizations)
+		organizations := releaseOrganizationsResponse.Organizations
+		if organizations == nil {
+			organizations = make([]string, 0)
+		}
+		data, _ := json.Marshal(organizations)
 
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
