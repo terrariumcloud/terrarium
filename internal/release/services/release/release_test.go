@@ -56,6 +56,7 @@ func Test_RegisterReleaseWithServer(t *testing.T) {
 
 		db := &mocks.DynamoDB{
 			DescribeTableErrors: []error{errors.New("some error")},
+			CreateTableError:    errors.New("some error"),
 		}
 
 		rs := &ReleaseService{
