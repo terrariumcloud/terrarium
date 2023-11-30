@@ -178,9 +178,14 @@ function Releases() {
             <Stack spacing={2} style={{ marginTop: ".8em", marginBottom: ".8em" }}>
 
                 {/* Filters Section */}
-                <Paper sx={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap' }}>
-                    <div className="headingcolor">
-                        Filter Releases
+                <Paper className="flex wrap" sx={{ flexDirection: 'column' }}>
+                    <div className="headingcolor flex">
+                        <div style={{ flexGrow: '1' }}>
+                            Filter Releases
+                        </div>
+                        <div>
+                            Showing <b>{filteredModuleList.length}</b> Release{filteredModuleList.length !== 1 && `s`}
+                        </div>
                     </div>
                     <div className="flex wrap" style={{ justifyContent: 'center', alignItems: "baseline", paddingBottom: "8px", backgroundColor: "rgba(66, 165, 245, 0.15)" }}>
                         <GenericSearchBar filterValue={filterText} setFilter={setFilterText} />
