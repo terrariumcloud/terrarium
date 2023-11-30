@@ -19,6 +19,7 @@ export const useReleaseTypeList = (): string[] => {
                 return response.json();
             })
             .then((response: string[]) => {
+                if (response == null) response = []
                 setReleaseTypes(response);
             })
     }, [])

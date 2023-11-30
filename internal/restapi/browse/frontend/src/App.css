@@ -18,3 +18,10 @@
 .wrap {
     flex-wrap: wrap;
 }
+
+.logo-title {
+    font-weight: 700 !important;
+    letter-spacing: 5px !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+}

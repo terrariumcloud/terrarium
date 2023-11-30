@@ -9,6 +9,7 @@ export const useReleaseOrgList = (): string[] => {
                 return response.json();
             })
             .then((response: string[]) => {
+                if (response == null) response = []
                 setReleaseOrgs(response);
             })
     }, [])

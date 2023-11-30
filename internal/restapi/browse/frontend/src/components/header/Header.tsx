@@ -10,7 +10,7 @@ function Header() {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography color="inherit" component={RouterLink} to="/" style={{ flexGrow: 1, textDecoration: "none", textTransform: "uppercase", fontSize: "14px" }}>
+        <Typography className='logo-title' color="inherit" component={RouterLink} to="/" style={{ flexGrow: 1, textTransform: "uppercase" }}>
           Terrarium
         </Typography>
         <Button color="inherit" component={RouterLink} to="/terraform-modules" style={{ textTransform: "capitalize" }}>
