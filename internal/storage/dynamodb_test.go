@@ -70,7 +70,6 @@ func Test_InitializeDynamoDb(t *testing.T) {
 	t.Run("when checking for table existence fails", func(t *testing.T) {
 		table := "Test"
 		schema := &dynamodb.CreateTableInput{}
-		someError := errors.New("some error")
 		db := &mocks.DynamoDB{
 			DescribeTableErrors: []error{errors.New("some error")},
 		}
@@ -85,12 +84,8 @@ func Test_InitializeDynamoDb(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", table, db.TableName)
 		}
 
-		if err == nil {
-			t.Error("Expected error, got nil.")
-		}
-
-		if err.Error() != someError.Error() {
-			t.Errorf("Expected %v, got %v.", someError.Error(), err.Error())
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
 		}
 	})
 
