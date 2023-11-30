@@ -7,8 +7,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
-	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"go.opentelemetry.io/otel/attribute"
@@ -25,8 +23,10 @@ import (
 )
 
 type modulesV1HttpService struct {
-	responseHandler restapi.ResponseHandler
-	errorHandler    restapi.ErrorHandler
+	versionManagerClient services.VersionManagerClient
+	storageClient        services.StorageClient
+	responseHandler      restapi.ResponseHandler
+	errorHandler         restapi.ErrorHandler
 }
 
 type ModuleVersionItem struct {
@@ -46,8 +46,8 @@ func (h *modulesV1HttpService) GetHttpHandler(mountPath string) http.Handler {
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
-func New() *modulesV1HttpService {
-	return &modulesV1HttpService{}
+func New(versionManagerClient services.VersionManagerClient, storageClient services.StorageClient) *modulesV1HttpService {
+	return &modulesV1HttpService{versionManagerClient: versionManagerClient, storageClient: storageClient}
 }
 
 func (h *modulesV1HttpService) createRouter(mountPath string) *mux.Router {
@@ -87,18 +87,7 @@ func (h *modulesV1HttpService) getModuleVersionHandler() http.Handler {
 			attribute.String("module.name", moduleName),
 		)
 
-		conn, err := services.CreateGRPCConnection(version_manager.VersionManagerEndpoint)
-		if err != nil {
-			log.Printf("Failed to connect to '%s': %v", version_manager.VersionManagerEndpoint, err)
-			span.RecordError(err)
-			h.errorHandler.Write(rw, errors.New("failed connecting to the version manager backend service"), http.StatusInternalServerError)
-			return
-		}
-		defer closeClient(conn)
-
-		client := services.NewVersionManagerClient(conn)
-
-		versionResponse, err2 := client.ListModuleVersions(r.Context(), &services.ListModuleVersionsRequest{Module: moduleName})
+		versionResponse, err2 := h.versionManagerClient.ListModuleVersions(r.Context(), &services.ListModuleVersionsRequest{Module: moduleName})
 		if err2 != nil {
 			log.Printf("Failed GRPC call with error: %v", err2)
 			span.RecordError(err2)
@@ -133,18 +122,7 @@ func (h *modulesV1HttpService) archiveHandler() http.Handler {
 			attribute.String("module.name", moduleName),
 		)
 
-		conn, err := services.CreateGRPCConnection(storage.StorageServiceEndpoint)
-		if err != nil {
-			log.Printf("Failed to connect: %v", err)
-			span.RecordError(err)
-			h.errorHandler.Write(rw, errors.New("failed connecting to the storage backend service"), http.StatusInternalServerError)
-			return
-		}
-		defer closeClient(conn)
-
-		client := services.NewStorageClient(conn)
-
-		downloadStream, err2 := client.DownloadSourceZip(r.Context(), &pb.DownloadSourceZipRequest{
+		downloadStream, err2 := h.storageClient.DownloadSourceZip(r.Context(), &pb.DownloadSourceZipRequest{
 			Module: getVersionedModuleFromRequest(r),
 		})
 		if err2 != nil {
