@@ -44,7 +44,10 @@ func Test_RegisterVersionManagerWithServer(t *testing.T) {
 	})
 
 	t.Run("when Table initialization fails", func(t *testing.T) {
-		db := &mocks.DynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{errors.New("some error")},
+			CreateTableError:    errors.New("some error"),
+		}
 
 		vms := &VersionManagerService{Db: db}
 
@@ -60,8 +63,8 @@ func Test_RegisterVersionManagerWithServer(t *testing.T) {
 			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
 		}
 
-		if db.CreateTableInvocations != 0 {
-			t.Errorf("Expected 0 calls to CreateTable, got %v.", db.CreateTableInvocations)
+		if db.CreateTableInvocations != 1 {
+			t.Errorf("Expected 1 calls to CreateTable, got %v.", db.CreateTableInvocations)
 		}
 	})
 }

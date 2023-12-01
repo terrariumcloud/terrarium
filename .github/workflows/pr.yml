@@ -1,0 +1,32 @@
+name: Build and run tests
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          stable: 'true'
+          go-version: 1.21
+
+      - name: Test Code
+        run: |
+          export CI=true
+          go test './...'
+          echo "Tests passed successfully."
+
+      - name: Build
+        run: |
+          go build

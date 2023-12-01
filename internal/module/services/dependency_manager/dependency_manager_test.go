@@ -59,6 +59,10 @@ func (srv *MockRetrieveContainerDependenciesServer) Send(res *terrarium.Containe
 	return srv.Err
 }
 
+func (src *MockRetrieveContainerDependenciesServer) Context() context.Context {
+	return context.TODO()
+}
+
 type MockRetrieveModuleDependenciesServer struct {
 	grpc.ServerStream
 	SendInvocations int
@@ -70,6 +74,10 @@ func (srv *MockRetrieveModuleDependenciesServer) Send(res *terrarium.ModuleDepen
 	srv.SendInvocations++
 	srv.Response = res
 	return srv.Err
+}
+
+func (src *MockRetrieveModuleDependenciesServer) Context() context.Context {
+	return context.TODO()
 }
 
 type MockGetDependenciesResponse struct {
@@ -123,10 +131,13 @@ func Test_RegisterDependencyManagerWithServer(t *testing.T) {
 		// - Module dependencies will fail...
 		// - Container dependencies
 		expectedDescribeTableInvocations := 1
-		expectedCreateTableInvocations := 0
+		expectedCreateTableInvocations := 1
 		expectedError := ModuleDependenciesTableInitializationError
 
-		db := &mocks.DynamoDB{DescribeTableErrors: []error{errors.New("some error")}}
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{errors.New("some error")},
+			CreateTableError:    errors.New("some error"),
+		}
 
 		dms := &DependencyManagerService{Db: db}
 
@@ -153,9 +164,12 @@ func Test_RegisterDependencyManagerWithServer(t *testing.T) {
 		// - Container dependencies will fail...
 		expectedError := ContainerDependenciesTableInitializationError
 		expectedDescribeTableInvocations := 2
-		expectedCreateTableInvocations := 0
+		expectedCreateTableInvocations := 1
 
-		db := &mocks.DynamoDB{DescribeTableErrors: []error{nil, errors.New("some error")}}
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{nil, errors.New("some error")},
+			CreateTableError:    errors.New("some error"),
+		}
 
 		dms := &DependencyManagerService{Db: db}
 
