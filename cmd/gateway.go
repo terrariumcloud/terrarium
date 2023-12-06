@@ -31,7 +31,13 @@ func init() {
 
 func runGateway(cmd *cobra.Command, args []string) {
 
-	gatewayServer := &gateway.TerrariumGrpcGateway{}
+	gatewayServer := gateway.New(registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
+		tag_manager.NewTagManagerGrpcClient(tag_manager.TagManagerEndpoint),
+		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
+		storage.NewStorageGrpcClient(storage.StorageServiceEndpoint),
+		dependency_manager.NewDependencyManagerGrpcClient(dependency_manager.DependencyManagerEndpoint),
+		release.NewPublisherGrpcClient(release.ReleaseServiceEndpoint),
+	)
 
 	startGRPCService("api-gateway", gatewayServer)
 }

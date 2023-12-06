@@ -39,6 +39,7 @@ var endpoint = defaultEndpoint
 var awsAccessKey string
 var awsSecretKey string
 var awsRegion string
+var opentelemetryInited = false
 
 var rootCmd = &cobra.Command{
 	Use:   "terrarium",
@@ -89,9 +90,8 @@ func newServiceResource(name string) *resource.Resource {
 	return resources
 }
 
-func startGRPCService(name string, service services.Service) {
-
-	log.Printf("Starting %s", name)
+func initOpenTelemetry(name string) func() {
+	opentelemetryInited = true
 
 	ctx := context.Background()
 
@@ -106,16 +106,28 @@ func startGRPCService(name string, service services.Service) {
 			trace.WithBatcher(traceExporter),
 			trace.WithResource(newServiceResource(name)),
 		)
-		defer func() {
+		otel.SetTracerProvider(tracerProvider)
+		return func() {
 			if err := tracerProvider.Shutdown(context.Background()); err != nil {
 				log.Fatal(err)
 			}
-		}()
-		otel.SetTracerProvider(tracerProvider)
+		}
 	} else {
 		otel.SetTracerProvider(noop.NewNoopTracerProvider())
 	}
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return func() {
+		// No-op
+	}
+}
+
+func startGRPCService(name string, service services.Service) {
+	log.Printf("Starting %s", name)
+	if !opentelemetryInited {
+		otelShutdown := initOpenTelemetry(name)
+		defer otelShutdown()
+	}
+
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %v", err)
@@ -138,33 +150,16 @@ func startGRPCService(name string, service services.Service) {
 
 func startRESTAPIService(name, mountPath string, rootHandler restapi.RESTAPIHandler) {
 	log.Printf("Starting %s", name)
-
-	ctx := context.Background()
-
-	traceExporter, err := newTraceExporter(ctx)
-	if err != nil {
-		log.Fatal(err)
+	if !opentelemetryInited {
+		otelShutdown := initOpenTelemetry(name)
+		defer otelShutdown()
 	}
 
-	if traceExporter != nil {
-		tracerProvider := trace.NewTracerProvider(
-			trace.WithSampler(trace.AlwaysSample()),
-			trace.WithBatcher(traceExporter),
-			trace.WithResource(newServiceResource(name)),
-		)
-		defer func() {
-			if err := tracerProvider.Shutdown(context.Background()); err != nil {
-				log.Fatal(err)
-			}
-		}()
-		otel.SetTracerProvider(tracerProvider)
-	} else {
-		otel.SetTracerProvider(noop.NewNoopTracerProvider())
+	log.Printf("Listening on %s", endpoint)
+	if err := http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)); err != nil {
+		log.Fatalf("Failed: %v", err)
 	}
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-	log.Println(fmt.Printf("Listening on %s", endpoint))
-	log.Fatal(http.ListenAndServe(endpoint, rootHandler.GetHttpHandler(mountPath)))
 }
 
 // Execute root command
