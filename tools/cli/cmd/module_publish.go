@@ -7,6 +7,7 @@ import (
 	"fmt"
 	module2 "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"github.com/terrariumcloud/terrarium/tools/cli/pkg/module"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -33,7 +34,24 @@ var modulePublishCmd = &cobra.Command{
 	Short: "Publishes a zip file as a module version in terrarium.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
+		conn, client, err := getModulePublisherClient()
+		if err != nil {
+			fmt.Printf("Error connecting to terrarium: %v", err)
+			os.Exit(1)
+		}
+		defer func() { _ = conn.Close() }()
+		if source, err := os.Open(args[0]); err != nil {
+			fmt.Printf("Error opening %s: %v", args[0], err)
+			os.Exit(1)
+		} else {
+			err := module.Publish(client, source, moduleMetadata)
+			if err != nil {
+				fmt.Printf("Error publishing module: %v", err)
+				os.Exit(1)
+			} else {
+				fmt.Println("Module published.")
+			}
+		}
 	},
 }
 
