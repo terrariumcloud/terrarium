@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -34,4 +35,14 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&terrariumEndpoint, "endpoint", terrariumEndpoint, "GRPC Endpoint for Terrarium.")
+}
+
+func printErrorAndExit(msg string, err error, exitCode int) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s", msg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, ": %s\n", err)
+	} else {
+		fmt.Fprintln(os.Stderr, "")
+	}
+	os.Exit(exitCode)
 }

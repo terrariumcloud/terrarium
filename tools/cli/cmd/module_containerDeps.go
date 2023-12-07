@@ -19,7 +19,7 @@ var containerDepsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		conn, client, err := getModuleConsumerClient()
 		if err != nil {
-			panic(err)
+			printErrorAndExit("Failed to connect to terrarium", err, 1)
 		}
 		defer func() { _ = conn.Close() }()
 		req := module.RetrieveContainerDependenciesRequestV2{
@@ -30,7 +30,7 @@ var containerDepsCmd = &cobra.Command{
 		}
 		responseClient, err := client.RetrieveContainerDependenciesV2(context.Background(), &req)
 		if err != nil {
-			panic(err)
+			printErrorAndExit("Failed to retrieve container dependencies", err, 1)
 		}
 		for {
 			response, err := responseClient.Recv()
@@ -38,9 +38,17 @@ var containerDepsCmd = &cobra.Command{
 				break
 			}
 			if err != nil {
-				panic(err)
+				printErrorAndExit("Retrieving dependencies failed", err, 1)
 			}
-			fmt.Printf("%v\n", response.Dependencies)
+			fmt.Printf("%s:%s:\n", response.Module.Name, response.Module.Version)
+			for name, containerDetails := range response.Dependencies {
+				fmt.Printf("    %s/%s:%s:\n", containerDetails.Namespace, name, containerDetails.Tag)
+
+				for _, details := range containerDetails.Images {
+					fmt.Printf("        - arch: %s\n", details.Arch)
+					fmt.Printf("          image: %s\n", details.Image)
+				}
+			}
 		}
 
 	},

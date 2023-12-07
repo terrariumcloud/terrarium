@@ -36,18 +36,15 @@ var modulePublishCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		conn, client, err := getModulePublisherClient()
 		if err != nil {
-			fmt.Printf("Error connecting to terrarium: %v", err)
-			os.Exit(1)
+			printErrorAndExit("Failed to connect to terrarium", err, 1)
 		}
 		defer func() { _ = conn.Close() }()
 		if source, err := os.Open(args[0]); err != nil {
-			fmt.Printf("Error opening %s: %v", args[0], err)
-			os.Exit(1)
+			printErrorAndExit(fmt.Sprintf("Failed to open %s", args[0]), err, 1)
 		} else {
 			err := module.Publish(client, source, moduleMetadata)
 			if err != nil {
-				fmt.Printf("Error publishing module: %v", err)
-				os.Exit(1)
+				printErrorAndExit("Publishing module failed", err, 1)
 			} else {
 				fmt.Println("Module published.")
 			}
