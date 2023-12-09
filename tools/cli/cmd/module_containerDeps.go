@@ -50,7 +50,6 @@ var containerDepsCmd = &cobra.Command{
 				}
 			}
 		}
-
 	},
 }
 
