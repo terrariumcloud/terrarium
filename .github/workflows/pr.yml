@@ -31,6 +31,13 @@ jobs:
         run: |
           go build
 
+      - name: Test CLI Code
+        run: |
+          export CI=true
+          cd tools/cli
+          go test './...'
+          echo "CLI Tests passed successfully."
+
       - name: Build CLI
         run: |
           cd tools/cli
