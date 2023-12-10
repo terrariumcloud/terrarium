@@ -42,6 +42,7 @@ var modulePublishCmd = &cobra.Command{
 		if source, err := os.Open(args[0]); err != nil {
 			printErrorAndExit(fmt.Sprintf("Failed to open %s", args[0]), err, 1)
 		} else {
+			moduleMetadata.Maturity = maturityVar.maturity
 			err := module.Publish(client, source, moduleMetadata)
 			if err != nil {
 				printErrorAndExit("Publishing module failed", err, 1)
