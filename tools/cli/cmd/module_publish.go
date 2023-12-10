@@ -27,7 +27,7 @@ var (
 
 // modulePublishCmd represents the publish command
 var modulePublishCmd = &cobra.Command{
-	Use:   "publish",
+	Use:   "publish [module source.zip]",
 	Short: "Publishes a zip file as a module version in terrarium.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
