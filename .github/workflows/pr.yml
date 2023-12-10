@@ -33,5 +33,5 @@ jobs:
 
       - name: Build CLI
         run: |
-          cd tools/ci
+          cd tools/cli
           go build
