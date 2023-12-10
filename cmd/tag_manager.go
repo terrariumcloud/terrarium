@@ -22,7 +22,7 @@ func init() {
 func runTagManager(cmd *cobra.Command, args []string) {
 
 	tagManagerServer := &tag_manager.TagManagerService{
-		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsSessionConfig),
 		Table:  tag_manager.TagTableName,
 		Schema: tag_manager.GetTagsSchema(tag_manager.TagTableName),
 	}

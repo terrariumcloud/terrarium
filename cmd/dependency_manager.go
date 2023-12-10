@@ -23,7 +23,7 @@ func init() {
 func runDependencyManager(cmd *cobra.Command, args []string) {
 
 	dependencyServiceServer := &dependency_manager.DependencyManagerService{
-		Db:              storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:              storage.NewDynamoDbClient(awsSessionConfig),
 		ModuleTable:     dependency_manager.ModuleDependenciesTableName,
 		ModuleSchema:    dependency_manager.GetDependenciesSchema(dependency_manager.ModuleDependenciesTableName),
 		ContainerTable:  dependency_manager.ContainerDependenciesTableName,

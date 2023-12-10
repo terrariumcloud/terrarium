@@ -23,7 +23,7 @@ func init() {
 func runVersionManager(cmd *cobra.Command, args []string) {
 
 	versionManagerServer := &version_manager.VersionManagerService{
-		Db:             storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:             storage.NewDynamoDbClient(awsSessionConfig),
 		Table:          version_manager.VersionsTableName,
 		Schema:         version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
 		ReleaseService: release.NewPublisherGrpcClient(release.ReleaseServiceEndpoint),

@@ -22,9 +22,9 @@ func init() {
 func runStorageService(cmd *cobra.Command, args []string) {
 
 	storageServiceServer := &storage2.StorageService{
-		Client:     storage.NewS3Client(awsAccessKey, awsSecretKey, awsRegion),
+		Client:     storage.NewS3Client(awsSessionConfig),
 		BucketName: storage2.BucketName,
-		Region:     awsRegion,
+		Region:     awsSessionConfig.Region,
 	}
 
 	startGRPCService("storage-s3", storageServiceServer)

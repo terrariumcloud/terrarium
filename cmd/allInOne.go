@@ -45,7 +45,7 @@ var allInOneCmd = &cobra.Command{
 	Long:  `This runs all the micro-services as part of a single process, useful for developing and for trying out Terrarium.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dependencyServiceServer := &dependency_manager.DependencyManagerService{
-			Db:              storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+			Db:              storage.NewDynamoDbClient(awsSessionConfig),
 			ModuleTable:     dependency_manager.ModuleDependenciesTableName,
 			ModuleSchema:    dependency_manager.GetDependenciesSchema(dependency_manager.ModuleDependenciesTableName),
 			ContainerTable:  dependency_manager.ContainerDependenciesTableName,
@@ -53,31 +53,31 @@ var allInOneCmd = &cobra.Command{
 		}
 
 		registrarServiceServer := &registrar.RegistrarService{
-			Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+			Db:     storage.NewDynamoDbClient(awsSessionConfig),
 			Table:  registrar.RegistrarTableName,
 			Schema: registrar.GetModulesSchema(registrar.RegistrarTableName),
 		}
 
 		storageServiceServer := &storage2.StorageService{
-			Client:     storage.NewS3Client(awsAccessKey, awsSecretKey, awsRegion),
+			Client:     storage.NewS3Client(awsSessionConfig),
 			BucketName: storage2.BucketName,
-			Region:     awsRegion,
+			Region:     awsSessionConfig.Region,
 		}
 
 		tagManagerServer := &tag_manager.TagManagerService{
-			Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+			Db:     storage.NewDynamoDbClient(awsSessionConfig),
 			Table:  tag_manager.TagTableName,
 			Schema: tag_manager.GetTagsSchema(tag_manager.TagTableName),
 		}
 
 		releaseServiceServer := &release.ReleaseService{
-			Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+			Db:     storage.NewDynamoDbClient(awsSessionConfig),
 			Table:  release.ReleaseTableName,
 			Schema: release.GetReleaseSchema(release.ReleaseTableName),
 		}
 
 		versionManagerServer := &version_manager.VersionManagerService{
-			Db:             storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+			Db:             storage.NewDynamoDbClient(awsSessionConfig),
 			Table:          version_manager.VersionsTableName,
 			Schema:         version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
 			ReleaseService: release.NewPublisherGrpcClient(allInOneInternalEndpoint),

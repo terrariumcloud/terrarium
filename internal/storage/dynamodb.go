@@ -20,8 +20,8 @@ type DynamoDBTableCreator interface {
 }
 
 // Create new DynamoDB client
-func NewDynamoDbClient(key string, secret string, region string) *dynamodb.Client {
-	cfg, err := NewAwsSession(key, secret, region)
+func NewDynamoDbClient(sessionConfig AWSSessionConfig) *dynamodb.Client {
+	cfg, err := NewAwsSession(sessionConfig)
 	if err != nil {
 		log.Fatalf("Unable to create AWS Session: %s", err.Error())
 	}

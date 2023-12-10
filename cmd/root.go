@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/terrariumcloud/terrarium/internal/storage"
 	"log"
 	"net"
 	"net/http"
@@ -35,26 +36,23 @@ const (
 	defaultEndpoint = "0.0.0.0:3001"
 )
 
-var endpoint = defaultEndpoint
-var awsAccessKey string
-var awsSecretKey string
-var awsRegion string
-var opentelemetryInited = false
-
-var rootCmd = &cobra.Command{
-	Use:   "terrarium",
-	Short: "Terrarium Services",
-	Long:  "Runs backend that exposes Terrarium Services",
-}
+var (
+	endpoint            = defaultEndpoint
+	awsSessionConfig    = storage.AWSSessionConfig{}
+	opentelemetryInited = false
+	rootCmd             = &cobra.Command{
+		Use:   "terrarium",
+		Short: "Terrarium Services",
+		Long:  "Runs backend that exposes Terrarium Services",
+	}
+)
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", defaultEndpoint, "Endpoint")
-	rootCmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "k", "", "AWS Access Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-access-key-id")
-	rootCmd.PersistentFlags().StringVarP(&awsSecretKey, "aws-secret-access-key", "s", "", "AWS Secret Key (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-secret-access-key")
-	rootCmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "r", "", "AWS Region (required)")
-	rootCmd.MarkPersistentFlagRequired("aws-region")
+	rootCmd.PersistentFlags().StringVarP(&awsSessionConfig.Key, "aws-access-key-id", "k", "", "AWS Access Key")
+	rootCmd.PersistentFlags().StringVarP(&awsSessionConfig.Secret, "aws-secret-access-key", "s", "", "AWS Secret Key")
+	rootCmd.PersistentFlags().StringVarP(&awsSessionConfig.Region, "aws-region", "r", "", "AWS Region")
+	rootCmd.PersistentFlags().BoolVar(&awsSessionConfig.UseLocalStack, "use-localstack", false, "Connect to a localstack instance rather than AWS.")
 }
 
 func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
