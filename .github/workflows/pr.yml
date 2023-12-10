@@ -30,3 +30,8 @@ jobs:
       - name: Build
         run: |
           go build
+
+      - name: Build CLI
+        run: |
+          cd tools/ci
+          go build
