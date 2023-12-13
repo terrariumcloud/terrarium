@@ -150,7 +150,7 @@ function Releases() {
         <>
             <div className='flex' style={{ paddingTop: "10px" }}>
                 <Typography color="text.primary" variant='h5' sx={{ flexGrow: '1' }}>
-                    Latest Releases to Terrarium
+                    Latest Releases
                 </Typography>
                 <div className='flex' style={{ alignItems: 'baseline' }}>
                     <Typography color="grey" variant='body1' sx={{ p: '4px 0px 4px 0px' }}>
