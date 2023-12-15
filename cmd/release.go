@@ -22,7 +22,7 @@ func init() {
 func runReleaseService(cmd *cobra.Command, args []string) {
 
 	releaseServiceServer := &release.ReleaseService{
-		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsSessionConfig),
 		Table:  release.ReleaseTableName,
 		Schema: release.GetReleaseSchema(release.ReleaseTableName),
 	}

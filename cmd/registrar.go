@@ -22,7 +22,7 @@ func init() {
 func runRegistrarService(cmd *cobra.Command, args []string) {
 
 	registrarServiceServer := &registrar.RegistrarService{
-		Db:     storage.NewDynamoDbClient(awsAccessKey, awsSecretKey, awsRegion),
+		Db:     storage.NewDynamoDbClient(awsSessionConfig),
 		Table:  registrar.RegistrarTableName,
 		Schema: registrar.GetModulesSchema(registrar.RegistrarTableName),
 	}

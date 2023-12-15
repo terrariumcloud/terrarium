@@ -1,10 +1,9 @@
-package storage_test
+package storage
 
 import (
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/terrariumcloud/terrarium/internal/storage"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"testing"
 )
@@ -22,7 +21,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 		schema := &dynamodb.CreateTableInput{}
 		db := &mocks.DynamoDB{}
 
-		err := storage.InitializeDynamoDb(table, schema, db)
+		err := InitializeDynamoDb(table, schema, db)
 
 		if db.DescribeTableInvocations != 1 {
 			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
@@ -44,7 +43,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 			DescribeTableErrors: []error{&types.TableNotFoundException{}},
 		}
 
-		err := storage.InitializeDynamoDb(table, schema, db)
+		err := InitializeDynamoDb(table, schema, db)
 
 		if db.DescribeTableInvocations != 1 {
 			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
@@ -74,7 +73,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 			DescribeTableErrors: []error{errors.New("some error")},
 		}
 
-		err := storage.InitializeDynamoDb(table, schema, db)
+		err := InitializeDynamoDb(table, schema, db)
 
 		if db.DescribeTableInvocations != 1 {
 			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
@@ -98,7 +97,7 @@ func Test_InitializeDynamoDb(t *testing.T) {
 			CreateTableError:    someError,
 		}
 
-		err := storage.InitializeDynamoDb(table, schema, db)
+		err := InitializeDynamoDb(table, schema, db)
 
 		if db.DescribeTableInvocations != 1 {
 			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)

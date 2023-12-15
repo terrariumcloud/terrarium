@@ -17,12 +17,14 @@ type AWSS3BucketClient interface {
 }
 
 // NewS3Client Create new S3 client
-func NewS3Client(key string, secret string, region string) *s3.Client {
-	cfg, err := NewAwsSession(key, secret, region)
+func NewS3Client(sessionConfig AWSSessionConfig) *s3.Client {
+	cfg, err := NewAwsSession(sessionConfig)
 	if err != nil {
 		log.Fatalf("Unable to create AWS Session: %s", err.Error())
 	}
-	return s3.NewFromConfig(*cfg)
+	return s3.NewFromConfig(*cfg, func(options *s3.Options) {
+		options.UsePathStyle = sessionConfig.UseLocalStack
+	})
 }
 
 // InitializeS3Bucket - checks if bucket exists, in case it doesn't it creates it

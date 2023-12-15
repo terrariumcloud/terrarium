@@ -1,8 +1,7 @@
-package storage_test
+package storage
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/storage"
 	"testing"
 )
 
@@ -11,27 +10,57 @@ import (
 func Test_NewAwsSession(t *testing.T) {
 
 	t.Run("returns AWS session`", func(t *testing.T) {
-		var key, secret, region string
-		key = "test_key"
-		secret = "test_secret"
-		region = "eu-west-1"
+		sessionConfig := AWSSessionConfig{
+			UseLocalStack: false,
+			Region:        "eu-west-1",
+			Key:           "test_key",
+			Secret:        "test_secret",
+		}
 
-		cfg, err := storage.NewAwsSession(key, secret, region)
+		cfg, err := NewAwsSession(sessionConfig)
 
 		if err != nil {
 			t.Errorf("Expected no error, got %v.", err)
 		}
 
-		if cfg.Region != region {
-			t.Errorf("Expected %v, got %v.", region, cfg.Region)
+		if cfg.Region != sessionConfig.Region {
+			t.Errorf("Expected %v, got %v.", sessionConfig.Region, cfg.Region)
 		}
 		creds, _ := cfg.Credentials.Retrieve(context.TODO())
 
-		if creds.AccessKeyID != key {
-			t.Errorf("Expected %v, got %v.", key, creds.AccessKeyID)
+		if creds.AccessKeyID != sessionConfig.Key {
+			t.Errorf("Expected %v, got %v.", sessionConfig.Key, creds.AccessKeyID)
 
-			if creds.SecretAccessKey != secret {
-				t.Errorf("Expected %v, got %v.", secret, creds.SecretAccessKey)
+			if creds.SecretAccessKey != sessionConfig.Secret {
+				t.Errorf("Expected %v, got %v.", sessionConfig.Secret, creds.SecretAccessKey)
+			}
+		}
+	})
+
+	t.Run("use localstack", func(t *testing.T) {
+		sessionConfig := AWSSessionConfig{
+			UseLocalStack: true,
+			Region:        "eu-west-1",
+			Key:           "super_secret_key",
+			Secret:        "super_secret_secret_key",
+		}
+
+		cfg, err := NewAwsSession(sessionConfig)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+
+		if cfg.Region != sessionConfig.Region {
+			t.Errorf("Expected %v, got %v.", sessionConfig.Region, cfg.Region)
+		}
+		creds, _ := cfg.Credentials.Retrieve(context.TODO())
+
+		if creds.AccessKeyID != "test" {
+			t.Errorf("Expected %v, got %v.", sessionConfig.Key, creds.AccessKeyID)
+
+			if creds.SecretAccessKey != "test" {
+				t.Errorf("Expected %v, got %v.", sessionConfig.Secret, creds.SecretAccessKey)
 			}
 		}
 	})

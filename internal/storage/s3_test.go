@@ -1,11 +1,9 @@
-package storage_test
+package storage
 
 import (
 	"errors"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
 	"testing"
-
-	"github.com/terrariumcloud/terrarium/internal/storage"
 )
 
 // Test_InitializeS3Bucket checks:
@@ -20,7 +18,7 @@ func Test_InitializeS3Bucket(t *testing.T) {
 		region := "test"
 		s3 := &mocks.S3{}
 
-		err := storage.InitializeS3Bucket(bucket, region, s3)
+		err := InitializeS3Bucket(bucket, region, s3)
 
 		if s3.HeadBucketInvocations != 1 {
 			t.Errorf("Expected 1 call to HeadBucket, got %v.", s3.HeadBucketInvocations)
@@ -40,7 +38,7 @@ func Test_InitializeS3Bucket(t *testing.T) {
 		region := "test"
 		s3Client := &mocks.S3{HeadBucketError: errors.New("some error")}
 
-		err := storage.InitializeS3Bucket(bucket, region, s3Client)
+		err := InitializeS3Bucket(bucket, region, s3Client)
 
 		if s3Client.HeadBucketInvocations != 1 {
 			t.Errorf("Expected 1 call to HeadBucket, got %v.", s3Client.HeadBucketInvocations)
@@ -69,7 +67,7 @@ func Test_InitializeS3Bucket(t *testing.T) {
 		someError := errors.New("some error")
 		s3Client := &mocks.S3{HeadBucketError: someError, CreateBucketError: someError}
 
-		err := storage.InitializeS3Bucket(bucket, region, s3Client)
+		err := InitializeS3Bucket(bucket, region, s3Client)
 
 		if s3Client.HeadBucketInvocations != 1 {
 			t.Errorf("Expected 1 call to HeadBucket, got %v.", s3Client.HeadBucketInvocations)
