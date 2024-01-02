@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
@@ -21,6 +23,8 @@ func init() {
 }
 
 func runVersionManager(cmd *cobra.Command, args []string) {
+	fmt.Println("version_manager.VersionsTableName", version_manager.VersionsTableName)
+	fmt.Println("release.ReleaseServiceEndpoint", release.ReleaseServiceEndpoint)
 
 	versionManagerServer := &version_manager.VersionManagerService{
 		Db:             storage.NewDynamoDbClient(awsSessionConfig),

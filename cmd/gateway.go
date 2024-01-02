@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/gateway"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
@@ -30,8 +32,12 @@ func init() {
 }
 
 func runGateway(cmd *cobra.Command, args []string) {
+	fmt.Println("Gateway intialization", registrar.RegistrarServiceEndpoint, tag_manager.TagManagerEndpoint,
+		version_manager.VersionManagerEndpoint, storage.StorageServiceEndpoint, dependency_manager.DependencyManagerEndpoint,
+		release.ReleaseServiceEndpoint)
 
-	gatewayServer := gateway.New(registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
+	gatewayServer := gateway.New(
+		registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
 		tag_manager.NewTagManagerGrpcClient(tag_manager.TagManagerEndpoint),
 		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
 		storage.NewStorageGrpcClient(storage.StorageServiceEndpoint),

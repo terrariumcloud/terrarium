@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -83,6 +84,7 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 
 // Publish is used to publish a new release.
 func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRequest) (*release.PublishResponse, error) {
+	fmt.Println("inside publish")
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
@@ -101,6 +103,9 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		Links:        request.GetLinks(),
 		CreatedAt:    time.Now().UTC().String(),
 	}
+
+	fmt.Println("Inside release mv", mv)
+	fmt.Println("ReleaseTableName", ReleaseTableName)
 
 	av, err := attributevalue.MarshalMap(mv)
 
@@ -123,6 +128,7 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 	if err != nil {
 		span.RecordError(err)
 	}
+	fmt.Println("Finished publish inside internal services")
 
 	return ReleasePublished, nil
 }

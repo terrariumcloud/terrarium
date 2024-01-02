@@ -2,6 +2,7 @@ package version_manager
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -71,6 +72,11 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 	}
 	services.RegisterVersionManagerServer(grpcServer, s)
 
+	fmt.Println("inside version manager")
+	// fmt.Println()
+	// s.BeginVersion(context.Background(), &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "aflahahamed", Version: "2.3.4"}})
+	// s.PublishVersion(context.Background(), &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "aflahahamed", Version: "0.0.0"}})
+
 	return nil
 }
 
@@ -101,12 +107,17 @@ func (s *VersionManagerService) BeginVersion(ctx context.Context, request *terra
 		Item:      av,
 		TableName: aws.String(VersionsTableName),
 	}
+	fmt.Println("VersionsTableName", VersionsTableName)
+	fmt.Println("in", in)
+	fmt.Println("mv", mv)
 
-	if _, err = s.Db.PutItem(ctx, in); err != nil {
+	var output *dynamodb.PutItemOutput
+	if output, err = s.Db.PutItem(ctx, in); err != nil {
 		span.RecordError(err)
 		log.Println(err)
 		return nil, CreateModuleVersionError
 	}
+	fmt.Println("output", output)
 
 	log.Println("New version created.")
 	return VersionCreated, nil
@@ -175,6 +186,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		log.Println(err)
 		return nil, PublishModuleVersionError
 	}
+	fmt.Println("module key", moduleKey)
 
 	publishOn, err := attributevalue.Marshal(time.Now().UTC().String())
 	if err != nil {
@@ -204,6 +216,7 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 		span.RecordError(err)
 		return nil, err
 	}
+	fmt.Println("parsedVersion", parsedVersion)
 
 	if parsedVersion.GreaterThan(DevelopmentVersion) && s.ReleaseService != nil {
 		moduleAddress := strings.Split(request.Module.GetName(), "/")
