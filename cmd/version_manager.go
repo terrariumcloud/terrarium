@@ -27,11 +27,11 @@ func runVersionManager(cmd *cobra.Command, args []string) {
 	fmt.Println("release.ReleaseServiceEndpoint", release.ReleaseServiceEndpoint)
 
 	versionManagerServer := &version_manager.VersionManagerService{
-		Db:     storage.NewDynamoDbClient(awsSessionConfig),
-		Table:  version_manager.VersionsTableName,
-		Schema: version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
-		// ReleaseService: release.NewPublisherGrpcClient(release.ReleaseServiceEndpoint),
-		ReleaseService: release.NewPublisherGrpcClient("terrarium-release.terrarium.svc.cluster.local:8080"),
+		Db:             storage.NewDynamoDbClient(awsSessionConfig),
+		Table:          version_manager.VersionsTableName,
+		Schema:         version_manager.GetModuleVersionsSchema(version_manager.VersionsTableName),
+		ReleaseService: release.NewPublisherGrpcClient(release.ReleaseServiceEndpoint),
+		// ReleaseService: release.NewPublisherGrpcClient("terrarium-release.terrarium.svc.cluster.local:8080"),
 	}
 
 	startGRPCService("version-manager", versionManagerServer)
