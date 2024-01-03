@@ -414,6 +414,8 @@ func NotifyWebhook(payload Release) error {
 	// Set webhook url
 	webhookUrl := os.Getenv("WEBHOOK")
 
+	fmt.Println("webhookUrl", webhookUrl)
+
 	// Creating Urls based on the provided links
 	for _, link := range payload.Links {
 
