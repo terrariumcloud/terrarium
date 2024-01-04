@@ -72,11 +72,6 @@ func (s *VersionManagerService) RegisterWithServer(grpcServer grpc.ServiceRegist
 	}
 	services.RegisterVersionManagerServer(grpcServer, s)
 
-	fmt.Println("inside version manager")
-	// fmt.Println()
-	// s.BeginVersion(context.Background(), &terrarium.BeginVersionRequest{Module: &terrarium.Module{Name: "aflahahamed", Version: "2.3.4"}})
-	// s.PublishVersion(context.Background(), &services.TerminateVersionRequest{Module: &terrarium.Module{Name: "aflahahamed", Version: "0.0.0"}})
-
 	return nil
 }
 

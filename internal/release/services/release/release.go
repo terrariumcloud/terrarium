@@ -79,6 +79,22 @@ func (s *ReleaseService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 	releaseSvc.RegisterPublisherServer(grpcServer, s)
 	releaseSvc.RegisterBrowseServer(grpcServer, s)
 
+	payload := &release.PublishRequest{
+		Type:         "test type",
+		Organization: "test",
+		Name:         "test name",
+		Version:      "1.3.4",
+		Description:  "test description",
+		Links: []*release.Link{
+			{
+				Title: "link",
+				Url:   "test link",
+			},
+		},
+	}
+
+	s.Publish(context.Background(), payload)
+
 	return nil
 }
 
@@ -124,10 +140,16 @@ func (s *ReleaseService) Publish(ctx context.Context, request *release.PublishRe
 		return nil, PublishReleaseError
 	}
 
-	err = NotifyWebhook(mv)
-	if err != nil {
-		span.RecordError(err)
+	for i := 0; i < 20; i++ {
+		err = NotifyWebhook(mv)
+		if err != nil {
+			span.RecordError(err)
+		}
+		fmt.Println("successfully sent notification")
+		time.Sleep(5 * time.Minute)
+		fmt.Println("waiting for 5 minutes...............")
 	}
+
 	fmt.Println("Finished publish inside internal services")
 
 	return ReleasePublished, nil
@@ -414,8 +436,6 @@ func NotifyWebhook(payload Release) error {
 	// Set webhook url
 	webhookUrl := os.Getenv("WEBHOOK")
 
-	fmt.Println("webhookUrl", webhookUrl)
-
 	// Creating Urls based on the provided links
 	for _, link := range payload.Links {
 
@@ -495,16 +515,23 @@ func NotifyWebhook(payload Release) error {
 		"potentialAction": URls,
 	}
 
+	fmt.Println("jsonData", jsonData)
+
 	jsonBytes, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
 		return err
 	}
+	fmt.Println("jsonBytes", jsonBytes)
 
 	// Send the notification to the Webhook
 	resp, err := http.Post(webhookUrl, "application/json", bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
+	fmt.Println("response from http post resp", resp)
+	fmt.Println("response from http post resp.Body", resp.Body)
+	fmt.Println("response from http post resp.Status", resp.Status)
+	fmt.Println("response from http post resp.StatusCode", resp.StatusCode)
 	defer resp.Body.Close()
 
 	return nil
