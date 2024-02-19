@@ -45,12 +45,12 @@ type SigningKeys struct {
 type ProviderMetadata struct {
 	OS                  string       `json:"os"`
 	Arch                string       `json:"arch"`
-	Filename            string       `json:"filename,omitempty"`
-	DownloadURL         string       `json:"download_url,omitempty"`
-	ShasumsURL          string       `json:"shasums_url,omitempty"`
-	ShasumsSignatureURL	string       `json:"shasums_signature_url,omitempty"`
-	Shasum              string       `json:"shasum,omitempty"`
-	SigningKeys         SigningKeys  `json:"signing_keys,omitempty"`
+	Filename            string       `json:"filename"`
+	DownloadURL         string       `json:"download_url"`
+	ShasumsURL          string       `json:"shasums_url"`
+	ShasumsSignatureURL	string       `json:"shasums_signature_url"`
+	Shasum              string       `json:"shasum"`
+	SigningKeys         SigningKeys  `json:"signing_keys"`
 }
 
 type VersionData struct {
@@ -221,15 +221,15 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 					if platform.OS == os && platform.Arch == arch {
 					outputExists = true
 					// Add the matched platform details to the providerMetadata
-					providerMetadata.Protocols 	   	= versionData.Protocols
-					providerMetadata.OS 		   	= platform.OS
-					providerMetadata.Arch 		   	= platform.Arch
-					providerMetadata.Filename 	   	= platform.Filename
-					providerMetadata.DownloadURL   	= platform.DownloadURL
-					providerMetadata.ShasumsURL    	= platform.ShasumsURL
-					providerMetadata.ShasumsSigURL 	= platform.ShasumsSignatureURL
-					providerMetadata.Shasum 	   	= platform.Shasum
-					providerMetadata.SigningKeys  	= platform.SigningKeys
+					providerMetadata.Protocols 	   = versionData.Protocols
+					providerMetadata.OS 		   = platform.OS
+					providerMetadata.Arch 		   = platform.Arch
+					providerMetadata.Filename 	   = platform.Filename
+					providerMetadata.DownloadURL   = platform.DownloadURL
+					providerMetadata.ShasumsURL    = platform.ShasumsURL
+					providerMetadata.ShasumsSigURL = platform.ShasumsSignatureURL
+					providerMetadata.Shasum 	   = platform.Shasum
+					providerMetadata.SigningKeys   = platform.SigningKeys
 					break
 					} else {
 						outputExists = false
