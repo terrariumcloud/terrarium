@@ -14,7 +14,7 @@ func GetProviderNameFromRequest(r *http.Request) string {
 	return fmt.Sprintf("%s/%s", orgName, providerName)
 }
 
-func GetProviderInputsFromRequest(r *http.Request) []string {
+func GetProviderInputsFromRequest(r *http.Request) (string, string, string) {
 	params := mux.Vars(r)
-	return []string{params["version"], params["os"], params["arch"]}
+	return params["version"], params["os"], params["arch"]
 }

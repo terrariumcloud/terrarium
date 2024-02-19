@@ -31,15 +31,15 @@ type providersV1HttpService struct {
 type Protocols []string
 
 type GPGPublicKey struct {
-	KeyID          		string 		`json:"key_id"`
-	ASCIIArmor     		string 		`json:"ascii_armor"`
-	TrustSignature 		string 		`json:"trust_signature"`
-	Source         		string 		`json:"source"`
-	SourceURL      		string 		`json:"source_url"`
+	KeyID          	string	`json:"key_id"`
+	ASCIIArmor     	string 	`json:"ascii_armor"`
+	TrustSignature	string 	`json:"trust_signature"`
+	Source         	string 	`json:"source"`
+	SourceURL      	string 	`json:"source_url"`
 }
 
 type SigningKeys struct {
-	GPGPublicKeys 	[]GPGPublicKey 	 `json:"gpg_public_keys"`
+	GPGPublicKeys	[]GPGPublicKey	`json:"gpg_public_keys"`
 }
 
 type ProviderMetadata struct {
@@ -48,14 +48,14 @@ type ProviderMetadata struct {
 	Filename            string       `json:"filename,omitempty"`
 	DownloadURL         string       `json:"download_url,omitempty"`
 	ShasumsURL          string       `json:"shasums_url,omitempty"`
-	ShasumsSignatureURL string       `json:"shasums_signature_url,omitempty"`
+	ShasumsSignatureURL	string       `json:"shasums_signature_url,omitempty"`
 	Shasum              string       `json:"shasum,omitempty"`
 	SigningKeys         SigningKeys  `json:"signing_keys,omitempty"`
 }
 
 type VersionData struct {
-	Protocols 			Protocols    `json:"protocols"`
-	Platforms 	[]ProviderMetadata	 `json:"platforms"`
+	Protocols	Protocols    		`json:"protocols"`
+	Platforms	[]ProviderMetadata	`json:"platforms"`
 }
 
 type ProviderData map[string]*VersionData
@@ -63,32 +63,32 @@ type ProviderData map[string]*VersionData
 // Structs to load response into (for listing versions for a specific provider)
 
 type Platform struct {
-	OS   			string 			 `json:"os"`
-	Arch 			string 			 `json:"arch"`
+	OS  	string	`json:"os"`
+	Arch	string	`json:"arch"`
 }
 
 type VersionItem struct {
-	Version   		string			 `json:"version"`
-	Protocols 		Protocols        `json:"protocols"`
-	Platforms 		[]Platform		 `json:"platforms"`
+	Version   	string		`json:"version"`
+	Protocols	Protocols   `json:"protocols"`
+	Platforms 	[]Platform	`json:"platforms"`
 }
 
 type ProviderVersionsResponse struct {
-	Versions 		[]VersionItem 	 `json:"versions"`
+	Versions	[]VersionItem	`json:"versions"`
 }
 
 // Structs to load response into (for a provider's metadata)
 
 type PlatformMetadataResponse struct {
-	Protocols     	Protocols 		 `json:"protocols"`
-	OS            	string    		 `json:"os"`
-	Arch          	string    	 	 `json:"arch"`
-	Filename      	string    		 `json:"filename"`
-	DownloadURL   	string    		 `json:"download_url"`
-	ShasumsURL    	string    		 `json:"shasums_url"`
-	ShasumsSigURL 	string    		 `json:"shasums_signature_url"`
-	Shasum        	string    		 `json:"shasum"`
-	SigningKeys   	SigningKeys 	 `json:"signing_keys"`
+	Protocols     	Protocols 	`json:"protocols"`
+	OS            	string    	`json:"os"`
+	Arch          	string    	`json:"arch"`
+	Filename      	string    	`json:"filename"`
+	DownloadURL   	string    	`json:"download_url"`
+	ShasumsURL    	string    	`json:"shasums_url"`
+	ShasumsSigURL	string    	`json:"shasums_signature_url"`
+	Shasum        	string    	`json:"shasum"`
+	SigningKeys   	SigningKeys	`json:"signing_keys"`
 }
 
 
@@ -208,11 +208,7 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 
 		obj := loadJSONData()
 
-		providerInputs := GetProviderInputsFromRequest(r)
-
-		version := providerInputs[0]
-		os := providerInputs[1]
-		arch := providerInputs[2]
+		version, os, arch := GetProviderInputsFromRequest(r)
 
 		var providerMetadata PlatformMetadataResponse
 		var outputExists bool
