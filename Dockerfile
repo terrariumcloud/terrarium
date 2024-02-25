@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates
 
 FROM scratch
-COPY --from=build /workspace/random.json /
+COPY --from=build /workspace/providers.json /
 COPY --from=build /workspace/terrarium /
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ENTRYPOINT [ "/terrarium" ]
