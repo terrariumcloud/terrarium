@@ -11,15 +11,13 @@ import (
 	"github.com/gorilla/mux"
 	"gopkg.in/errgo.v2/errors"
 
-	"github.com/terrariumcloud/terrarium/internal/restapi"
 	"github.com/terrariumcloud/terrarium/internal/provider/services"
+	"github.com/terrariumcloud/terrarium/internal/restapi"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-
 )
-
 
 type providersV1HttpService struct {
 	responseHandler restapi.ResponseHandler
@@ -29,32 +27,32 @@ type providersV1HttpService struct {
 // Structs to load response into (for listing versions for a specific provider)
 
 type Platform struct {
-	OS  	string	`json:"os"`
-	Arch	string	`json:"arch"`
+	OS   string `json:"os"`
+	Arch string `json:"arch"`
 }
 
 type VersionItem struct {
-	Version   	string		`json:"version"`
-	Protocols	[]string   	`json:"protocols"`
-	Platforms 	[]Platform	`json:"platforms"`
+	Version   string     `json:"version"`
+	Protocols []string   `json:"protocols"`
+	Platforms []Platform `json:"platforms"`
 }
 
 type ProviderVersionsResponse struct {
-	Versions	[]VersionItem	`json:"versions"`
+	Versions []VersionItem `json:"versions"`
 }
 
 // Structs to load response into (for a provider's metadata)
 
 type PlatformMetadataResponse struct {
-	Protocols     	[]string 				`json:"protocols"`
-	OS            	string    				`json:"os"`
-	Arch          	string    				`json:"arch"`
-	Filename      	string    				`json:"filename"`
-	DownloadURL   	string    				`json:"download_url"`
-	ShasumsURL    	string    				`json:"shasums_url"`
-	ShasumsSigURL	string    				`json:"shasums_signature_url"`
-	Shasum        	string    				`json:"shasum"`
-	SigningKeys   	services.SigningKeys	`json:"signing_keys"`
+	Protocols     []string             `json:"protocols"`
+	OS            string               `json:"os"`
+	Arch          string               `json:"arch"`
+	Filename      string               `json:"filename"`
+	DownloadURL   string               `json:"download_url"`
+	ShasumsURL    string               `json:"shasums_url"`
+	ShasumsSigURL string               `json:"shasums_signature_url"`
+	Shasum        string               `json:"shasum"`
+	SigningKeys   services.SigningKeys `json:"signing_keys"`
 }
 
 func New() *providersV1HttpService {
@@ -93,7 +91,7 @@ func (h *providersV1HttpService) healthHandler() http.Handler {
 func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("getProviderVersionHandler")
-		
+
 		providerName := GetProviderNameFromRequest(r)
 
 		ctx := r.Context()
@@ -108,9 +106,9 @@ func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 
 		providerObj, err := services.LoadData()
 		if err != nil {
-            http.Error(rw, err.Error(), http.StatusInternalServerError)
-            return
-        }
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		// Check if the provider ID exists
 		if providerData, exists := providerObj[providerName]; exists {
@@ -124,9 +122,9 @@ func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 					platform.Arch = versionPlatforms.Arch
 					versionItem.Platforms = append(versionItem.Platforms, platform)
 				}
-				providerVersions.Versions = append(providerVersions.Versions, versionItem) 
+				providerVersions.Versions = append(providerVersions.Versions, versionItem)
 			}
-			
+
 		} else {
 			errMsg := fmt.Sprintf("failed to retrieve the list of versions for %s", providerName)
 			span.RecordError(errors.New(errMsg))
@@ -167,9 +165,9 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 
 		providerObj, err := services.LoadData()
 		if err != nil {
-            http.Error(rw, err.Error(), http.StatusInternalServerError)
-            return
-        }
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		// Check if the provider ID exists
 		if providerData, exists := providerObj[providerName]; exists {
@@ -179,15 +177,15 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 					if platform.OS == os && platform.Arch == arch {
 						outputExists = true
 						// Add the matched platform details to the providerMetadata
-						providerMetadata.Protocols 	   = versionData.Protocols
-						providerMetadata.OS 		   = platform.OS
-						providerMetadata.Arch 		   = platform.Arch
-						providerMetadata.Filename 	   = platform.Filename
-						providerMetadata.DownloadURL   = platform.DownloadURL
-						providerMetadata.ShasumsURL    = platform.ShasumsURL
+						providerMetadata.Protocols = versionData.Protocols
+						providerMetadata.OS = platform.OS
+						providerMetadata.Arch = platform.Arch
+						providerMetadata.Filename = platform.Filename
+						providerMetadata.DownloadURL = platform.DownloadURL
+						providerMetadata.ShasumsURL = platform.ShasumsURL
 						providerMetadata.ShasumsSigURL = platform.ShasumsSignatureURL
-						providerMetadata.Shasum 	   = platform.Shasum
-						providerMetadata.SigningKeys   = platform.SigningKeys
+						providerMetadata.Shasum = platform.Shasum
+						providerMetadata.SigningKeys = platform.SigningKeys
 						break
 					} else {
 						outputExists = false

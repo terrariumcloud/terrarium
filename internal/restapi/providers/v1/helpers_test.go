@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
 func Test_GetProviderNameFromRequest(t *testing.T) {
 	req := httptest.NewRequest("GET", "/providers/v1/hashicorp/random/versions", nil)
 	req = mux.SetURLVars(req, map[string]string{
