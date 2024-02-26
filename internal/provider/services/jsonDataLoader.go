@@ -6,12 +6,7 @@ import (
 	"os"
 )
 
-type LoadJSONData interface {
-	LoadData() (map[string]ProviderData, error)
-}
-
 // Structs to load data into (from a JSON file for now, will be from DB later)
-
 type GPGPublicKey struct {
 	KeyID          string `json:"key_id"`
 	ASCIIArmor     string `json:"ascii_armor"`
