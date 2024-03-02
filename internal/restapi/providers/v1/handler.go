@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"gopkg.in/errgo.v2/errors"
 
 	"github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
@@ -20,43 +19,13 @@ import (
 )
 
 type providersV1HttpService struct {
+	jsonHandler     services.ProviderVersionManager
 	responseHandler restapi.ResponseHandler
 	errorHandler    restapi.ErrorHandler
 }
 
-// Structs to load response into (for listing versions for a specific provider)
-
-type Platform struct {
-	OS   string `json:"os"`
-	Arch string `json:"arch"`
-}
-
-type VersionItem struct {
-	Version   string     `json:"version"`
-	Protocols []string   `json:"protocols"`
-	Platforms []Platform `json:"platforms"`
-}
-
-type ProviderVersionsResponse struct {
-	Versions []VersionItem `json:"versions"`
-}
-
-// Structs to load response into (for a provider's metadata)
-
-type PlatformMetadataResponse struct {
-	Protocols     []string             `json:"protocols"`
-	OS            string               `json:"os"`
-	Arch          string               `json:"arch"`
-	Filename      string               `json:"filename"`
-	DownloadURL   string               `json:"download_url"`
-	ShasumsURL    string               `json:"shasums_url"`
-	ShasumsSigURL string               `json:"shasums_signature_url"`
-	Shasum        string               `json:"shasum"`
-	SigningKeys   services.SigningKeys `json:"signing_keys"`
-}
-
-func New() *providersV1HttpService {
-	return &providersV1HttpService{}
+func New(jsonHandler services.ProviderVersionManager) *providersV1HttpService {
+	return &providersV1HttpService{jsonHandler: jsonHandler}
 }
 
 func (h *providersV1HttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -96,39 +65,13 @@ func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		span.AddEvent("Returning a list of available versions for a provider", trace.WithAttributes(attribute.String("Provider Name", providerName)))
 		span.SetAttributes(
 			attribute.String("provider.name", providerName),
 		)
 
-		var providerVersions ProviderVersionsResponse
-		var platform Platform
-
-		providerObj, err := services.LoadData()
+		providerVersions, err := h.jsonHandler.ListProviderVersions(providerName)
 		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Check if the provider ID exists
-		if providerData, exists := providerObj[providerName]; exists {
-			// Add the matched provider's version details to the ProviderVersionsResponse
-			for version, versionMetadata := range providerData {
-				var versionItem VersionItem
-				versionItem.Version = version
-				versionItem.Protocols = versionMetadata.Protocols
-				for _, versionPlatforms := range versionMetadata.Platforms {
-					platform.OS = versionPlatforms.OS
-					platform.Arch = versionPlatforms.Arch
-					versionItem.Platforms = append(versionItem.Platforms, platform)
-				}
-				providerVersions.Versions = append(providerVersions.Versions, versionItem)
-			}
-
-		} else {
-			errMsg := fmt.Sprintf("failed to retrieve the list of versions for %s", providerName)
-			span.RecordError(errors.New(errMsg))
-			h.errorHandler.Write(rw, errors.New(errMsg), http.StatusNoContent)
+			h.errorHandler.Write(rw, err, http.StatusNotFound)
 			return
 		}
 
@@ -153,66 +96,20 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		span.AddEvent("Fetching provider's metadata", trace.WithAttributes(attribute.String("Provider Name", providerName)))
 		span.SetAttributes(
 			attribute.String("module.name", providerName),
 		)
 
-		version, os, arch := GetProviderInputsFromRequest(r)
+		providerVersion, providerOS, providerArch := GetProviderInputsFromRequest(r)
 
-		var providerMetadata PlatformMetadataResponse
-		var outputExists bool
-
-		providerObj, err := services.LoadData()
+		providerMetadata, err := h.jsonHandler.GetVersionData(providerName, providerVersion, providerOS, providerArch)
 		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			h.errorHandler.Write(rw, err, http.StatusNotFound)
 			return
 		}
 
-		// Check if the provider ID exists
-		if providerData, exists := providerObj[providerName]; exists {
-			// Check if the version exists for the provider
-			if versionData, exists := providerData[version]; exists {
-				for _, platform := range versionData.Platforms {
-					if platform.OS == os && platform.Arch == arch {
-						outputExists = true
-						// Add the matched platform details to the providerMetadata
-						providerMetadata.Protocols = versionData.Protocols
-						providerMetadata.OS = platform.OS
-						providerMetadata.Arch = platform.Arch
-						providerMetadata.Filename = platform.Filename
-						providerMetadata.DownloadURL = platform.DownloadURL
-						providerMetadata.ShasumsURL = platform.ShasumsURL
-						providerMetadata.ShasumsSigURL = platform.ShasumsSignatureURL
-						providerMetadata.Shasum = platform.Shasum
-						providerMetadata.SigningKeys = platform.SigningKeys
-						break
-					} else {
-						outputExists = false
-					}
-				}
-			} else {
-				errMsg := fmt.Sprintf("failed to retrieve version: %s for: %s", version, providerName)
-				span.RecordError(errors.New(errMsg))
-				h.errorHandler.Write(rw, errors.New(errMsg), http.StatusNoContent)
-				return
-			}
-		} else {
-			errMsg := fmt.Sprintf("failed to retrieve: %s", providerName)
-			span.RecordError(errors.New(errMsg))
-			h.errorHandler.Write(rw, errors.New(errMsg), http.StatusNoContent)
-			return
-		}
-
-		if outputExists {
-			data, _ := json.Marshal(providerMetadata)
-			rw.Header().Add("Content-Type", "application/json")
-			_, _ = rw.Write(data)
-		} else {
-			errMsg := fmt.Sprintf("failed to retrieve the requested provider: %s for version: %s, os: %s and arch: %s", providerName, version, os, arch)
-			span.RecordError(errors.New(errMsg))
-			h.errorHandler.Write(rw, errors.New(errMsg), http.StatusNoContent)
-			return
-		}
+		data, _ := json.Marshal(providerMetadata)
+		rw.Header().Add("Content-Type", "application/json")
+		_, _ = rw.Write(data)
 	})
 }

@@ -3,6 +3,8 @@ package cmd
 import (
 	providersv1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 
+	"github.com/terrariumcloud/terrarium/internal/provider/services"
+
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +29,10 @@ func init() {
 }
 
 func runRESTProvidersV1Server(cmd *cobra.Command, args []string) {
-	restAPIServer := providersv1.New()
+	vm, err := services.NewJSONFileProviderVersionManager()
+	if err != nil {
+		panic(err)
+	}
+	restAPIServer := providersv1.New(vm)
 	startRESTAPIService("rest-providers-v1", mountPathProviders, restAPIServer)
 }
