@@ -1,3 +1,4 @@
 {
-  "modules.v1": "/modules/v1"
+  "modules.v1": "/modules/v1",
+  "providers.v1": "/providers/v1/"
 }

@@ -1,0 +1,180 @@
+package services
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
+	"gopkg.in/errgo.v2/errors"
+)
+
+type ProviderVersionManager interface {
+	ListProviderVersions(providerName string) (*ProviderVersionsResponse, error)
+	GetVersionData(providerName string, version string, os string, arch string) (*PlatformMetadataResponse, error)
+}
+
+// Structs to load data into (from a JSON file for now, will be from DB later)
+type GPGPublicKey struct {
+	KeyID          string `json:"key_id"`
+	ASCIIArmor     string `json:"ascii_armor"`
+	TrustSignature string `json:"trust_signature"`
+	Source         string `json:"source"`
+	SourceURL      string `json:"source_url"`
+}
+
+type SigningKeys struct {
+	GPGPublicKeys []GPGPublicKey `json:"gpg_public_keys"`
+}
+
+type ProviderMetadata struct {
+	OS                  string      `json:"os"`
+	Arch                string      `json:"arch"`
+	Filename            string      `json:"filename"`
+	DownloadURL         string      `json:"download_url"`
+	ShasumsURL          string      `json:"shasums_url"`
+	ShasumsSignatureURL string      `json:"shasums_signature_url"`
+	Shasum              string      `json:"shasum"`
+	SigningKeys         SigningKeys `json:"signing_keys"`
+}
+
+type VersionData struct {
+	Protocols []string           `json:"protocols"`
+	Platforms []ProviderMetadata `json:"platforms"`
+}
+
+type ProviderData map[string]VersionData
+
+type JSONFileProviderVersionManager struct {
+	data map[string]ProviderData
+}
+
+// Structs to load response into (for listing versions for a specific provider)
+
+type Platform struct {
+	OS   string `json:"os"`
+	Arch string `json:"arch"`
+}
+
+type VersionItem struct {
+	Version   string     `json:"version"`
+	Protocols []string   `json:"protocols"`
+	Platforms []Platform `json:"platforms"`
+}
+
+type ProviderVersionsResponse struct {
+	Versions []VersionItem `json:"versions"`
+}
+
+// Structs to load response into (for a provider's metadata)
+
+type PlatformMetadataResponse struct {
+	Protocols     []string    `json:"protocols"`
+	OS            string      `json:"os"`
+	Arch          string      `json:"arch"`
+	Filename      string      `json:"filename"`
+	DownloadURL   string      `json:"download_url"`
+	ShasumsURL    string      `json:"shasums_url"`
+	ShasumsSigURL string      `json:"shasums_signature_url"`
+	Shasum        string      `json:"shasum"`
+	SigningKeys   SigningKeys `json:"signing_keys"`
+}
+
+var providerObj map[string]ProviderData
+
+func LoadData() (map[string]ProviderData, error) {
+	log.Printf("loadJSONDataIntoStructs")
+
+	filePath := "./providers.json"
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(data, &providerObj); err != nil {
+		return nil, err
+	}
+	return providerObj, nil
+}
+
+func NewJSONFileProviderVersionManager() (ProviderVersionManager, error) {
+	if data, err := LoadData(); err == nil {
+		return &JSONFileProviderVersionManager{data: data}, nil
+	} else {
+		return nil, err
+	}
+}
+
+func (vm *JSONFileProviderVersionManager) ListProviderVersions(providerName string) (*ProviderVersionsResponse, error) {
+
+	var providerVersions ProviderVersionsResponse
+	var platform Platform
+
+	// Check if the provider ID exists
+	if providerData, exists := providerObj[providerName]; exists {
+		// Add the matched provider's version details to the ProviderVersionsResponse
+		for version, versionMetadata := range providerData {
+			var versionItem VersionItem
+			versionItem.Version = version
+			versionItem.Protocols = versionMetadata.Protocols
+			for _, versionPlatforms := range versionMetadata.Platforms {
+				platform.OS = versionPlatforms.OS
+				platform.Arch = versionPlatforms.Arch
+				versionItem.Platforms = append(versionItem.Platforms, platform)
+			}
+			providerVersions.Versions = append(providerVersions.Versions, versionItem)
+		}
+
+	} else {
+		errMsg := fmt.Sprintf("failed to retrieve the list of versions for %s", providerName)
+		return nil, errors.New(errMsg)
+	}
+
+	return &providerVersions, nil
+}
+
+func (vm *JSONFileProviderVersionManager) GetVersionData(providerName string, version string, os string, arch string) (*PlatformMetadataResponse, error) {
+
+	var providerMetadata PlatformMetadataResponse
+	var outputExists bool
+
+	// Check if the provider ID exists
+	if providerData, exists := providerObj[providerName]; exists {
+		// Check if the version exists for the provider
+		if versionData, exists := providerData[version]; exists {
+			for _, platform := range versionData.Platforms {
+				if platform.OS == os && platform.Arch == arch {
+					outputExists = true
+					// Add the matched platform details to the providerMetadata
+					providerMetadata.Protocols = versionData.Protocols
+					providerMetadata.OS = platform.OS
+					providerMetadata.Arch = platform.Arch
+					providerMetadata.Filename = platform.Filename
+					providerMetadata.DownloadURL = platform.DownloadURL
+					providerMetadata.ShasumsURL = platform.ShasumsURL
+					providerMetadata.ShasumsSigURL = platform.ShasumsSignatureURL
+					providerMetadata.Shasum = platform.Shasum
+					providerMetadata.SigningKeys = platform.SigningKeys
+					break
+				} else {
+					outputExists = false
+				}
+			}
+		} else {
+			errMsg := fmt.Sprintf("failed to retrieve version: %s for: %s", version, providerName)
+			return nil, errors.New(errMsg)
+		}
+	} else {
+		errMsg := fmt.Sprintf("failed to retrieve : %s", providerName)
+		return nil, errors.New(errMsg)
+	}
+
+	if outputExists {
+		return &providerMetadata, nil
+	} else {
+		errMsg := fmt.Sprintf("failed to retrieve provider %s (version %s) for os: %s and arch: %s", providerName, version, os, arch)
+		return nil, errors.New(errMsg)
+	}
+
+}
