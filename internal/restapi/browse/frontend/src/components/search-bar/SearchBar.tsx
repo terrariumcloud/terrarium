@@ -80,7 +80,7 @@ export default function SearchBar({filterValue, setFilter}: {filterValue?: strin
               </Search>
           }
           <Box sx={{ flexGrow: 1 }} />
-          <Button color="inherit" component={RouterLink} to="/terraform-modules">Browse</Button>
+          <Button color="inherit" component={RouterLink} to="/">Browse</Button>
         </Toolbar>
       </AppBar>
     </Box>

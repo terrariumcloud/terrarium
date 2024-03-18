@@ -3,10 +3,14 @@ import React from 'react';
 import './App.css';
 import Main from './pages/main/Main';
 import Browse from './pages/modules/browse/Browse';
+import BrowseProviders from './pages/providers/browse/Browse'
 import Releases from './pages/modules/release/Releases';
 import ModuleInfo from './pages/modules/moduleinfo/ModuleInfo';
 import ModuleDetailDescription from './pages/modules/moduleinfo/ModuleDetailDescription';
 import ModuleDetailVersions from './pages/modules/moduleinfo/ModuleDetailVersions';
+import ProviderInfo from './pages/providers/providerinfo/ProviderInfo';
+import ProviderDetailDescription from './pages/providers/providerinfo/ProviderDetailDescription';
+import ProviderDetailVersions from './pages/providers/providerinfo/ProviderDetailVersions';
 
 import {
     createBrowserRouter,
@@ -62,6 +66,34 @@ const routes = [
                     {
                         index: true,
                         element: <Releases />,
+                    },
+                ],
+            },
+            {
+                path: "terraform-providers",
+                errorElement: <ServerError />,
+                children: [
+                    {
+                        index: true,
+                        element: <BrowseProviders />,
+                    },
+                    {
+                        path: ":org/:name/",
+                        element: <ProviderInfo />,
+                        children: [
+                            {
+                                index: true,
+                                element: <ProviderDetailDescription />,
+                            },
+                            {
+                                path: "description",
+                                element: <ProviderDetailDescription />,
+                            },
+                            {
+                                path: "versions",
+                                element: <ProviderDetailVersions />,
+                            }
+                        ]
                     },
                 ],
             },
