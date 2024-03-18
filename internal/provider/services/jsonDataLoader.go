@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"strings"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,8 @@ import (
 type ProviderVersionManager interface {
 	ListProviderVersions(providerName string) (*ProviderVersionsResponse, error)
 	GetVersionData(providerName string, version string, os string, arch string) (*PlatformMetadataResponse, error)
+	ListProviders() (*ListProviderResponse, error)
+	GetProviders(providerName string) (*ListProviderItem, error)
 }
 
 // Structs to load data into (from a JSON file for now, will be from DB later)
@@ -78,6 +81,20 @@ type PlatformMetadataResponse struct {
 	ShasumsSigURL string      `json:"shasums_signature_url"`
 	Shasum        string      `json:"shasum"`
 	SigningKeys   SigningKeys `json:"signing_keys"`
+}
+
+// Structs to load response into (for listing providers)
+
+type ListProviderResponse struct {
+	Providers	[]*ListProviderItem	`json:"providers"`
+}
+
+type ListProviderItem struct {
+	Organization string          `json:"organization,omitempty"`
+    Name         string          `json:"name,omitempty"`
+    Description  string          `json:"description,omitempty"`
+    SourceUrl    string          `json:"source_url,omitempty"`
+    Maturity     string			 `json:"maturity,omitempty"`
 }
 
 var providerObj map[string]ProviderData
@@ -174,6 +191,46 @@ func (vm *JSONFileProviderVersionManager) GetVersionData(providerName string, ve
 		return &providerMetadata, nil
 	} else {
 		errMsg := fmt.Sprintf("failed to retrieve provider %s (version %s) for os: %s and arch: %s", providerName, version, os, arch)
+		return nil, errors.New(errMsg)
+	}
+
+}
+
+func (vm *JSONFileProviderVersionManager) ListProviders() (*ListProviderResponse, error) {
+	var providersList ListProviderResponse
+
+	for key := range providerObj {
+		parts := strings.Split(key, "/")
+		
+		provider := &ListProviderItem {
+			Organization: parts[0],
+			Name: parts[1],
+			Description:  "This is the description for the provider it is supposedly a long text.",
+			SourceUrl:    "https://github.com/...",
+			Maturity:     "3",
+		}
+		providersList.Providers = append(providersList.Providers, provider)
+	}
+
+	return &providersList, nil
+}
+
+func (vm *JSONFileProviderVersionManager) GetProviders(providerName string) (*ListProviderItem, error) {
+
+	if _, exists := providerObj[providerName]; exists {
+		parts := strings.Split(providerName, "/") //If provider exists, then taking provider name to split the orgName/providerName as taking providerObj is package dependent (struct) & not expected input for Split method (this is for time being)
+
+		provider := &ListProviderItem{
+			Organization: parts[0],
+			Name: parts[1],
+			Description:  "This is the description for the provider it is supposedly a long text.",
+			SourceUrl:    "https://github.com/...",
+			Maturity:     "3",
+		}
+		return provider, nil
+
+	} else {
+		errMsg := fmt.Sprintf("failed to retrieve : %s", providerName)
 		return nil, errors.New(errMsg)
 	}
 

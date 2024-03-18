@@ -6,6 +6,7 @@ import (
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 )
 
 var browseCmd = &cobra.Command{
@@ -24,8 +25,13 @@ func init() {
 
 func runBrowseServer(cmd *cobra.Command, args []string) {
 
+	vm, err := providerServices.NewJSONFileProviderVersionManager()
+	if err != nil {
+		panic(err)
+	}
+
 	restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
 		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
-		release.NewBrowseGrpcClient(release.ReleaseServiceEndpoint))
+		release.NewBrowseGrpcClient(release.ReleaseServiceEndpoint),vm)
 	startRESTAPIService("browse", "", restAPIServer)
 }

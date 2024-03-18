@@ -15,16 +15,19 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	v1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
+	providersV1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 
 	"github.com/apparentlymart/go-versions/versions"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 	releaseServices "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 )
 
 type browseHttpService struct {
+	jsonHandler     	 providerServices.ProviderVersionManager
 	registrarClient      services.RegistrarClient
 	versionManagerClient services.VersionManagerClient
 	releasesClient       releaseServices.BrowseClient
@@ -38,8 +41,8 @@ func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
-func New(registrarClient services.RegistrarClient, versionManagerClient services.VersionManagerClient, releasesClient releaseServices.BrowseClient) *browseHttpService {
-	return &browseHttpService{registrarClient: registrarClient, versionManagerClient: versionManagerClient, releasesClient: releasesClient}
+func New(registrarClient services.RegistrarClient, versionManagerClient services.VersionManagerClient, releasesClient releaseServices.BrowseClient, jsonHandler providerServices.ProviderVersionManager) *browseHttpService {
+	return &browseHttpService{registrarClient: registrarClient, versionManagerClient: versionManagerClient, releasesClient: releasesClient, jsonHandler: jsonHandler}
 }
 
 func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
@@ -55,6 +58,8 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.Handle("/releases", h.getReleasesHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/organizations", h.getOrganizationsHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/providers", h.getProviderListHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/providers/{organization_name}/{name}", h.getProviderMetadataHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }
@@ -209,5 +214,65 @@ func (h *browseHttpService) getOrganizationsHandler() http.Handler {
 
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
+	})
+}
+
+// GetProviderListHandler will return a list of all published providers.
+func (h *browseHttpService) getProviderListHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+
+		if jsonResponse, err := h.jsonHandler.ListProviders(); err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of providers from backend service"), http.StatusInternalServerError)
+			return
+		} else {
+			data, _ := json.Marshal(createProvidersResponse(jsonResponse.Providers))
+
+			rw.Header().Add("Content-Type", "application/json")
+			_, _ = rw.Write(data)
+		}
+	})
+}
+
+func (h *browseHttpService) getProviderMetadataHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		providerName := providersV1.GetProviderNameFromRequest(r)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		span.SetAttributes(
+			attribute.String("provider.name", providerName),
+		)
+
+		jsonResponse, err := h.jsonHandler.GetProviders(providerName)
+		if err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of providers from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		versionResponse, err := h.jsonHandler.ListProviderVersions(providerName)
+		if err != nil {
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		var filteredVersions []string
+
+		for _, providerVersion := range versionResponse.Versions {
+			parsedVersion := versions.MustParseVersion(providerVersion.Version)
+
+			if parsedVersion.GreaterThan(versions.MustParseVersion("0.0.0")) {
+				filteredVersions = append(filteredVersions, providerVersion.Version)
+			}
+
+		}
+		data := createProviderMetadataResponse(jsonResponse, filteredVersions)
+
+		h.responseHandler.Write(rw, data, http.StatusOK)
 	})
 }

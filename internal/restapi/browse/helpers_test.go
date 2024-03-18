@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 )
 
 func Test_createModuleMetadataResponse(t *testing.T) {
@@ -51,6 +52,53 @@ func Test_createModuleMetadataResponse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := createModuleMetadataResponse(tt.args.moduleMetadata, tt.args.moduleVersions); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createModuleMetadataResponse() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_createProviderMetadataResponse(t *testing.T) {
+	type args struct {
+		providerMetadata *providerServices.ListProviderItem
+		providerVersions []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *providerItem
+	}{
+		{
+			name: "Provider Metadata Response",
+			args: args{
+				providerMetadata: &providerServices.ListProviderItem{
+					Organization: "cie",
+					Name:         "test-provider",
+					Description:  "This is the description for the provider it is supposedly a long text",
+					SourceUrl:    "https://github.com/...",
+					Maturity:     "4",
+				},
+				providerVersions: []string{
+					"1.0.3",
+					"1.0.4",
+				},
+			},
+			want: &providerItem{
+				Organization: "cie",
+				Name:         "test-provider",
+				Description:  "This is the description for the provider it is supposedly a long text",
+				SourceUrl:    "https://github.com/...",
+				Maturity:     "4",
+				Versions: []string{
+					"1.0.3",
+					"1.0.4",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := createProviderMetadataResponse(tt.args.providerMetadata, tt.args.providerVersions); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("createProviderMetadataResponse() = %v, want %v", got, tt.want)
 			}
 		})
 	}
