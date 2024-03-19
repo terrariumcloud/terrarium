@@ -99,12 +99,11 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 		providerVersion, providerOS, providerArch := GetProviderInputsFromRequest(r)
 		span.SetAttributes(
 			attribute.String("module.name", providerName),
-						attribute.String("provider.name", providerName),
+			attribute.String("provider.name", providerName),
 			attribute.String("provider.version", providerVersion),
 			attribute.String("provider.os", providerOS),
 			attribute.String("provider.arch", providerArch),
 		)
-
 
 		providerMetadata, err := h.jsonHandler.GetVersionData(providerName, providerVersion, providerOS, providerArch)
 		if err != nil {

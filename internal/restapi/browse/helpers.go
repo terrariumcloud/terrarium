@@ -2,8 +2,8 @@ package browse
 
 import (
 	"github.com/terrariumcloud/terrarium/internal/module/services"
-	release "github.com/terrariumcloud/terrarium/internal/release/services"
 	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
+	release "github.com/terrariumcloud/terrarium/internal/release/services"
 
 	"google.golang.org/grpc"
 )
@@ -62,11 +62,11 @@ func createModuleMetadataResponse(moduleMetadata *services.ModuleMetadata, modul
 func createProviderMetadataResponse(providerMetadata *providerServices.ListProviderItem, providerVersions []string) *providerItem {
 	return &providerItem{
 		Organization: providerMetadata.Organization,
-		Name: 		  providerMetadata.Name,
+		Name:         providerMetadata.Name,
 		Description:  providerMetadata.Description,
-		SourceUrl: 	  providerMetadata.SourceUrl,
-		Maturity: 	  providerMetadata.Maturity,
-		Versions: 	  providerVersions,
+		SourceUrl:    providerMetadata.SourceUrl,
+		Maturity:     providerMetadata.Maturity,
+		Versions:     providerVersions,
 	}
 }
 

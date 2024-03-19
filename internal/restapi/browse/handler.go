@@ -27,7 +27,7 @@ import (
 )
 
 type browseHttpService struct {
-	jsonHandler     	 providerServices.ProviderVersionManager
+	jsonHandler          providerServices.ProviderVersionManager
 	registrarClient      services.RegistrarClient
 	versionManagerClient services.VersionManagerClient
 	releasesClient       releaseServices.BrowseClient

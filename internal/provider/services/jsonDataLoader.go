@@ -2,10 +2,10 @@ package services
 
 import (
 	"encoding/json"
-	"strings"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"gopkg.in/errgo.v2/errors"
 )
@@ -86,15 +86,15 @@ type PlatformMetadataResponse struct {
 // Structs to load response into (for listing providers)
 
 type ListProviderResponse struct {
-	Providers	[]*ListProviderItem	`json:"providers"`
+	Providers []*ListProviderItem `json:"providers"`
 }
 
 type ListProviderItem struct {
-	Organization string          `json:"organization,omitempty"`
-    Name         string          `json:"name,omitempty"`
-    Description  string          `json:"description,omitempty"`
-    SourceUrl    string          `json:"source_url,omitempty"`
-    Maturity     string			 `json:"maturity,omitempty"`
+	Organization string `json:"organization,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Description  string `json:"description,omitempty"`
+	SourceUrl    string `json:"source_url,omitempty"`
+	Maturity     string `json:"maturity,omitempty"`
 }
 
 var providerObj map[string]ProviderData
@@ -201,10 +201,10 @@ func (vm *JSONFileProviderVersionManager) ListProviders() (*ListProviderResponse
 
 	for key := range providerObj {
 		parts := strings.Split(key, "/")
-		
-		provider := &ListProviderItem {
+
+		provider := &ListProviderItem{
 			Organization: parts[0],
-			Name: parts[1],
+			Name:         parts[1],
 			Description:  "This is the description for the provider it is supposedly a long text.",
 			SourceUrl:    "https://github.com/...",
 			Maturity:     "3",
@@ -222,7 +222,7 @@ func (vm *JSONFileProviderVersionManager) GetProviders(providerName string) (*Li
 
 		provider := &ListProviderItem{
 			Organization: parts[0],
-			Name: parts[1],
+			Name:         parts[1],
 			Description:  "This is the description for the provider it is supposedly a long text.",
 			SourceUrl:    "https://github.com/...",
 			Maturity:     "3",

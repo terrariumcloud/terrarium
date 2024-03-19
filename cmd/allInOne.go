@@ -7,13 +7,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	services2 "github.com/terrariumcloud/terrarium/internal/module/services"
-	services3 "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/gateway"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	storage2 "github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	services3 "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
 	modulesv1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
@@ -108,9 +108,9 @@ var allInOneCmd = &cobra.Command{
 		startAllInOneGrpcServices([]services2.Service{gatewayServer}, allInOneGrpcGatewayEndpoint)
 
 		vm, err := services3.NewJSONFileProviderVersionManager()
-			if err != nil {
-				panic(err)
-			}
+		if err != nil {
+			panic(err)
+		}
 
 		restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(allInOneInternalEndpoint),
 			version_manager.NewVersionManagerGrpcClient(allInOneInternalEndpoint),
