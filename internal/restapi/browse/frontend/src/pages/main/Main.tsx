@@ -60,9 +60,21 @@ function Main() {
                 </Grid>
                 <Grid item xs={7} >
                     <Typography variant="h5" align='right' gutterBottom>Providers</Typography>
-                    <Typography variant="body2" align='right' gutterBottom>
-                        With Terrarium you will be able to publish and consume Terraform Provider. But it is not yet available.
+                    <Typography variant="body2" gutterBottom>
+                        With Terrarium you will be able to publish and consume Terraform Provider. All the provider that are
+                        currently available are available for consumption to include a provider you just need a few things:
                     </Typography>
+                    <List>
+                        <ListItem>You need to declare the provider in your terraform code.</ListItem>
+                        <ListItem>You need to reference the terrarium address for the provider.</ListItem>
+                        <ListItem>You need to specify the version of the provider.</ListItem>
+                    </List>
+                    <Typography variant="body2" gutterBottom>
+                        To discover the list of available providers and their versions, Terrarium comes with provider discovery
+                        and search capabilities which we hopefully made friendly enough to be of use.
+                    </Typography>
+                    <br />
+                    <Button variant="contained" fullWidth component={RouterLink} to="terraform-providers">Browse for providers</Button>
                 </Grid>
             </Grid>
 

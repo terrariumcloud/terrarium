@@ -16,6 +16,9 @@ function Header() {
         <Button color="inherit" component={RouterLink} to="/terraform-modules" style={{ textTransform: "capitalize" }}>
           Modules
         </Button>
+        <Button color="inherit" component={RouterLink} to="/terraform-providers" style={{ textTransform: "capitalize" }}>
+          Providers
+        </Button>
         <Button color="inherit" component={RouterLink} to="/releases" style={{ textTransform: "capitalize" }}>
           Releases
         </Button>
