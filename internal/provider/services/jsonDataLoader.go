@@ -225,7 +225,7 @@ func (vm *JSONFileProviderVersionManager) GetProviders(providerName string) (*Li
 			Name:         parts[1],
 			Description:  "This is the description for the provider it is supposedly a long text.",
 			SourceUrl:    "https://github.com/...",
-			Maturity:     "3",
+			Maturity:     "DEVELOPMENT",
 		}
 		return provider, nil
 
