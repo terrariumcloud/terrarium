@@ -25,13 +25,13 @@ func init() {
 
 func runBrowseServer(cmd *cobra.Command, args []string) {
 
-	vm, err := providerServices.NewJSONFileProviderVersionManager()
+	version_manager_svc, err := providerServices.NewJSONFileProviderVersionManager()
 	if err != nil {
 		panic(err)
 	}
 
 	restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(registrar.RegistrarServiceEndpoint),
 		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
-		release.NewBrowseGrpcClient(release.ReleaseServiceEndpoint), vm)
+		release.NewBrowseGrpcClient(release.ReleaseServiceEndpoint), version_manager_svc)
 	startRESTAPIService("browse", "", restAPIServer)
 }

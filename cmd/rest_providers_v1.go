@@ -29,10 +29,10 @@ func init() {
 }
 
 func runRESTProvidersV1Server(cmd *cobra.Command, args []string) {
-	vm, err := services.NewJSONFileProviderVersionManager()
+	version_manager_svc, err := services.NewJSONFileProviderVersionManager()
 	if err != nil {
 		panic(err)
 	}
-	restAPIServer := providersv1.New(vm)
+	restAPIServer := providersv1.New(version_manager_svc)
 	startRESTAPIService("rest-providers-v1", mountPathProviders, restAPIServer)
 }
