@@ -60,6 +60,8 @@ func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
 	apiRouter.Handle("/types", h.getReleaseTypesHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/providers", h.getProviderListHandler()).Methods(http.MethodGet)
 	apiRouter.Handle("/providers/{organization_name}/{name}", h.getProviderMetadataHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/providers", h.getProviderListHandler()).Methods(http.MethodGet)
+	apiRouter.Handle("/providers/{organization_name}/{name}", h.getProviderMetadataHandler()).Methods(http.MethodGet)
 	rootRouter.PathPrefix("/").Handler(getFrontendSpaHandler())
 	return rootRouter
 }

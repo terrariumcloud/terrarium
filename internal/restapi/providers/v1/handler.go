@@ -99,6 +99,7 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 		providerVersion, providerOS, providerArch := GetProviderInputsFromRequest(r)
 		span.SetAttributes(
 			attribute.String("provider.name", providerName),
+			attribute.String("provider.name", providerName),
 			attribute.String("provider.version", providerVersion),
 			attribute.String("provider.os", providerOS),
 			attribute.String("provider.arch", providerArch),
