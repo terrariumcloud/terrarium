@@ -21,7 +21,7 @@ func init() {
 	browseCmd.Flags().StringVarP(&registrar.RegistrarServiceEndpoint, "registrar", "", registrar.DefaultRegistrarServiceEndpoint, "GRPC Endpoint for Module Registrar Service")
 	browseCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	browseCmd.Flags().StringVarP(&release.ReleaseServiceEndpoint, "release", "", release.DefaultReleaseServiceEndpoint, "GRPC Endpoint for Release Service")
-	browseCmd.Flags().StringVarP(&providerVersionManager.VersionManagerEndpoint, "provider-version-manager", "", providerVersionManager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Provider Version Manager Service")
+	browseCmd.Flags().StringVarP(&providerVersionManager.VersionManagerEndpoint, "provider-version-manager", "", providerVersionManager.DefaultProviderVersionManagerEndpoint, "GRPC Endpoint for Provider Version Manager Service")
 	rootCmd.AddCommand(browseCmd)
 }
 

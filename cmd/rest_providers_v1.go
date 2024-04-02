@@ -24,7 +24,7 @@ func init() {
 		"providers",
 		"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
 	)
-	providersV1Cmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "provider-version-manager", "", version_manager.DefaultVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	providersV1Cmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "provider-version-manager", "", version_manager.DefaultProviderVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
 	rootCmd.AddCommand(providersV1Cmd)
 }
 
