@@ -575,11 +575,11 @@ func unmarshalProvider(item map[string]types.AttributeValue) (*services.ListProv
 	providerAddress := strings.Split(provider.Name, "/")
 
 	result := services.ListProviderItem{
-		Organization: providerAddress[0],
-		Name:         providerAddress[1],
-		Description:  provider.Description,
-		SourceRepoUrl:    provider.SourceRepoUrl,
-		Maturity:     terrarium.Maturity(terrarium.Maturity_value[provider.Maturity]),
+		Organization:  providerAddress[0],
+		Name:          providerAddress[1],
+		Description:   provider.Description,
+		SourceRepoUrl: provider.SourceRepoUrl,
+		Maturity:      terrarium.Maturity(terrarium.Maturity_value[provider.Maturity]),
 	}
 
 	return &result, nil
@@ -595,25 +595,25 @@ func unmarshalProviderMetadata(item map[string]types.AttributeValue) (*services.
 	signingKeys := &services.SigningKeys{
 		GpgPublicKeys: []*services.GPGPublicKey{
 			{
-				KeyId:         provider.KeyID,
-				AsciiArmor:    provider.ASCIIArmor,
+				KeyId:          provider.KeyID,
+				AsciiArmor:     provider.ASCIIArmor,
 				TrustSignature: provider.TrustSignature,
-				Source:        provider.Source,
-				SourceUrl:     provider.SourceURL,
+				Source:         provider.Source,
+				SourceUrl:      provider.SourceURL,
 			},
 		},
 	}
 
 	result := services.PlatformMetadataResponse{
-		Protocols: provider.Protocols,
-		Os: provider.OS,
-		Arch: provider.Arch,
-		Filename: provider.Filename,
-		DownloadUrl: provider.DownloadURL,
-		ShasumsUrl: provider.ShasumsURL,
+		Protocols:           provider.Protocols,
+		Os:                  provider.OS,
+		Arch:                provider.Arch,
+		Filename:            provider.Filename,
+		DownloadUrl:         provider.DownloadURL,
+		ShasumsUrl:          provider.ShasumsURL,
 		ShasumsSignatureUrl: provider.ShasumsSignatureURL,
-		Shasum: provider.Shasum,
-		SigningKeys: signingKeys,
+		Shasum:              provider.Shasum,
+		SigningKeys:         signingKeys,
 	}
 
 	return &result, nil
@@ -628,13 +628,13 @@ func unmarshalProviderVersionItem(item map[string]types.AttributeValue) (*servic
 
 	platform := []*services.Platform{
 		{
-			Os: provider.OS,
+			Os:   provider.OS,
 			Arch: provider.Arch,
 		},
 	}
 
 	result := services.VersionItem{
-		Version: provider.Version,
+		Version:   provider.Version,
 		Protocols: provider.Protocols,
 		Platforms: platform,
 	}

@@ -19,12 +19,12 @@ type moduleItem struct {
 }
 
 type providerItem struct {
-	Organization string   `json:"organization"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	SourceRepoUrl    string   `json:"source_repo_url"`
-	Maturity     string   `json:"maturity,omitempty"`
-	Versions     []string `json:"versions,omitempty"`
+	Organization  string   `json:"organization"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
+	SourceRepoUrl string   `json:"source_repo_url"`
+	Maturity      string   `json:"maturity,omitempty"`
+	Versions      []string `json:"versions,omitempty"`
 }
 
 type modulesResponse struct {
@@ -61,12 +61,12 @@ func createModuleMetadataResponse(moduleMetadata *services.ModuleMetadata, modul
 
 func createProviderMetadataResponse(providerMetadata *providerServices.ListProviderItem, providerVersions []string) *providerItem {
 	return &providerItem{
-		Organization: providerMetadata.Organization,
-		Name:         providerMetadata.Name,
-		Description:  providerMetadata.Description,
+		Organization:  providerMetadata.Organization,
+		Name:          providerMetadata.Name,
+		Description:   providerMetadata.Description,
 		SourceRepoUrl: providerMetadata.SourceRepoUrl,
-		Maturity:     providerMetadata.Maturity.String(),
-		Versions:     providerVersions,
+		Maturity:      providerMetadata.Maturity.String(),
+		Versions:      providerVersions,
 	}
 }
 
