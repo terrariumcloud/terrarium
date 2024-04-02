@@ -75,7 +75,7 @@ func Test_createProviderMetadataResponse(t *testing.T) {
 					Name:         "test-provider",
 					Description:  "This is the description for the provider it is supposedly a long text",
 					SourceUrl:    "https://github.com/...",
-					Maturity:     "4",
+					Maturity:     6,
 				},
 				providerVersions: []string{
 					"1.0.3",
@@ -87,7 +87,7 @@ func Test_createProviderMetadataResponse(t *testing.T) {
 				Name:         "test-provider",
 				Description:  "This is the description for the provider it is supposedly a long text",
 				SourceUrl:    "https://github.com/...",
-				Maturity:     "4",
+				Maturity:     "DEPRECATED",
 				Versions: []string{
 					"1.0.3",
 					"1.0.4",

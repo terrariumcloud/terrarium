@@ -19,13 +19,13 @@ import (
 )
 
 type providersV1HttpService struct {
-	jsonHandler     services.ProviderVersionManager
+	versionManagerClient services.VersionManagerClient
 	responseHandler restapi.ResponseHandler
 	errorHandler    restapi.ErrorHandler
 }
 
-func New(jsonHandler services.ProviderVersionManager) *providersV1HttpService {
-	return &providersV1HttpService{jsonHandler: jsonHandler}
+func New(versionManagerClient services.VersionManagerClient) *providersV1HttpService {
+	return &providersV1HttpService{versionManagerClient: versionManagerClient}
 }
 
 func (h *providersV1HttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -69,7 +69,7 @@ func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 			attribute.String("provider.name", providerName),
 		)
 
-		providerVersions, err := h.jsonHandler.ListProviderVersions(providerName)
+		providerVersions, err := h.versionManagerClient.ListProviderVersions(r.Context(),&services.ProviderName{Provider: providerName})
 		if err != nil {
 			h.errorHandler.Write(rw, err, http.StatusNotFound)
 			return
@@ -104,7 +104,12 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 			attribute.String("provider.arch", providerArch),
 		)
 
-		providerMetadata, err := h.jsonHandler.GetVersionData(providerName, providerVersion, providerOS, providerArch)
+		providerMetadata, err := h.versionManagerClient.GetVersionData(r.Context(), &services.VersionDataRequest{
+			Name: providerName,
+			Version: providerVersion,
+			Os: providerOS,
+			Arch: providerArch, 
+		})
 		if err != nil {
 			h.errorHandler.Write(rw, err, http.StatusNotFound)
 			return

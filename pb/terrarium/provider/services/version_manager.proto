@@ -1,0 +1,97 @@
+syntax = "proto3";
+package terrarium.provider.services;
+
+import "pb/terrarium/provider/provider.proto";
+
+option go_package = "github.com/terrariumcloud/terrarium/internal/provider/services";
+
+service VersionManager {
+  rpc Register(terrarium.provider.RegisterProviderRequest) returns (terrarium.provider.Response);
+  rpc ListProviderVersions(ProviderName) returns (ProviderVersionsResponse);
+  rpc GetVersionData(VersionDataRequest) returns (PlatformMetadataResponse);
+  rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
+  rpc GetProvider(ProviderName) returns (GetProviderResponse);
+  rpc PublishVersion(PublishVersionRequest) returns (terrarium.provider.Response);
+  rpc AbortProvider(TerminateProviderRequest) returns (terrarium.provider.Response);
+  rpc AbortProviderVersion(TerminateVersionRequest) returns (terrarium.provider.Response);
+}
+
+message TerminateVersionRequest {
+    terrarium.provider.ProviderVersion provider = 1;
+}
+
+message TerminateProviderRequest {
+    terrarium.provider.ProviderName provider = 1;
+}
+
+message PublishVersionRequest {
+    terrarium.provider.Provider provider = 1;
+}
+
+message ProviderName {
+  string provider = 1;
+}
+
+message Platform {
+  string os = 1;
+  string arch = 2;
+}
+
+message VersionItem {
+  string version = 1;
+  repeated string protocols = 2;
+  repeated Platform platforms = 3;
+}
+
+message ProviderVersionsResponse {
+  repeated VersionItem versions = 1;
+}
+
+message VersionDataRequest {
+  string name = 1;
+  string version = 2;
+  string os = 3;
+  string arch = 4;
+}
+
+message GPGPublicKey {
+  string key_id = 1;
+  string ascii_armor = 2;
+  string trust_signature = 3;
+  string source = 4;
+  string source_url = 5;
+}
+
+message SigningKeys {
+  repeated GPGPublicKey gpg_public_keys = 1;
+}
+
+message PlatformMetadataResponse {
+  repeated string protocols = 1;
+  string os = 2;
+  string arch = 3;
+  string filename = 4;
+  string download_url = 5;
+  string shasums_url = 6;
+  string shasums_signature_url = 7;
+  string shasum = 8;
+  SigningKeys signing_keys = 9;
+}
+
+message ListProvidersRequest {}
+
+message ListProvidersResponse {
+  repeated ListProviderItem providers = 1;
+}
+
+message ListProviderItem {
+  string organization = 1;
+  string name = 2;
+  string description = 3;
+  string source_url = 4;
+  terrarium.provider.Maturity maturity = 5;
+}
+
+message GetProviderResponse {
+  ListProviderItem provider = 1;
+}

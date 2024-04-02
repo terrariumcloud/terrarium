@@ -32,7 +32,7 @@ type modulesResponse struct {
 }
 
 type providersResponse struct {
-	Providers []*providerServices.ListProviderItem `json:"providers"`
+	Providers []*providerServices.ListProviderItem`json:"providers"`
 }
 
 func createModulesResponse(modules []*services.ModuleMetadata) *modulesResponse {
@@ -65,7 +65,7 @@ func createProviderMetadataResponse(providerMetadata *providerServices.ListProvi
 		Name:         providerMetadata.Name,
 		Description:  providerMetadata.Description,
 		SourceUrl:    providerMetadata.SourceUrl,
-		Maturity:     providerMetadata.Maturity,
+		Maturity:     providerMetadata.Maturity.String(),
 		Versions:     providerVersions,
 	}
 }

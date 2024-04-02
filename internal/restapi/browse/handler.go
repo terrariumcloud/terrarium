@@ -27,12 +27,12 @@ import (
 )
 
 type browseHttpService struct {
-	jsonHandler          providerServices.ProviderVersionManager
-	registrarClient      services.RegistrarClient
-	versionManagerClient services.VersionManagerClient
-	releasesClient       releaseServices.BrowseClient
-	responseHandler      restapi.ResponseHandler
-	errorHandler         restapi.ErrorHandler
+	providerVersionManagerClient	providerServices.VersionManagerClient
+	registrarClient      			services.RegistrarClient
+	versionManagerClient 			services.VersionManagerClient
+	releasesClient      			releaseServices.BrowseClient
+	responseHandler     			restapi.ResponseHandler
+	errorHandler        			restapi.ErrorHandler
 }
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -41,8 +41,8 @@ func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {
 	return handlers.CombinedLoggingHandler(os.Stdout, router)
 }
 
-func New(registrarClient services.RegistrarClient, versionManagerClient services.VersionManagerClient, releasesClient releaseServices.BrowseClient, jsonHandler providerServices.ProviderVersionManager) *browseHttpService {
-	return &browseHttpService{registrarClient: registrarClient, versionManagerClient: versionManagerClient, releasesClient: releasesClient, jsonHandler: jsonHandler}
+func New(registrarClient services.RegistrarClient, versionManagerClient services.VersionManagerClient, releasesClient releaseServices.BrowseClient, providerVersionManagerClient providerServices.VersionManagerClient) *browseHttpService {
+	return &browseHttpService{registrarClient: registrarClient, versionManagerClient: versionManagerClient, releasesClient: releasesClient, providerVersionManagerClient: providerVersionManagerClient}
 }
 
 func (h *browseHttpService) createRouter(mountPath string) *mux.Router {
@@ -224,12 +224,12 @@ func (h *browseHttpService) getProviderListHandler() http.Handler {
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
 
-		if jsonResponse, err := h.jsonHandler.ListProviders(); err != nil {
+		if registrarResponse, err := h.providerVersionManagerClient.ListProviders(ctx, &providerServices.ListProvidersRequest{}); err != nil {
 			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of providers from backend service"), http.StatusInternalServerError)
 			return
 		} else {
-			data, _ := json.Marshal(createProvidersResponse(jsonResponse.Providers))
+			data, _ := json.Marshal(createProvidersResponse(registrarResponse.Providers))
 
 			rw.Header().Add("Content-Type", "application/json")
 			_, _ = rw.Write(data)
@@ -247,14 +247,14 @@ func (h *browseHttpService) getProviderMetadataHandler() http.Handler {
 			attribute.String("provider.name", providerName),
 		)
 
-		jsonResponse, err := h.jsonHandler.GetProviders(providerName)
+		registrarResponse, err := h.providerVersionManagerClient.GetProvider(ctx, &providerServices.ProviderName{Provider: providerName})
 		if err != nil {
 			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of providers from backend service"), http.StatusInternalServerError)
 			return
 		}
 
-		versionResponse, err := h.jsonHandler.ListProviderVersions(providerName)
+		versionResponse, err := h.providerVersionManagerClient.ListProviderVersions(ctx, &providerServices.ProviderName{Provider: providerName})
 		if err != nil {
 			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to retrieve the list of versions from backend service"), http.StatusInternalServerError)
@@ -271,7 +271,7 @@ func (h *browseHttpService) getProviderMetadataHandler() http.Handler {
 			}
 
 		}
-		data := createProviderMetadataResponse(jsonResponse, filteredVersions)
+		data := createProviderMetadataResponse(registrarResponse.GetProvider(), filteredVersions)
 
 		h.responseHandler.Write(rw, data, http.StatusOK)
 	})
