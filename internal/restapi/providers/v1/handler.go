@@ -20,8 +20,8 @@ import (
 
 type providersV1HttpService struct {
 	versionManagerClient services.VersionManagerClient
-	responseHandler restapi.ResponseHandler
-	errorHandler    restapi.ErrorHandler
+	responseHandler      restapi.ResponseHandler
+	errorHandler         restapi.ErrorHandler
 }
 
 func New(versionManagerClient services.VersionManagerClient) *providersV1HttpService {
@@ -69,7 +69,7 @@ func (h *providersV1HttpService) getProviderVersionHandler() http.Handler {
 			attribute.String("provider.name", providerName),
 		)
 
-		providerVersions, err := h.versionManagerClient.ListProviderVersions(r.Context(),&services.ProviderName{Provider: providerName})
+		providerVersions, err := h.versionManagerClient.ListProviderVersions(ctx, &services.ProviderName{Provider: providerName})
 		if err != nil {
 			h.errorHandler.Write(rw, err, http.StatusNotFound)
 			return
@@ -105,11 +105,11 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 			attribute.String("provider.arch", providerArch),
 		)
 
-		providerMetadata, err := h.versionManagerClient.GetVersionData(r.Context(), &services.VersionDataRequest{
-			Name: providerName,
+		providerMetadata, err := h.versionManagerClient.GetVersionData(ctx, &services.VersionDataRequest{
+			Name:    providerName,
 			Version: providerVersion,
-			Os: providerOS,
-			Arch: providerArch, 
+			Os:      providerOS,
+			Arch:    providerArch,
 		})
 		if err != nil {
 			h.errorHandler.Write(rw, err, http.StatusNotFound)

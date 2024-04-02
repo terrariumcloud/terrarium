@@ -16,18 +16,18 @@ import (
 )
 
 var (
-	ConnectToVersionManagerError      = status.Error(codes.Unavailable, "Failed to connect to Version manager service.")
-	UnknownVersionManagerActionError  = status.Error(codes.InvalidArgument, "Unknown Version manager action requested.")
+	ConnectToVersionManagerError     = status.Error(codes.Unavailable, "Failed to connect to Version manager service.")
+	UnknownVersionManagerActionError = status.Error(codes.InvalidArgument, "Unknown Version manager action requested.")
 )
 
 type TerrariumGrpcGateway struct {
 	terrarium.UnimplementedPublisherServer
-	versionManagerClient    services.VersionManagerClient
+	versionManagerClient services.VersionManagerClient
 }
 
-func New(versionManagerClient services.VersionManagerClient,) *TerrariumGrpcGateway {
+func New(versionManagerClient services.VersionManagerClient) *TerrariumGrpcGateway {
 	return &TerrariumGrpcGateway{
-		versionManagerClient:    versionManagerClient,
+		versionManagerClient: versionManagerClient,
 	}
 }
 
@@ -48,8 +48,8 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 	span.SetAttributes(
 		attribute.String("provider.name", request.GetName()),
 		attribute.String("provider.version", request.GetVersion()),
-		attribute.String("provider.os",request.GetOs()),
-		attribute.String("provider.arch",request.GetArch()),
+		attribute.String("provider.os", request.GetOs()),
+		attribute.String("provider.arch", request.GetArch()),
 	)
 
 	if res, delegateError := client.Register(ctx, request); delegateError != nil {
@@ -69,19 +69,19 @@ func (gw *TerrariumGrpcGateway) EndProvider(ctx context.Context, request *terrar
 
 // EndVersionWithClient calls AbortProvider/AbortProviderVersion/PublishVersion on Version Manager client
 func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, request *terrarium.EndProviderRequest, client services.VersionManagerClient) (*terrarium.Response, error) {
-	
+
 	terminateProvider := services.TerminateProviderRequest{
 		Provider: request.GetProviderName(),
 	}
 
-	terminateProviderVersion := services.TerminateVersionRequest {
+	terminateProviderVersion := services.TerminateVersionRequest{
 		Provider: request.GetProviderVersion(),
 	}
 
-	publishRequest := services.PublishVersionRequest {
+	publishRequest := services.PublishVersionRequest{
 		Provider: request.GetProviderPublish(),
 	}
-	
+
 	span := trace.SpanFromContext(ctx)
 
 	if request.GetAction() == terrarium.EndProviderRequest_DISCARD_PROVIDER {

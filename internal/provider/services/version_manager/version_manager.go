@@ -204,8 +204,8 @@ func (s *VersionManagerService) PublishVersion(ctx context.Context, request *ser
 	span.SetAttributes(
 		attribute.String("provider.name", request.Provider.GetName()),
 		attribute.String("provider.version", request.Provider.GetVersion()),
-		attribute.String("provider.os",request.Provider.GetOs()),
-		attribute.String("provider.arch",request.Provider.GetArch()),
+		attribute.String("provider.os", request.Provider.GetOs()),
+		attribute.String("provider.arch", request.Provider.GetArch()),
 	)
 
 	providerKey, err := s.GetProviderKey(request.GetProvider())
@@ -249,8 +249,8 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 	span.SetAttributes(
 		attribute.String("provider.name", request.GetName()),
 		attribute.String("provider.version", request.GetVersion()),
-		attribute.String("provider.os",request.GetOs()),
-		attribute.String("provider.arch",request.GetArch()),
+		attribute.String("provider.os", request.GetOs()),
+		attribute.String("provider.arch", request.GetArch()),
 	)
 
 	providerID, err := attributevalue.Marshal(request.GetName())

@@ -27,12 +27,12 @@ import (
 )
 
 type browseHttpService struct {
-	providerVersionManagerClient	providerServices.VersionManagerClient
-	registrarClient      			services.RegistrarClient
-	versionManagerClient 			services.VersionManagerClient
-	releasesClient      			releaseServices.BrowseClient
-	responseHandler     			restapi.ResponseHandler
-	errorHandler        			restapi.ErrorHandler
+	providerVersionManagerClient providerServices.VersionManagerClient
+	registrarClient              services.RegistrarClient
+	versionManagerClient         services.VersionManagerClient
+	releasesClient               releaseServices.BrowseClient
+	responseHandler              restapi.ResponseHandler
+	errorHandler                 restapi.ErrorHandler
 }
 
 func (h *browseHttpService) GetHttpHandler(mountPath string) http.Handler {

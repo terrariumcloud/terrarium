@@ -32,7 +32,7 @@ type modulesResponse struct {
 }
 
 type providersResponse struct {
-	Providers []*providerServices.ListProviderItem`json:"providers"`
+	Providers []*providerServices.ListProviderItem `json:"providers"`
 }
 
 func createModulesResponse(modules []*services.ModuleMetadata) *modulesResponse {
