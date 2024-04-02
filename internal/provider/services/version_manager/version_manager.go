@@ -27,13 +27,13 @@ import (
 )
 
 const (
-	DefaultVersionsTableName      = "terrarium-providers"
-	DefaultVersionManagerEndpoint = "version_manager:3001"
+	DefaultProviderVersionsTableName      = "terrarium-providers"
+	DefaultProviderVersionManagerEndpoint = "provider_version_manager:3001"
 )
 
 var (
-	VersionsTableName      = DefaultVersionsTableName
-	VersionManagerEndpoint = DefaultVersionManagerEndpoint
+	VersionsTableName      = DefaultProviderVersionsTableName
+	VersionManagerEndpoint = DefaultProviderVersionManagerEndpoint
 
 	ProviderRegistered = &terrarium.Response{Message: "Provider registered successfully."}
 	VersionPublished   = &terrarium.Response{Message: "Version published."}
@@ -579,7 +579,7 @@ func unmarshalProvider(item map[string]types.AttributeValue) (*services.ListProv
 		Organization: providerAddress[0],
 		Name:         providerAddress[1],
 		Description:  provider.Description,
-		SourceUrl:    provider.Source,
+		SourceRepoUrl:    provider.Source,
 		Maturity:     terrarium.Maturity(terrarium.Maturity_value[provider.Maturity]),
 	}
 

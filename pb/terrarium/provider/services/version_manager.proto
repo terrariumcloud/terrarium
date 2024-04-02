@@ -88,7 +88,7 @@ message ListProviderItem {
   string organization = 1;
   string name = 2;
   string description = 3;
-  string source_url = 4;
+  string source_repo_url = 4;
   terrarium.provider.Maturity maturity = 5;
 }
 

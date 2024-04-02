@@ -22,7 +22,7 @@ type providerItem struct {
 	Organization string   `json:"organization"`
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
-	SourceUrl    string   `json:"source_url"`
+	SourceRepoUrl    string   `json:"source_repo_url"`
 	Maturity     string   `json:"maturity,omitempty"`
 	Versions     []string `json:"versions,omitempty"`
 }
@@ -64,7 +64,7 @@ func createProviderMetadataResponse(providerMetadata *providerServices.ListProvi
 		Organization: providerMetadata.Organization,
 		Name:         providerMetadata.Name,
 		Description:  providerMetadata.Description,
-		SourceUrl:    providerMetadata.SourceUrl,
+		SourceRepoUrl: providerMetadata.SourceRepoUrl,
 		Maturity:     providerMetadata.Maturity.String(),
 		Versions:     providerVersions,
 	}
