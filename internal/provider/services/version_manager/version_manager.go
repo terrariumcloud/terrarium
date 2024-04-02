@@ -401,7 +401,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 	}
 
 	scanInputs := &dynamodb.ScanInput{
-		TableName:                 aws.String(VersionsTableName), // CHECK LATERRRR
+		TableName:                 aws.String(VersionsTableName),
 		ProjectionExpression:      expr.Projection(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -418,8 +418,8 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 
 	if response.Items != nil {
 		for _, item := range response.Items {
-			versionItem := &services.VersionItem{}
-			if err := attributevalue.UnmarshalMap(item, &versionItem); err != nil {
+			versionItem, err := unmarshalProviderVersionItem(item)
+			if err != nil {
 				log.Printf("UnmarshalMap failed: %v", err)
 				return nil, err
 			}
@@ -494,8 +494,7 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 		log.Println(err)
 		return nil, ProviderGetError
 	} else {
-		providerMetadata := &services.PlatformMetadataResponse{}
-		err = attributevalue.UnmarshalMap(response.Item, &providerMetadata)
+		providerMetadata, err := unmarshalProviderMetadata(response.Item)
 		if err != nil {
 			log.Println(err)
 			return nil, MarshalProviderError
@@ -579,8 +578,65 @@ func unmarshalProvider(item map[string]types.AttributeValue) (*services.ListProv
 		Organization: providerAddress[0],
 		Name:         providerAddress[1],
 		Description:  provider.Description,
-		SourceRepoUrl:    provider.Source,
+		SourceRepoUrl:    provider.SourceRepoUrl,
 		Maturity:     terrarium.Maturity(terrarium.Maturity_value[provider.Maturity]),
+	}
+
+	return &result, nil
+}
+
+func unmarshalProviderMetadata(item map[string]types.AttributeValue) (*services.PlatformMetadataResponse, error) {
+	provider := Provider{}
+	if err := attributevalue.UnmarshalMap(item, &provider); err != nil {
+		log.Printf("UnmarshalMap failed: %v", err)
+		return nil, err
+	}
+
+	signingKeys := &services.SigningKeys{
+		GpgPublicKeys: []*services.GPGPublicKey{
+			{
+				KeyId:         provider.KeyID,
+				AsciiArmor:    provider.ASCIIArmor,
+				TrustSignature: provider.TrustSignature,
+				Source:        provider.Source,
+				SourceUrl:     provider.SourceURL,
+			},
+		},
+	}
+
+	result := services.PlatformMetadataResponse{
+		Protocols: provider.Protocols,
+		Os: provider.OS,
+		Arch: provider.Arch,
+		Filename: provider.Filename,
+		DownloadUrl: provider.DownloadURL,
+		ShasumsUrl: provider.ShasumsURL,
+		ShasumsSignatureUrl: provider.ShasumsSignatureURL,
+		Shasum: provider.Shasum,
+		SigningKeys: signingKeys,
+	}
+
+	return &result, nil
+}
+
+func unmarshalProviderVersionItem(item map[string]types.AttributeValue) (*services.VersionItem, error) {
+	provider := Provider{}
+	if err := attributevalue.UnmarshalMap(item, &provider); err != nil {
+		log.Printf("UnmarshalMap failed: %v", err)
+		return nil, err
+	}
+
+	platform := []*services.Platform{
+		{
+			Os: provider.OS,
+			Arch: provider.Arch,
+		},
+	}
+
+	result := services.VersionItem{
+		Version: provider.Version,
+		Protocols: provider.Protocols,
+		Platforms: platform,
 	}
 
 	return &result, nil
