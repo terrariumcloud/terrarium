@@ -25,5 +25,5 @@ func runProviderGateway(cmd *cobra.Command, args []string) {
 		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
 	)
 
-	startGRPCService("api-gateway-provider", gatewayServer)
+	startProviderGRPCService("api-gateway-provider", gatewayServer)
 }
