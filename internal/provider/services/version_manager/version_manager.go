@@ -394,6 +394,9 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 }
 
 func (s *VersionManagerService) ListProviders(ctx context.Context, request *services.ListProvidersRequest) (*services.ListProvidersResponse, error) {
+	
+	// Initialize a map to store providers uniquely
+	uniqueProviders := make(map[string]*services.ListProviderItem)
 
 	scanInputs := &dynamodb.ScanInput{
 		TableName: aws.String(VersionsTableName),
@@ -405,16 +408,30 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 		return nil, err
 	}
 
-	grpcResponse := services.ListProvidersResponse{}
-
 	if response.Items != nil {
 		for _, item := range response.Items {
 			if providerMetadata, err := unmarshalProvider(item); err != nil {
 				return nil, err
 			} else {
-				grpcResponse.Providers = append(grpcResponse.Providers, providerMetadata)
+				key := providerMetadata.Name
+				// Check if the provider already exists in the map
+				if _, ok := uniqueProviders[key]; !ok {
+					// Add the provider to the map if it doesn't exist
+					uniqueProviders[key] = providerMetadata
+				}
 			}
 		}
+	}
+
+	// Convert the map of unique providers to a list
+	providersList := make([]*services.ListProviderItem, 0, len(uniqueProviders))
+	for _, provider := range uniqueProviders {
+		providersList = append(providersList, provider)
+	}
+
+	// Create the response
+	grpcResponse := services.ListProvidersResponse{
+		Providers: providersList,
 	}
 
 	return &grpcResponse, nil

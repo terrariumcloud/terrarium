@@ -19,10 +19,6 @@ message TerminateVersionRequest {
     terrarium.provider.Provider provider = 1;
 }
 
-message TerminateProviderRequest {
-    terrarium.provider.ProviderName provider = 1;
-}
-
 message ProviderName {
   string provider = 1;
 }

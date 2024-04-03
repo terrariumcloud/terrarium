@@ -60,10 +60,6 @@ message Response {
   string message = 1;
 }
 
-message ProviderName {
-  string name = 1;
-}
-
 message Provider {
   string name = 1;
   string version = 2;
