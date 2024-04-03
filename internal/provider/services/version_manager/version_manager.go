@@ -58,16 +58,16 @@ type VersionManagerService struct {
 }
 
 type Provider struct {
-	Name                string   `json:"name" bson:"name" dynamodbav:"name"`
-	Version             string   `json:"version" bson:"version" dynamodbav:"version"`
-	Protocols           []string `json:"protocols" bson:"protocols" dynamodbav:"protocols"`
-	Platforms           []*terrarium.PlatformItem  `json:"platforms" bson:"platforms" dynamodbav:"platforms"`
-	Description         string   `json:"description" bson:"description" dynamodbav:"description"`
-	SourceRepoUrl       string   `json:"source_repo_url" bson:"source_repo_url" dynamodbav:"source_repo_url"`
-	Maturity            string   `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
-	CreatedOn           string   `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
-	ModifiedOn          string   `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
-	PublishedOn         string   `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+	Name          string                    `json:"name" bson:"name" dynamodbav:"name"`
+	Version       string                    `json:"version" bson:"version" dynamodbav:"version"`
+	Protocols     []string                  `json:"protocols" bson:"protocols" dynamodbav:"protocols"`
+	Platforms     []*terrarium.PlatformItem `json:"platforms" bson:"platforms" dynamodbav:"platforms"`
+	Description   string                    `json:"description" bson:"description" dynamodbav:"description"`
+	SourceRepoUrl string                    `json:"source_repo_url" bson:"source_repo_url" dynamodbav:"source_repo_url"`
+	Maturity      string                    `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
+	CreatedOn     string                    `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	ModifiedOn    string                    `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
+	PublishedOn   string                    `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
 }
 
 // RegisterWithServer Registers VersionManagerService with grpc server
@@ -99,7 +99,7 @@ func (s *VersionManagerService) GetProviderKey(provider *terrarium.Provider) (ma
 	}, nil
 }
 
-//AbortProviderVersion removes a Version of a Provider.
+// AbortProviderVersion removes a Version of a Provider.
 func (s *VersionManagerService) AbortProviderVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Aborting provider version.")
 
@@ -223,14 +223,14 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 
 	if res.Item == nil {
 		provider := Provider{
-			Name:                request.GetName(),
-			Version:             request.GetVersion(),
-			Protocols:           request.GetProtocols(),
-			Platforms:           request.GetPlatforms(),
-			Description:         request.GetDescription(),
-			SourceRepoUrl:       request.GetSourceRepoUrl(),
-			Maturity:            request.GetMaturity().String(),
-			CreatedOn:           time.Now().UTC().String(),
+			Name:          request.GetName(),
+			Version:       request.GetVersion(),
+			Protocols:     request.GetProtocols(),
+			Platforms:     request.GetPlatforms(),
+			Description:   request.GetDescription(),
+			SourceRepoUrl: request.GetSourceRepoUrl(),
+			Maturity:      request.GetMaturity().String(),
+			CreatedOn:     time.Now().UTC().String(),
 		}
 
 		providerItem, err := attributevalue.MarshalMap(provider)
@@ -483,33 +483,33 @@ func unmarshalProviderMetadata(item map[string]types.AttributeValue, os, arch st
 	}
 
 	for _, platform := range provider.Platforms {
-        if platform.Os == os && platform.Arch == arch {
+		if platform.Os == os && platform.Arch == arch {
 
 			var gpgPublicKeys []*services.GPGPublicKey
-            for _, key := range platform.SigningKeys.GpgPublicKeys {
-                gpgPublicKeys = append(gpgPublicKeys, &services.GPGPublicKey{
-                    KeyId:          key.KeyId,
-                    AsciiArmor:     key.AsciiArmor,
-                    TrustSignature: key.TrustSignature,
-                    Source:         key.Source,
-                    SourceUrl:      key.SourceUrl,
-                })
-            }
+			for _, key := range platform.SigningKeys.GpgPublicKeys {
+				gpgPublicKeys = append(gpgPublicKeys, &services.GPGPublicKey{
+					KeyId:          key.KeyId,
+					AsciiArmor:     key.AsciiArmor,
+					TrustSignature: key.TrustSignature,
+					Source:         key.Source,
+					SourceUrl:      key.SourceUrl,
+				})
+			}
 
-            return &services.PlatformMetadataResponse{
-                Protocols:           provider.Protocols,
-                Os:                  platform.Os,
-                Arch:                platform.Arch,
-                Filename:            platform.Filename,
-                DownloadUrl:         platform.DownloadUrl,
-                ShasumsUrl:          platform.ShasumsUrl,
-                ShasumsSignatureUrl: platform.ShasumsSignatureUrl,
-                Shasum:              platform.Shasum,
-                SigningKeys:         &services.SigningKeys{
-					GpgPublicKeys:   gpgPublicKeys,
-                },
-        	}, nil
-        }
+			return &services.PlatformMetadataResponse{
+				Protocols:           provider.Protocols,
+				Os:                  platform.Os,
+				Arch:                platform.Arch,
+				Filename:            platform.Filename,
+				DownloadUrl:         platform.DownloadUrl,
+				ShasumsUrl:          platform.ShasumsUrl,
+				ShasumsSignatureUrl: platform.ShasumsSignatureUrl,
+				Shasum:              platform.Shasum,
+				SigningKeys: &services.SigningKeys{
+					GpgPublicKeys: gpgPublicKeys,
+				},
+			}, nil
+		}
 	}
 
 	err := fmt.Errorf("requested os '%s' and arch '%s' doesn't exist", os, arch)
@@ -524,13 +524,13 @@ func unmarshalProviderVersionItem(item map[string]types.AttributeValue) (*servic
 	}
 
 	var platforms []*services.Platform
-    for _, platformItem := range provider.Platforms {
-        platform := &services.Platform{
-            Os:   platformItem.Os,
-            Arch: platformItem.Arch,
-        }
-        platforms = append(platforms, platform)
-    }
+	for _, platformItem := range provider.Platforms {
+		platform := &services.Platform{
+			Os:   platformItem.Os,
+			Arch: platformItem.Arch,
+		}
+		platforms = append(platforms, platform)
+	}
 
 	result := services.VersionItem{
 		Version:   provider.Version,
