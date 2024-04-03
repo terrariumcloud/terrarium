@@ -70,7 +70,7 @@ func (v versionManagerGrpcClient) Register(ctx context.Context, in *terrarium.Re
 	}
 }
 
-func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *services.PublishVersionRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
+func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
 	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
@@ -78,17 +78,6 @@ func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *servic
 
 		client := services.NewVersionManagerClient(conn)
 		return client.PublishVersion(ctx, in, opts...)
-	}
-}
-
-func (v versionManagerGrpcClient) AbortProvider(ctx context.Context, in *services.TerminateProviderRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
-		return nil, err
-	} else {
-		defer func() { _ = conn.Close() }()
-
-		client := services.NewVersionManagerClient(conn)
-		return client.AbortProvider(ctx, in, opts...)
 	}
 }
 

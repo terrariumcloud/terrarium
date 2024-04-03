@@ -9,25 +9,40 @@ service Publisher {
 }
 
 message RegisterProviderRequest {
-  string api_key = 1;
-  string name = 2;
-  string version = 3;
-  string description = 4;
-  string source_repo_url = 5;
-  Maturity maturity = 6;
-  repeated string protocols = 7;
-  string os = 8;
-  string arch = 9;
-  string filename = 10;
-  string download_url = 11;
-  string shasums_url = 12;
-  string shasums_signature_url = 13;
-  string shasum = 14;
-  string key_id = 15;
-  string ascii_armor = 16;
-  string trust_signature = 17;
-  string source = 18;
-  string source_url = 19;
+    string api_key = 1;
+    string name = 2;
+    string version = 3;
+    repeated string protocols = 4;
+    repeated PlatformItem platforms = 5;
+    string description = 6;
+    string source_repo_url = 7;
+    Maturity maturity = 8;
+    string created_on = 9;
+    string modified_on = 10;
+    string published_on = 11;
+}
+
+message PlatformItem {
+    string os = 1;
+    string arch = 2;
+    string filename = 3;
+    string download_url = 4;
+    string shasums_url = 5;
+    string shasums_signature_url = 6;
+    string shasum = 7;
+    SigningKeys signing_keys = 8;
+}
+
+message SigningKeys {
+    repeated GPGPublicKey gpg_public_keys = 1;
+}
+
+message GPGPublicKey {
+    string key_id = 1;
+    string ascii_armor = 2;
+    string trust_signature = 3;
+    string source = 4;
+    string source_url = 5;
 }
 
 enum Maturity {
@@ -45,30 +60,20 @@ message Response {
   string message = 1;
 }
 
-message Provider {
-  string name = 1;
-  string version = 2;
-  string os = 3;
-  string arch = 4;
-}
-
 message ProviderName {
   string name = 1;
 }
 
-message ProviderVersion {
+message Provider {
   string name = 1;
   string version = 2;
 }
 
 message EndProviderRequest {
-  ProviderName provider_name = 1;
-  ProviderVersion provider_version = 2;
-  Provider provider_publish = 3;
+  Provider provider = 1;
   enum Action {
-    DISCARD_PROVIDER = 0;
-    DISCARD_VERSION = 1;
-    PUBLISH = 2;
+    DISCARD_VERSION = 0;
+    PUBLISH = 1;
   };
   Action action = 4;
 }

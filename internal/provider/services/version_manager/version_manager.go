@@ -61,18 +61,7 @@ type Provider struct {
 	Name                string   `json:"name" bson:"name" dynamodbav:"name"`
 	Version             string   `json:"version" bson:"version" dynamodbav:"version"`
 	Protocols           []string `json:"protocols" bson:"protocols" dynamodbav:"protocols"`
-	OS                  string   `json:"os" bson:"os" dynamodbav:"os"`
-	Arch                string   `json:"arch" bson:"arch" dynamodbav:"arch"`
-	Filename            string   `json:"filename" bson:"filename" dynamodbav:"filename"`
-	DownloadURL         string   `json:"download_url" bson:"download_url" dynamodbav:"download_url"`
-	ShasumsURL          string   `json:"shasums_url" bson:"shasums_url" dynamodbav:"shasums_url"`
-	ShasumsSignatureURL string   `json:"shasums_signature_url" bson:"shasums_signature_url" dynamodbav:"shasums_signature_url"`
-	Shasum              string   `json:"shasum" bson:"shasum" dynamodbav:"shasum"`
-	KeyID               string   `json:"key_id" bson:"key_id" dynamodbav:"key_id"`
-	ASCIIArmor          string   `json:"ascii_armor" bson:"ascii_armor" dynamodbav:"ascii_armor"`
-	TrustSignature      string   `json:"trust_signature" bson:"trust_signature" dynamodbav:"trust_signature"`
-	Source              string   `json:"source" bson:"source" dynamodbav:"source"`
-	SourceURL           string   `json:"source_url" bson:"source_url" dynamodbav:"source_url"`
+	Platforms           []*terrarium.PlatformItem  `json:"platforms" bson:"platforms" dynamodbav:"platforms"`
 	Description         string   `json:"description" bson:"description" dynamodbav:"description"`
 	SourceRepoUrl       string   `json:"source_repo_url" bson:"source_repo_url" dynamodbav:"source_repo_url"`
 	Maturity            string   `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
@@ -104,57 +93,13 @@ func (s *VersionManagerService) GetProviderKey(provider *terrarium.Provider) (ma
 		return map[string]types.AttributeValue{}, err
 	}
 
-	os, err := attributevalue.Marshal(provider.GetOs())
-	if err != nil {
-		return map[string]types.AttributeValue{}, err
-	}
-
-	arch, err := attributevalue.Marshal(provider.GetArch())
-	if err != nil {
-		return map[string]types.AttributeValue{}, err
-	}
-
 	return map[string]types.AttributeValue{
 		"name":    providerName,
 		"version": providerVersion,
-		"os":      os,
-		"arch":    arch,
 	}, nil
 }
 
-// AbortProvider Removes a Provider with Version Manager service
-func (s *VersionManagerService) AbortProvider(ctx context.Context, request *services.TerminateProviderRequest) (*terrarium.Response, error) {
-	log.Println("Aborting provider.")
-
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(
-		attribute.String("provider.name", request.Provider.GetName()),
-	)
-
-	providerID, err := attributevalue.Marshal(request.Provider.GetName())
-	if err != nil {
-		span.RecordError(err)
-		log.Println(err)
-		return nil, ProviderGetError
-	}
-
-	in := &dynamodb.DeleteItemInput{
-		Key: map[string]types.AttributeValue{
-			"name": providerID,
-		},
-		TableName: aws.String(VersionsTableName),
-	}
-
-	if _, err := s.Db.DeleteItem(ctx, in); err != nil {
-		span.RecordError(err)
-		log.Println(err)
-		return nil, AbortProviderVersionError
-	}
-
-	log.Println("Provider aborted.")
-	return ProviderAborted, nil
-}
-
+//AbortProviderVersion removes a Version of a Provider.
 func (s *VersionManagerService) AbortProviderVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Aborting provider version.")
 
@@ -197,15 +142,13 @@ func (s *VersionManagerService) AbortProviderVersion(ctx context.Context, reques
 }
 
 // PublishVersion Updates Provider Version to published with Version Manager service
-func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.PublishVersionRequest) (*terrarium.Response, error) {
+func (s *VersionManagerService) PublishVersion(ctx context.Context, request *services.TerminateVersionRequest) (*terrarium.Response, error) {
 	log.Println("Publishing provider version.")
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
 		attribute.String("provider.name", request.Provider.GetName()),
 		attribute.String("provider.version", request.Provider.GetVersion()),
-		attribute.String("provider.os", request.Provider.GetOs()),
-		attribute.String("provider.arch", request.Provider.GetArch()),
 	)
 
 	providerKey, err := s.GetProviderKey(request.GetProvider())
@@ -249,8 +192,6 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 	span.SetAttributes(
 		attribute.String("provider.name", request.GetName()),
 		attribute.String("provider.version", request.GetVersion()),
-		attribute.String("provider.os", request.GetOs()),
-		attribute.String("provider.arch", request.GetArch()),
 	)
 
 	providerID, err := attributevalue.Marshal(request.GetName())
@@ -267,27 +208,11 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 		return nil, ProviderGetError
 	}
 
-	providerOs, err := attributevalue.Marshal(request.GetOs())
-	if err != nil {
-		log.Println(err)
-		span.RecordError(err)
-		return nil, ProviderGetError
-	}
-
-	providerArch, err := attributevalue.Marshal(request.GetArch())
-	if err != nil {
-		log.Println(err)
-		span.RecordError(err)
-		return nil, ProviderGetError
-	}
-
 	res, err := s.Db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(VersionsTableName),
 		Key: map[string]types.AttributeValue{
 			"name":    providerID,
 			"version": providerVersion,
-			"os":      providerOs,
-			"arch":    providerArch,
 		},
 	})
 	if err != nil {
@@ -301,18 +226,7 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 			Name:                request.GetName(),
 			Version:             request.GetVersion(),
 			Protocols:           request.GetProtocols(),
-			OS:                  request.GetOs(),
-			Arch:                request.GetArch(),
-			Filename:            request.GetFilename(),
-			DownloadURL:         request.GetDownloadUrl(),
-			ShasumsURL:          request.GetShasum(),
-			ShasumsSignatureURL: request.GetShasumsSignatureUrl(),
-			Shasum:              request.GetShasum(),
-			KeyID:               request.GetKeyId(),
-			ASCIIArmor:          request.GetAsciiArmor(),
-			TrustSignature:      request.GetTrustSignature(),
-			Source:              request.GetSource(),
-			SourceURL:           request.GetSourceUrl(),
+			Platforms:           request.GetPlatforms(),
 			Description:         request.GetDescription(),
 			SourceRepoUrl:       request.GetSourceRepoUrl(),
 			Maturity:            request.GetMaturity().String(),
@@ -340,17 +254,9 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 		update := expression.Set(expression.Name("description"), expression.Value(request.GetDescription()))
 		update.Set(expression.Name("source_repo_url"), expression.Value(request.GetSourceRepoUrl()))
 		update.Set(expression.Name("maturity"), expression.Value(request.GetMaturity().String()))
+		update.Set(expression.Name("platforms"), expression.Value(request.GetPlatforms()))
+		update.Set(expression.Name("protocols"), expression.Value(request.GetProtocols()))
 		update.Set(expression.Name("modified_on"), expression.Value(time.Now().UTC().String()))
-		update.Set(expression.Name("filename"), expression.Value(request.GetFilename()))
-		update.Set(expression.Name("download_url"), expression.Value(request.GetDownloadUrl()))
-		update.Set(expression.Name("shasums_url"), expression.Value(request.GetShasumsUrl()))
-		update.Set(expression.Name("shasums_signature_url"), expression.Value(request.GetShasumsSignatureUrl()))
-		update.Set(expression.Name("shasum"), expression.Value(request.GetShasum()))
-		update.Set(expression.Name("key_id"), expression.Value(request.GetKeyId()))
-		update.Set(expression.Name("ascii_armor"), expression.Value(request.GetAsciiArmor()))
-		update.Set(expression.Name("trust_signature"), expression.Value(request.GetTrustSignature()))
-		update.Set(expression.Name("source"), expression.Value(request.GetSource()))
-		update.Set(expression.Name("source_url"), expression.Value(request.GetSourceUrl()))
 
 		expr, err := expression.NewBuilder().WithUpdate(update).Build()
 		if err != nil {
@@ -364,8 +270,6 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 			Key: map[string]types.AttributeValue{
 				"name":    providerID,
 				"version": providerVersion,
-				"os":      providerOs,
-				"arch":    providerArch,
 			},
 			ExpressionAttributeNames:  expr.Names(),
 			ExpressionAttributeValues: expr.Values(),
@@ -392,7 +296,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 	filter := expression.And(
 		expression.Name("name").Equal(expression.Value(request.GetProvider())),
 		expression.Name("published_on").AttributeExists())
-	projection := expression.NamesList(expression.Name("version"), expression.Name("protocols"), expression.Name("os"), expression.Name("arch"))
+	projection := expression.NamesList(expression.Name("version"), expression.Name("protocols"), expression.Name("platforms"))
 
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
 	if err != nil {
@@ -469,32 +373,18 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 		return nil, ProviderGetError
 	}
 
-	providerOS, err := attributevalue.Marshal(request.GetOs())
-	if err != nil {
-		log.Println(err)
-		return nil, ProviderGetError
-	}
-
-	providerArch, err := attributevalue.Marshal(request.GetArch())
-	if err != nil {
-		log.Println(err)
-		return nil, ProviderGetError
-	}
-
 	response, err := s.Db.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(VersionsTableName),
 		Key: map[string]types.AttributeValue{
 			"name":    providerID,
 			"version": providerVersion,
-			"os":      providerOS,
-			"arch":    providerArch,
 		},
 	})
 	if err != nil {
 		log.Println(err)
 		return nil, ProviderGetError
 	} else {
-		providerMetadata, err := unmarshalProviderMetadata(response.Item)
+		providerMetadata, err := unmarshalProviderMetadata(response.Item, request.Os, request.Arch)
 		if err != nil {
 			log.Println(err)
 			return nil, MarshalProviderError
@@ -585,38 +475,45 @@ func unmarshalProvider(item map[string]types.AttributeValue) (*services.ListProv
 	return &result, nil
 }
 
-func unmarshalProviderMetadata(item map[string]types.AttributeValue) (*services.PlatformMetadataResponse, error) {
+func unmarshalProviderMetadata(item map[string]types.AttributeValue, os, arch string) (*services.PlatformMetadataResponse, error) {
 	provider := Provider{}
 	if err := attributevalue.UnmarshalMap(item, &provider); err != nil {
 		log.Printf("UnmarshalMap failed: %v", err)
 		return nil, err
 	}
 
-	signingKeys := &services.SigningKeys{
-		GpgPublicKeys: []*services.GPGPublicKey{
-			{
-				KeyId:          provider.KeyID,
-				AsciiArmor:     provider.ASCIIArmor,
-				TrustSignature: provider.TrustSignature,
-				Source:         provider.Source,
-				SourceUrl:      provider.SourceURL,
-			},
-		},
+	for _, platform := range provider.Platforms {
+        if platform.Os == os && platform.Arch == arch {
+
+			var gpgPublicKeys []*services.GPGPublicKey
+            for _, key := range platform.SigningKeys.GpgPublicKeys {
+                gpgPublicKeys = append(gpgPublicKeys, &services.GPGPublicKey{
+                    KeyId:          key.KeyId,
+                    AsciiArmor:     key.AsciiArmor,
+                    TrustSignature: key.TrustSignature,
+                    Source:         key.Source,
+                    SourceUrl:      key.SourceUrl,
+                })
+            }
+
+            return &services.PlatformMetadataResponse{
+                Protocols:           provider.Protocols,
+                Os:                  platform.Os,
+                Arch:                platform.Arch,
+                Filename:            platform.Filename,
+                DownloadUrl:         platform.DownloadUrl,
+                ShasumsUrl:          platform.ShasumsUrl,
+                ShasumsSignatureUrl: platform.ShasumsSignatureUrl,
+                Shasum:              platform.Shasum,
+                SigningKeys:         &services.SigningKeys{
+					GpgPublicKeys:   gpgPublicKeys,
+                },
+        	}, nil
+        }
 	}
 
-	result := services.PlatformMetadataResponse{
-		Protocols:           provider.Protocols,
-		Os:                  provider.OS,
-		Arch:                provider.Arch,
-		Filename:            provider.Filename,
-		DownloadUrl:         provider.DownloadURL,
-		ShasumsUrl:          provider.ShasumsURL,
-		ShasumsSignatureUrl: provider.ShasumsSignatureURL,
-		Shasum:              provider.Shasum,
-		SigningKeys:         signingKeys,
-	}
-
-	return &result, nil
+	err := fmt.Errorf("requested os '%s' and arch '%s' doesn't exist", os, arch)
+	return nil, err
 }
 
 func unmarshalProviderVersionItem(item map[string]types.AttributeValue) (*services.VersionItem, error) {
@@ -626,17 +523,19 @@ func unmarshalProviderVersionItem(item map[string]types.AttributeValue) (*servic
 		return nil, err
 	}
 
-	platform := []*services.Platform{
-		{
-			Os:   provider.OS,
-			Arch: provider.Arch,
-		},
-	}
+	var platforms []*services.Platform
+    for _, platformItem := range provider.Platforms {
+        platform := &services.Platform{
+            Os:   platformItem.Os,
+            Arch: platformItem.Arch,
+        }
+        platforms = append(platforms, platform)
+    }
 
 	result := services.VersionItem{
 		Version:   provider.Version,
 		Protocols: provider.Protocols,
-		Platforms: platform,
+		Platforms: platforms,
 	}
 
 	return &result, nil
@@ -654,14 +553,6 @@ func GetProviderVersionsSchema(table string) *dynamodb.CreateTableInput {
 				AttributeName: aws.String("version"),
 				AttributeType: types.ScalarAttributeTypeS,
 			},
-			{
-				AttributeName: aws.String("os"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-			{
-				AttributeName: aws.String("arch"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
 		},
 		KeySchema: []types.KeySchemaElement{
 			{
@@ -670,14 +561,6 @@ func GetProviderVersionsSchema(table string) *dynamodb.CreateTableInput {
 			},
 			{
 				AttributeName: aws.String("version"),
-				KeyType:       types.KeyTypeRange,
-			},
-			{
-				AttributeName: aws.String("os"),
-				KeyType:       types.KeyTypeRange,
-			},
-			{
-				AttributeName: aws.String("arch"),
 				KeyType:       types.KeyTypeRange,
 			},
 		},

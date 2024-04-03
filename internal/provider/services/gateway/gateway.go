@@ -48,8 +48,6 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 	span.SetAttributes(
 		attribute.String("provider.name", request.GetName()),
 		attribute.String("provider.version", request.GetVersion()),
-		attribute.String("provider.os", request.GetOs()),
-		attribute.String("provider.arch", request.GetArch()),
 	)
 
 	if res, delegateError := client.Register(ctx, request); delegateError != nil {
@@ -70,32 +68,17 @@ func (gw *TerrariumGrpcGateway) EndProvider(ctx context.Context, request *terrar
 // EndVersionWithClient calls AbortProvider/AbortProviderVersion/PublishVersion on Version Manager client
 func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, request *terrarium.EndProviderRequest, client services.VersionManagerClient) (*terrarium.Response, error) {
 
-	terminateProvider := services.TerminateProviderRequest{
-		Provider: request.GetProviderName(),
-	}
-
 	terminateProviderVersion := services.TerminateVersionRequest{
-		Provider: request.GetProviderVersion(),
+		Provider: request.GetProvider(),
 	}
 
-	publishRequest := services.PublishVersionRequest{
-		Provider: request.GetProviderPublish(),
+	publishRequest := services.TerminateVersionRequest{
+		Provider: request.GetProvider(),
 	}
 
 	span := trace.SpanFromContext(ctx)
 
-	if request.GetAction() == terrarium.EndProviderRequest_DISCARD_PROVIDER {
-		log.Println("Abort Provider => Version Manager")
-		if res, delegateError := client.AbortProvider(ctx, &terminateProvider); delegateError != nil {
-			log.Printf("Failed: %v", delegateError)
-			span.RecordError(delegateError)
-			return nil, delegateError
-		} else {
-			log.Println("Done <= Version Manager")
-			span.AddEvent("Successfully aborted provider", trace.WithAttributes(attribute.String("Provider Name", request.ProviderName.GetName())))
-			return res, nil
-		}
-	} else if request.GetAction() == terrarium.EndProviderRequest_DISCARD_VERSION {
+	if request.GetAction() == terrarium.EndProviderRequest_DISCARD_VERSION {
 		log.Println("Abort Provider Version => Version Manager")
 		if res, delegateError := client.AbortProviderVersion(ctx, &terminateProviderVersion); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
@@ -103,7 +86,7 @@ func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, reque
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
-			span.AddEvent("Successfully aborted provider version", trace.WithAttributes(attribute.String("Provider Name", request.ProviderVersion.GetName()), attribute.String("Provider Version", request.ProviderVersion.GetVersion())))
+			span.AddEvent("Successfully aborted provider version", trace.WithAttributes(attribute.String("Provider Name", request.Provider.GetName()), attribute.String("Provider Version", request.Provider.GetVersion())))
 			return res, nil
 		}
 	} else if request.GetAction() == terrarium.EndProviderRequest_PUBLISH {
@@ -114,7 +97,7 @@ func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, reque
 			return nil, delegateError
 		} else {
 			log.Println("Done <= Version Manager")
-			span.AddEvent("Successfully published version", trace.WithAttributes(attribute.String("Provider Name", request.ProviderPublish.GetName()), attribute.String("Provider Version", request.ProviderPublish.GetVersion()), attribute.String("Provider OS", request.ProviderPublish.GetOs()), attribute.String("Provider Arch", request.ProviderPublish.GetArch())))
+			span.AddEvent("Successfully published version", trace.WithAttributes(attribute.String("Provider Name", request.Provider.GetName()), attribute.String("Provider Version", request.Provider.GetVersion())))
 			return res, nil
 		}
 	} else {

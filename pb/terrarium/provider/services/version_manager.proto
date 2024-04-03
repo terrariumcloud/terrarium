@@ -11,21 +11,16 @@ service VersionManager {
   rpc GetVersionData(VersionDataRequest) returns (PlatformMetadataResponse);
   rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
   rpc GetProvider(ProviderName) returns (GetProviderResponse);
-  rpc PublishVersion(PublishVersionRequest) returns (terrarium.provider.Response);
-  rpc AbortProvider(TerminateProviderRequest) returns (terrarium.provider.Response);
+  rpc PublishVersion(TerminateVersionRequest) returns (terrarium.provider.Response);
   rpc AbortProviderVersion(TerminateVersionRequest) returns (terrarium.provider.Response);
 }
 
 message TerminateVersionRequest {
-    terrarium.provider.ProviderVersion provider = 1;
+    terrarium.provider.Provider provider = 1;
 }
 
 message TerminateProviderRequest {
     terrarium.provider.ProviderName provider = 1;
-}
-
-message PublishVersionRequest {
-    terrarium.provider.Provider provider = 1;
 }
 
 message ProviderName {

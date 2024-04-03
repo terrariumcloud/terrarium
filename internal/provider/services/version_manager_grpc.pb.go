@@ -28,8 +28,7 @@ type VersionManagerClient interface {
 	GetVersionData(ctx context.Context, in *VersionDataRequest, opts ...grpc.CallOption) (*PlatformMetadataResponse, error)
 	ListProviders(ctx context.Context, in *ListProvidersRequest, opts ...grpc.CallOption) (*ListProvidersResponse, error)
 	GetProvider(ctx context.Context, in *ProviderName, opts ...grpc.CallOption) (*GetProviderResponse, error)
-	PublishVersion(ctx context.Context, in *PublishVersionRequest, opts ...grpc.CallOption) (*provider.Response, error)
-	AbortProvider(ctx context.Context, in *TerminateProviderRequest, opts ...grpc.CallOption) (*provider.Response, error)
+	PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*provider.Response, error)
 	AbortProviderVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*provider.Response, error)
 }
 
@@ -86,18 +85,9 @@ func (c *versionManagerClient) GetProvider(ctx context.Context, in *ProviderName
 	return out, nil
 }
 
-func (c *versionManagerClient) PublishVersion(ctx context.Context, in *PublishVersionRequest, opts ...grpc.CallOption) (*provider.Response, error) {
+func (c *versionManagerClient) PublishVersion(ctx context.Context, in *TerminateVersionRequest, opts ...grpc.CallOption) (*provider.Response, error) {
 	out := new(provider.Response)
 	err := c.cc.Invoke(ctx, "/terrarium.provider.services.VersionManager/PublishVersion", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *versionManagerClient) AbortProvider(ctx context.Context, in *TerminateProviderRequest, opts ...grpc.CallOption) (*provider.Response, error) {
-	out := new(provider.Response)
-	err := c.cc.Invoke(ctx, "/terrarium.provider.services.VersionManager/AbortProvider", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +112,7 @@ type VersionManagerServer interface {
 	GetVersionData(context.Context, *VersionDataRequest) (*PlatformMetadataResponse, error)
 	ListProviders(context.Context, *ListProvidersRequest) (*ListProvidersResponse, error)
 	GetProvider(context.Context, *ProviderName) (*GetProviderResponse, error)
-	PublishVersion(context.Context, *PublishVersionRequest) (*provider.Response, error)
-	AbortProvider(context.Context, *TerminateProviderRequest) (*provider.Response, error)
+	PublishVersion(context.Context, *TerminateVersionRequest) (*provider.Response, error)
 	AbortProviderVersion(context.Context, *TerminateVersionRequest) (*provider.Response, error)
 	mustEmbedUnimplementedVersionManagerServer()
 }
@@ -147,11 +136,8 @@ func (UnimplementedVersionManagerServer) ListProviders(context.Context, *ListPro
 func (UnimplementedVersionManagerServer) GetProvider(context.Context, *ProviderName) (*GetProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProvider not implemented")
 }
-func (UnimplementedVersionManagerServer) PublishVersion(context.Context, *PublishVersionRequest) (*provider.Response, error) {
+func (UnimplementedVersionManagerServer) PublishVersion(context.Context, *TerminateVersionRequest) (*provider.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishVersion not implemented")
-}
-func (UnimplementedVersionManagerServer) AbortProvider(context.Context, *TerminateProviderRequest) (*provider.Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AbortProvider not implemented")
 }
 func (UnimplementedVersionManagerServer) AbortProviderVersion(context.Context, *TerminateVersionRequest) (*provider.Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbortProviderVersion not implemented")
@@ -260,7 +246,7 @@ func _VersionManager_GetProvider_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _VersionManager_PublishVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishVersionRequest)
+	in := new(TerminateVersionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -272,25 +258,7 @@ func _VersionManager_PublishVersion_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/terrarium.provider.services.VersionManager/PublishVersion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VersionManagerServer).PublishVersion(ctx, req.(*PublishVersionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _VersionManager_AbortProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TerminateProviderRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VersionManagerServer).AbortProvider(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/terrarium.provider.services.VersionManager/AbortProvider",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VersionManagerServer).AbortProvider(ctx, req.(*TerminateProviderRequest))
+		return srv.(VersionManagerServer).PublishVersion(ctx, req.(*TerminateVersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -343,10 +311,6 @@ var VersionManager_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishVersion",
 			Handler:    _VersionManager_PublishVersion_Handler,
-		},
-		{
-			MethodName: "AbortProvider",
-			Handler:    _VersionManager_AbortProvider_Handler,
 		},
 		{
 			MethodName: "AbortProviderVersion",
