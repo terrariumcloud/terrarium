@@ -16,7 +16,7 @@ var gatewayProviderCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gatewayProviderCmd)
-	gatewayCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "provider-version-manager", "", version_manager.DefaultProviderVersionManagerEndpoint, "GRPC Endpoint for Module Version Manager Service")
+	gatewayCmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "provider-version-manager", "", version_manager.DefaultProviderVersionManagerEndpoint, "GRPC Endpoint for Provider Version Manager Service")
 }
 
 func runProviderGateway(cmd *cobra.Command, args []string) {
