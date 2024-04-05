@@ -94,7 +94,7 @@ var allInOneCmd = &cobra.Command{
 			Schema: providerVersionManager.GetProviderVersionsSchema(providerVersionManager.VersionsTableName),
 		}
 
-		services := []services2.Service{
+		moduleServices := []moduleServices.Service{
 			dependencyServiceServer,
 			registrarServiceServer,
 			storageServiceServer,
