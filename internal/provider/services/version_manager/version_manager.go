@@ -398,8 +398,18 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 	// Initialize a map to store providers uniquely
 	uniqueProviders := make(map[string]*services.ListProviderItem)
 
+	projection := expression.NamesList(expression.Name("name"), expression.Name("description"), expression.Name("maturity"), expression.Name("source_repo_url"))
+
+	expr, err := expression.NewBuilder().WithProjection(projection).Build()
+	if err != nil {
+		log.Printf("Expression Builder failed creation: %v", err)
+		return nil, err
+	}
+
 	scanInputs := &dynamodb.ScanInput{
 		TableName: aws.String(VersionsTableName),
+		ProjectionExpression:     expr.Projection(),
+		ExpressionAttributeNames: expr.Names(),
 	}
 
 	response, err := s.Db.Scan(ctx, scanInputs)
@@ -423,13 +433,11 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 		}
 	}
 
-	// Convert the map of unique providers to a list
 	providersList := make([]*services.ListProviderItem, 0, len(uniqueProviders))
 	for _, provider := range uniqueProviders {
 		providersList = append(providersList, provider)
 	}
 
-	// Create the response
 	grpcResponse := services.ListProvidersResponse{
 		Providers: providersList,
 	}
@@ -440,13 +448,15 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 func (s *VersionManagerService) GetProvider(ctx context.Context, request *services.ProviderName) (*services.GetProviderResponse, error) {
 
 	filter := expression.Name("name").Equal(expression.Value(request.GetProvider()))
-	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	projection := expression.NamesList(expression.Name("name"), expression.Name("description"), expression.Name("maturity"), expression.Name("source_repo_url"))
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
 	if err != nil {
 		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
 
 	scanInputs := &dynamodb.ScanInput{
+		ProjectionExpression:      expr.Projection(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
