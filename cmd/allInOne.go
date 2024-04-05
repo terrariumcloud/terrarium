@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	services2 "github.com/terrariumcloud/terrarium/internal/module/services"
+	moduleServices "github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/gateway"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
