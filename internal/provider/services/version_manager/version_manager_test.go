@@ -33,9 +33,9 @@ func Test_RegisterProvider(t *testing.T) {
 		svc := &VersionManagerService{Db: db}
 
 		req := &terrarium.RegisterProviderRequest{
-			Name:          "test-org/test-provider2",
-			Version:       "2.0.0",
-			Protocols:     []string{"5.1", "5.2"},
+			Name:      "test-org/test-provider2",
+			Version:   "2.0.0",
+			Protocols: []string{"5.1", "5.2"},
 			Platforms: []*terrarium.PlatformItem{
 				{
 					Os:                  "linux",
@@ -113,14 +113,14 @@ func Test_RegisterProvider(t *testing.T) {
 			GetItemOuts: []*dynamodb.GetItemOutput{
 				{
 					Item: map[string]types.AttributeValue{
-						"name":                  services.MustMarshallString(name, t),
-						"description":           services.MustMarshallString(emptyString, t),
-						"source_url":            services.MustMarshallString(emptyString, t),
-						"maturity":              services.MustMarshallString(emptyString, t),
-						"modified_on":           services.MustMarshallString(emptyString, t),
-						"source_repo_url":       services.MustMarshallString(emptyString, t),
-						"protocols":            services.MustMarshallString(emptyString, t),
-						"platforms":            services.MustMarshallString(emptyString, t),
+						"name":            services.MustMarshallString(name, t),
+						"description":     services.MustMarshallString(emptyString, t),
+						"source_url":      services.MustMarshallString(emptyString, t),
+						"maturity":        services.MustMarshallString(emptyString, t),
+						"modified_on":     services.MustMarshallString(emptyString, t),
+						"source_repo_url": services.MustMarshallString(emptyString, t),
+						"protocols":       services.MustMarshallString(emptyString, t),
+						"platforms":       services.MustMarshallString(emptyString, t),
 					},
 				},
 			},
@@ -130,9 +130,9 @@ func Test_RegisterProvider(t *testing.T) {
 		svc := &VersionManagerService{Db: db}
 
 		req := &terrarium.RegisterProviderRequest{
-			Name:          "test-org/test-provider2",
-			Version:       "2.0.0",
-			Protocols:     []string{"5.1", "5.2"},
+			Name:      "test-org/test-provider2",
+			Version:   "2.0.0",
+			Protocols: []string{"5.1", "5.2"},
 			Platforms: []*terrarium.PlatformItem{
 				{
 					Os:                  "linux",
@@ -215,9 +215,9 @@ func Test_RegisterProvider(t *testing.T) {
 		svc := &VersionManagerService{Db: db}
 
 		req := &terrarium.RegisterProviderRequest{
-			Name:          "test-org/test-provider2",
-			Version:       "2.0.0",
-			Protocols:     []string{"5.1", "5.2"},
+			Name:      "test-org/test-provider2",
+			Version:   "2.0.0",
+			Protocols: []string{"5.1", "5.2"},
 			Platforms: []*terrarium.PlatformItem{
 				{
 					Os:                  "linux",
@@ -293,9 +293,9 @@ func Test_RegisterProvider(t *testing.T) {
 		svc := &VersionManagerService{Db: db}
 
 		req := &terrarium.RegisterProviderRequest{
-			Name:          "test-org/test-provider2",
-			Version:       "2.0.0",
-			Protocols:     []string{"5.1", "5.2"},
+			Name:      "test-org/test-provider2",
+			Version:   "2.0.0",
+			Protocols: []string{"5.1", "5.2"},
 			Platforms: []*terrarium.PlatformItem{
 				{
 					Os:                  "linux",
@@ -653,4 +653,3 @@ func Test_ListProviders(t *testing.T) {
 		}
 	})
 }
-

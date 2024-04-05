@@ -394,7 +394,7 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 }
 
 func (s *VersionManagerService) ListProviders(ctx context.Context, request *services.ListProvidersRequest) (*services.ListProvidersResponse, error) {
-	
+
 	// Initialize a map to store providers uniquely
 	uniqueProviders := make(map[string]*services.ListProviderItem)
 
@@ -407,7 +407,7 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 	}
 
 	scanInputs := &dynamodb.ScanInput{
-		TableName: aws.String(VersionsTableName),
+		TableName:                aws.String(VersionsTableName),
 		ProjectionExpression:     expr.Projection(),
 		ExpressionAttributeNames: expr.Names(),
 	}
