@@ -3,6 +3,7 @@ package version_manager
 import (
 	"context"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 )
@@ -16,7 +17,7 @@ func NewVersionManagerGrpcClient(endpoint string) services.VersionManagerClient 
 }
 
 func (v versionManagerGrpcClient) BeginVersion(ctx context.Context, in *module.BeginVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -27,7 +28,7 @@ func (v versionManagerGrpcClient) BeginVersion(ctx context.Context, in *module.B
 }
 
 func (v versionManagerGrpcClient) AbortVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -38,7 +39,7 @@ func (v versionManagerGrpcClient) AbortVersion(ctx context.Context, in *services
 }
 
 func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -49,7 +50,7 @@ func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *servic
 }
 
 func (v versionManagerGrpcClient) ListModuleVersions(ctx context.Context, in *services.ListModuleVersionsRequest, opts ...grpc.CallOption) (*services.ListModuleVersionsResponse, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()

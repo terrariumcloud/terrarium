@@ -5,14 +5,17 @@ import (
 	"io"
 	"log"
 
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	moduleServices "github.com/terrariumcloud/terrarium/internal/module/services"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	release "github.com/terrariumcloud/terrarium/internal/release/services"
-	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
+	terrariumModule "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,48 +33,52 @@ var (
 )
 
 type TerrariumGrpcGateway struct {
-	terrarium.UnimplementedPublisherServer
-	terrarium.UnimplementedConsumerServer
+	terrariumModule.UnimplementedPublisherServer
+	terrariumModule.UnimplementedConsumerServer
 	releasePkg.UnimplementedReleasePublisherServer
-	registrarClient         services.RegistrarClient
-	tagManagerClient        services.TagManagerClient
-	versionManagerClient    services.VersionManagerClient
-	storageClient           services.StorageClient
-	dependencyManagerClient services.DependencyManagerClient
+	terrariumProvider.UnimplementedProviderPublisherServer
+	providerVersionManagerClient providerServices.VersionManagerClient
+	registrarClient         moduleServices.RegistrarClient
+	tagManagerClient        moduleServices.TagManagerClient
+	moduleVersionManagerClient    moduleServices.VersionManagerClient
+	storageClient           moduleServices.StorageClient
+	dependencyManagerClient moduleServices.DependencyManagerClient
 	releasePublisherClient  release.PublisherClient
 }
 
-func New(registrarClient services.RegistrarClient,
-	tagManagerClient services.TagManagerClient,
-	versionManagerClient services.VersionManagerClient,
-	storageClient services.StorageClient,
-	dependencyManagerClient services.DependencyManagerClient,
-	releasePublisherClient release.PublisherClient) *TerrariumGrpcGateway {
+func New(registrarClient moduleServices.RegistrarClient,
+	tagManagerClient moduleServices.TagManagerClient,
+	moduleVersionManagerClient moduleServices.VersionManagerClient,
+	storageClient moduleServices.StorageClient,
+	dependencyManagerClient moduleServices.DependencyManagerClient,
+	releasePublisherClient release.PublisherClient,
+	providerVersionManagerClient providerServices.VersionManagerClient) *TerrariumGrpcGateway {
 	return &TerrariumGrpcGateway{
 		registrarClient:         registrarClient,
 		tagManagerClient:        tagManagerClient,
-		versionManagerClient:    versionManagerClient,
+		moduleVersionManagerClient: moduleVersionManagerClient,
 		storageClient:           storageClient,
 		dependencyManagerClient: dependencyManagerClient,
 		releasePublisherClient:  releasePublisherClient,
+		providerVersionManagerClient: providerVersionManagerClient,
 	}
 }
 
 // RegisterWithServer registers TerrariumGrpcGateway with grpc server
 func (gw *TerrariumGrpcGateway) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
-	terrarium.RegisterPublisherServer(grpcServer, gw)
-	terrarium.RegisterConsumerServer(grpcServer, gw)
+	terrariumModule.RegisterPublisherServer(grpcServer, gw)
+	terrariumModule.RegisterConsumerServer(grpcServer, gw)
 	releasePkg.RegisterReleasePublisherServer(grpcServer, gw)
 	return nil
 }
 
 // Register new module with Registrar service
-func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrarium.RegisterModuleRequest) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) Register(ctx context.Context, request *terrariumModule.RegisterModuleRequest) (*terrariumModule.Response, error) {
 	return gw.RegisterWithClient(ctx, request, gw.registrarClient)
 }
 
 // RegisterWithClient calls Register on Registrar client
-func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request *terrarium.RegisterModuleRequest, client services.RegistrarClient) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request *terrariumModule.RegisterModuleRequest, client moduleServices.RegistrarClient) (*terrariumModule.Response, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: register with Client", trace.WithAttributes(attribute.String("Module Name", request.GetName())))
 	span.SetAttributes(
@@ -90,11 +97,11 @@ func (gw *TerrariumGrpcGateway) RegisterWithClient(ctx context.Context, request 
 }
 
 // Register PublishTag with Registrar service
-func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrarium.PublishTagRequest) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) PublishTag(ctx context.Context, request *terrariumModule.PublishTagRequest) (*terrariumModule.Response, error) {
 	return gw.PublishTagWithClient(ctx, request, gw.tagManagerClient)
 }
 
-func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, request *terrarium.PublishTagRequest, client services.TagManagerClient) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, request *terrariumModule.PublishTagRequest, client moduleServices.TagManagerClient) (*terrariumModule.Response, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: publishing tags with Client", trace.WithAttributes(attribute.String("Module Name", request.GetName()), attribute.StringSlice("Module Tags", request.GetTags())))
 	span.SetAttributes(
@@ -114,12 +121,12 @@ func (gw *TerrariumGrpcGateway) PublishTagWithClient(ctx context.Context, reques
 }
 
 // BeginVersion creates new version with Version Manager service
-func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrarium.BeginVersionRequest) (*terrarium.Response, error) {
-	return gw.BeginVersionWithClient(ctx, request, gw.versionManagerClient)
+func (gw *TerrariumGrpcGateway) BeginVersion(ctx context.Context, request *terrariumModule.BeginVersionRequest) (*terrariumModule.Response, error) {
+	return gw.BeginVersionWithClient(ctx, request, gw.moduleVersionManagerClient)
 }
 
 // BeginVersionWithClient calls BeginVersion on Version Manager client
-func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrarium.BeginVersionRequest, client services.VersionManagerClient) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, request *terrariumModule.BeginVersionRequest, client moduleServices.VersionManagerClient) (*terrariumModule.Response, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: call BeginVersion on Version Manager Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
@@ -138,18 +145,18 @@ func (gw *TerrariumGrpcGateway) BeginVersionWithClient(ctx context.Context, requ
 }
 
 // EndVersion publishes/aborts with Version Manger service
-func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrarium.EndVersionRequest) (*terrarium.Response, error) {
-	return gw.EndVersionWithClient(ctx, request, gw.versionManagerClient)
+func (gw *TerrariumGrpcGateway) EndVersion(ctx context.Context, request *terrariumModule.EndVersionRequest) (*terrariumModule.Response, error) {
+	return gw.EndVersionWithClient(ctx, request, gw.moduleVersionManagerClient)
 }
 
 // EndVersionWithClient calls AbortVersion/PublishVersion on Version Manager client
-func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, request *terrarium.EndVersionRequest, client services.VersionManagerClient) (*terrarium.Response, error) {
-	terminateRequest := services.TerminateVersionRequest{
+func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, request *terrariumModule.EndVersionRequest, client moduleServices.VersionManagerClient) (*terrariumModule.Response, error) {
+	terminateRequest := moduleServices.TerminateVersionRequest{
 		Module: request.GetModule(),
 	}
 	span := trace.SpanFromContext(ctx)
 
-	if request.GetAction() == terrarium.EndVersionRequest_DISCARD {
+	if request.GetAction() == terrariumModule.EndVersionRequest_DISCARD {
 		log.Println("Abort version => Version Manager")
 		if res, delegateError := client.AbortVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
@@ -160,7 +167,7 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 			span.AddEvent("Successfully aborted version", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 			return res, nil
 		}
-	} else if request.GetAction() == terrarium.EndVersionRequest_PUBLISH {
+	} else if request.GetAction() == terrariumModule.EndVersionRequest_PUBLISH {
 		log.Println("Publish version => Version Manager")
 		if res, delegateError := client.PublishVersion(ctx, &terminateRequest); delegateError != nil {
 			log.Printf("Failed: %v", delegateError)
@@ -179,12 +186,12 @@ func (gw *TerrariumGrpcGateway) EndVersionWithClient(ctx context.Context, reques
 }
 
 // UploadSourceZip uploads source zip to Storage service
-func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrarium.Publisher_UploadSourceZipServer) error {
+func (gw *TerrariumGrpcGateway) UploadSourceZip(server terrariumModule.Publisher_UploadSourceZipServer) error {
 	return gw.UploadSourceZipWithClient(server, gw.storageClient)
 }
 
 // UploadSourceZipWithClient calls UploadSourceZip on Storage client
-func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publisher_UploadSourceZipServer, client services.StorageClient) error {
+func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrariumModule.Publisher_UploadSourceZipServer, client moduleServices.StorageClient) error {
 	upstream, upErr := client.UploadSourceZip(server.Context())
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
@@ -232,12 +239,12 @@ func (gw *TerrariumGrpcGateway) UploadSourceZipWithClient(server terrarium.Publi
 }
 
 // DownloadSourceZip downloads source zip from Storage service
-func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer) error {
+func (gw *TerrariumGrpcGateway) DownloadSourceZip(request *terrariumModule.DownloadSourceZipRequest, server terrariumModule.Consumer_DownloadSourceZipServer) error {
 	return gw.DownloadSourceZipWithClient(request, server, gw.storageClient)
 }
 
 // DownloadSourceZipWithClient calls DownloadSourceZip on Storage client
-func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.DownloadSourceZipRequest, server terrarium.Consumer_DownloadSourceZipServer, client services.StorageClient) error {
+func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrariumModule.DownloadSourceZipRequest, server terrariumModule.Consumer_DownloadSourceZipServer, client moduleServices.StorageClient) error {
 	downstream, downErr := client.DownloadSourceZip(server.Context(), request)
 	ctx := server.Context()
 	span := trace.SpanFromContext(ctx)
@@ -275,12 +282,12 @@ func (gw *TerrariumGrpcGateway) DownloadSourceZipWithClient(request *terrarium.D
 }
 
 // RegisterModuleDependencies registers Module dependencies with Dependency Manager service
-func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) RegisterModuleDependencies(ctx context.Context, request *terrariumModule.RegisterModuleDependenciesRequest) (*terrariumModule.Response, error) {
 	return gw.RegisterModuleDependenciesWithClient(ctx, request, gw.dependencyManagerClient)
 }
 
 // RegisterModuleDependenciesWithClient calls RegisterModuleDependencies on Dependency Manager client
-func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context.Context, request *terrarium.RegisterModuleDependenciesRequest, client services.DependencyManagerClient) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context.Context, request *terrariumModule.RegisterModuleDependenciesRequest, client moduleServices.DependencyManagerClient) (*terrariumModule.Response, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: registering module dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
@@ -300,12 +307,12 @@ func (gw *TerrariumGrpcGateway) RegisterModuleDependenciesWithClient(ctx context
 }
 
 // RegisterContainerDependencies registers Container dependencies with Dependency Manager service
-func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) RegisterContainerDependencies(ctx context.Context, request *terrariumModule.RegisterContainerDependenciesRequest) (*terrariumModule.Response, error) {
 	return gw.RegisterContainerDependenciesWithClient(ctx, request, gw.dependencyManagerClient)
 }
 
 // RegisterContainerDependenciesWithClient calls RegisterContainerDependencies on Dependency Manager client
-func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx context.Context, request *terrarium.RegisterContainerDependenciesRequest, client services.DependencyManagerClient) (*terrarium.Response, error) {
+func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx context.Context, request *terrariumModule.RegisterContainerDependenciesRequest, client moduleServices.DependencyManagerClient) (*terrariumModule.Response, error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("gateway: registering container dependencies with Client", trace.WithAttributes(attribute.String("Module Name", request.Module.GetName()), attribute.String("Module Version", request.Module.GetVersion())))
 	span.SetAttributes(
@@ -324,18 +331,18 @@ func (gw *TerrariumGrpcGateway) RegisterContainerDependenciesWithClient(ctx cont
 }
 
 // RetrieveContainerDependencies retrieves Container dependencies from Dependency Manager service
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrarium.RetrieveContainerDependenciesRequest, server terrarium.Consumer_RetrieveContainerDependenciesServer) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependencies(request *terrariumModule.RetrieveContainerDependenciesRequest, server terrariumModule.Consumer_RetrieveContainerDependenciesServer) error {
 	log.Println("Retrieve container dependencies => NOOP")
 	return nil
 }
 
 // RetrieveContainerDependenciesV2 retrieves Container dependencies from Dependency Manager service
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2(request *terrariumModule.RetrieveContainerDependenciesRequestV2, server terrariumModule.Consumer_RetrieveContainerDependenciesV2Server) error {
 	return gw.RetrieveContainerDependenciesV2WithClient(request, server, gw.dependencyManagerClient)
 }
 
 // RetrieveContainerDependenciesWithClient calls RetrieveContainerDependencies on Dependency Manager client
-func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(request *terrarium.RetrieveContainerDependenciesRequestV2, server terrarium.Consumer_RetrieveContainerDependenciesV2Server, client services.DependencyManagerClient) error {
+func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(request *terrariumModule.RetrieveContainerDependenciesRequestV2, server terrariumModule.Consumer_RetrieveContainerDependenciesV2Server, client moduleServices.DependencyManagerClient) error {
 	//ctx := metadata.AppendToOutgoingContext(server.Context(), "k", "v")
 
 	downStream, downErr := client.RetrieveContainerDependencies(server.Context(), request)
@@ -380,11 +387,11 @@ func (gw *TerrariumGrpcGateway) RetrieveContainerDependenciesV2WithClient(reques
 }
 
 // Retrieve Module dependences from Dependency Manager service
-func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer) error {
+func (gw *TerrariumGrpcGateway) RetrieveModuleDependencies(request *terrariumModule.RetrieveModuleDependenciesRequest, server terrariumModule.Consumer_RetrieveModuleDependenciesServer) error {
 	return gw.RetrieveModuleDependenciesWithClient(request, server, gw.dependencyManagerClient)
 }
 
-func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *terrarium.RetrieveModuleDependenciesRequest, server terrarium.Consumer_RetrieveModuleDependenciesServer, client services.DependencyManagerClient) error {
+func (gw *TerrariumGrpcGateway) RetrieveModuleDependenciesWithClient(request *terrariumModule.RetrieveModuleDependenciesRequest, server terrariumModule.Consumer_RetrieveModuleDependenciesServer, client moduleServices.DependencyManagerClient) error {
 	downStream, downErr := client.RetrieveModuleDependencies(server.Context(), request)
 
 	ctx := server.Context()
@@ -447,5 +454,82 @@ func (gw *TerrariumGrpcGateway) PublishWithClient(ctx context.Context, request *
 		return nil, delegateError
 	} else {
 		return res, nil
+	}
+}
+
+// RegisteProviderrWithServer registers TerrariumGrpcGateway with grpc server
+func (gw *TerrariumGrpcGateway) RegisterProviderWithServer(grpcServer grpc.ServiceRegistrar) error {
+	terrariumProvider.RegisterProviderPublisherServer(grpcServer, gw)
+	return nil
+}
+
+// Registers new provider on version manager client
+func (gw *TerrariumGrpcGateway) RegisterProvider(ctx context.Context, request *terrariumProvider.RegisterProviderRequest) (*terrariumProvider.Response, error) {
+	return gw.RegisterProviderWithClient(ctx, request, gw.providerVersionManagerClient)
+}
+
+// RegisterProviderWithClient calls Register on version manager client
+func (gw *TerrariumGrpcGateway) RegisterProviderWithClient(ctx context.Context, request *terrariumProvider.RegisterProviderRequest, client providerServices.VersionManagerClient) (*terrariumProvider.Response, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("provider.name", request.GetName()),
+		attribute.String("provider.version", request.GetVersion()),
+	)
+
+	if res, delegateError := client.Register(ctx, request); delegateError != nil {
+		log.Printf("Failed: %v", delegateError)
+		span.RecordError(delegateError)
+		return nil, delegateError
+	} else {
+		log.Println("Done <= Registered")
+		span.AddEvent("Successful call to Register on Version Manager client.")
+		return res, nil
+	}
+}
+
+func (gw *TerrariumGrpcGateway) EndProvider(ctx context.Context, request *terrariumProvider.EndProviderRequest) (*terrariumProvider.Response, error) {
+	return gw.EndProviderWithClient(ctx, request, gw.providerVersionManagerClient)
+}
+
+// EndProviderWithClient calls AbortProviderVersion/PublishVersion on Version Manager client
+func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, request *terrariumProvider.EndProviderRequest, client providerServices.VersionManagerClient) (*terrariumProvider.Response, error) {
+
+	terminateProviderVersion := providerServices.TerminateVersionRequest{
+		Provider: request.GetProvider(),
+	}
+
+	publishRequest := providerServices.TerminateVersionRequest{
+		Provider: request.GetProvider(),
+	}
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("provider.name", request.Provider.GetName()),
+		attribute.String("provider.version", request.Provider.GetVersion()),
+	)
+
+	if request.GetAction() == terrariumProvider.EndProviderRequest_DISCARD_VERSION {
+		log.Println("Abort Provider Version => Version Manager")
+		if res, delegateError := client.AbortProviderVersion(ctx, &terminateProviderVersion); delegateError != nil {
+			log.Printf("Failed: %v", delegateError)
+			span.RecordError(delegateError)
+			return nil, delegateError
+		} else {
+			log.Println("Done <= Version Manager")
+			return res, nil
+		}
+	} else if request.GetAction() == terrariumProvider.EndProviderRequest_PUBLISH {
+		log.Println("Pubish Provider => Version Manager")
+		if res, delegateError := client.PublishVersion(ctx, &publishRequest); delegateError != nil {
+			log.Printf("Failed: %v", delegateError)
+			span.RecordError(delegateError)
+			return nil, delegateError
+		} else {
+			log.Println("Done <= Version Manager")
+			return res, nil
+		}
+	} else {
+		log.Printf("Unknown Version manager action requested: %v", request.GetAction())
+		return nil, UnknownVersionManagerActionError
 	}
 }

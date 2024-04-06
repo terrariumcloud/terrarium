@@ -27,5 +27,5 @@ func runProviderVersionManagerService(cmd *cobra.Command, args []string) {
 		Schema: version_manager.GetProviderVersionsSchema(version_manager.VersionsTableName),
 	}
 
-	startProviderGRPCService("provider-version-manager", versionManagerServiceServer)
+	startGRPCService("provider-version-manager", versionManagerServiceServer)
 }

@@ -3,8 +3,8 @@ package terrarium.provider;
 
 option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/provider";
 
-service Publisher {
-  rpc Register(RegisterProviderRequest) returns (Response) {}
+service ProviderPublisher {
+  rpc RegisterProvider(RegisterProviderRequest) returns (Response) {}
   rpc EndProvider(EndProviderRequest) returns (Response) {}
 }
 

@@ -37,7 +37,6 @@ var (
 
 	ProviderRegistered = &terrarium.Response{Message: "Provider registered successfully."}
 	VersionPublished   = &terrarium.Response{Message: "Version published."}
-	ProviderAborted    = &terrarium.Response{Message: "Provider aborted."}
 	VersionAborted     = &terrarium.Response{Message: "Version aborted."}
 
 	ProviderVersionsTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for provider versions.")

@@ -2,7 +2,7 @@ package release
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
 	releaseSvc "github.com/terrariumcloud/terrarium/internal/release/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	"google.golang.org/grpc"
@@ -17,7 +17,7 @@ func NewBrowseGrpcClient(endpoint string) releaseSvc.BrowseClient {
 }
 
 func (b browseGrpcClient) ListReleases(ctx context.Context, in *releaseSvc.ListReleasesRequest, opts ...grpc.CallOption) (*releaseSvc.ListReleasesResponse, error) {
-	if conn, err := services.CreateGRPCConnection(b.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(b.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -28,7 +28,7 @@ func (b browseGrpcClient) ListReleases(ctx context.Context, in *releaseSvc.ListR
 }
 
 func (b browseGrpcClient) ListReleaseTypes(ctx context.Context, in *releaseSvc.ListReleaseTypesRequest, opts ...grpc.CallOption) (*releaseSvc.ListReleaseTypesResponse, error) {
-	if conn, err := services.CreateGRPCConnection(b.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(b.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -39,7 +39,7 @@ func (b browseGrpcClient) ListReleaseTypes(ctx context.Context, in *releaseSvc.L
 }
 
 func (b browseGrpcClient) ListOrganization(ctx context.Context, in *releaseSvc.ListOrganizationRequest, opts ...grpc.CallOption) (*releaseSvc.ListOrganizationResponse, error) {
-	if conn, err := services.CreateGRPCConnection(b.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(b.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -58,7 +58,7 @@ func NewPublisherGrpcClient(endpoint string) releaseSvc.PublisherClient {
 }
 
 func (r publisherGrpcClient) Publish(ctx context.Context, in *release.PublishRequest, opts ...grpc.CallOption) (*release.PublishResponse, error) {
-	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()

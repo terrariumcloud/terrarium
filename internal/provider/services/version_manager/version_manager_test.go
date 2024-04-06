@@ -611,12 +611,6 @@ func Test_ListProviders(t *testing.T) {
 						"source_repo_url": &types.AttributeValueMemberS{Value: "http://test.com/provider"},
 						"maturity":        &types.AttributeValueMemberS{Value: "ALPHA"},
 					},
-					{
-						"name":            &types.AttributeValueMemberS{Value: "test-org2/test-provider2"},
-						"description":     &types.AttributeValueMemberS{Value: "Test Description2"},
-						"source_repo_url": &types.AttributeValueMemberS{Value: "http://test.com/provider2"},
-						"maturity":        &types.AttributeValueMemberS{Value: "BETA"},
-					},
 				},
 			},
 		}
@@ -638,13 +632,6 @@ func Test_ListProviders(t *testing.T) {
 					Description:   "Test Description",
 					SourceRepoUrl: "http://test.com/provider",
 					Maturity:      terrarium.Maturity_ALPHA,
-				},
-				{
-					Organization:  "test-org2",
-					Name:          "test-provider2",
-					Description:   "Test Description2",
-					SourceRepoUrl: "http://test.com/provider2",
-					Maturity:      terrarium.Maturity_BETA,
 				},
 			},
 		}

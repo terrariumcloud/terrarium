@@ -13,7 +13,7 @@ export interface ProviderEntry {
     organization: string
     name: string
     description?: string
-    source_url: string
+    source_repo_url: string
     maturity?: string
 }
 

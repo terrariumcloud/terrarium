@@ -12,9 +12,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/terrariumcloud/terrarium/internal/restapi"
-
-	"github.com/terrariumcloud/terrarium/internal/module/services"
-	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
+	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -120,7 +118,7 @@ func initOpenTelemetry(name string) func() {
 	}
 }
 
-func startGRPCService(name string, service services.Service) {
+func startGRPCService(name string, service grpcService.Service) {
 	log.Printf("Starting %s", name)
 	if !opentelemetryInited {
 		otelShutdown := initOpenTelemetry(name)
@@ -138,33 +136,6 @@ func startGRPCService(name string, service services.Service) {
 	)
 
 	if err := service.RegisterWithServer(grpcServer); err != nil {
-		log.Fatalf("Failed to start: %v", err)
-	}
-
-	log.Printf("Listening at %s", endpoint)
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("Failed: %v", err)
-	}
-}
-
-func startProviderGRPCService(name string, provider_service providerServices.Service) {
-	log.Printf("Starting %s", name)
-	if !opentelemetryInited {
-		otelShutdown := initOpenTelemetry(name)
-		defer otelShutdown()
-	}
-
-	listener, err := net.Listen("tcp4", endpoint)
-	if err != nil {
-		log.Fatalf("Failed to start: %v", err)
-	}
-
-	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-	)
-
-	if err := provider_service.RegisterWithServer(grpcServer); err != nil {
 		log.Fatalf("Failed to start: %v", err)
 	}
 

@@ -18,122 +18,122 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// PublisherClient is the client API for Publisher service.
+// ProviderPublisherClient is the client API for ProviderPublisher service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type PublisherClient interface {
-	Register(ctx context.Context, in *RegisterProviderRequest, opts ...grpc.CallOption) (*Response, error)
+type ProviderPublisherClient interface {
+	RegisterProvider(ctx context.Context, in *RegisterProviderRequest, opts ...grpc.CallOption) (*Response, error)
 	EndProvider(ctx context.Context, in *EndProviderRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
-type publisherClient struct {
+type providerPublisherClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewPublisherClient(cc grpc.ClientConnInterface) PublisherClient {
-	return &publisherClient{cc}
+func NewProviderPublisherClient(cc grpc.ClientConnInterface) ProviderPublisherClient {
+	return &providerPublisherClient{cc}
 }
 
-func (c *publisherClient) Register(ctx context.Context, in *RegisterProviderRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *providerPublisherClient) RegisterProvider(ctx context.Context, in *RegisterProviderRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/terrarium.provider.Publisher/Register", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/terrarium.provider.ProviderPublisher/RegisterProvider", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publisherClient) EndProvider(ctx context.Context, in *EndProviderRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *providerPublisherClient) EndProvider(ctx context.Context, in *EndProviderRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/terrarium.provider.Publisher/EndProvider", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/terrarium.provider.ProviderPublisher/EndProvider", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// PublisherServer is the server API for Publisher service.
-// All implementations must embed UnimplementedPublisherServer
+// ProviderPublisherServer is the server API for ProviderPublisher service.
+// All implementations must embed UnimplementedProviderPublisherServer
 // for forward compatibility
-type PublisherServer interface {
-	Register(context.Context, *RegisterProviderRequest) (*Response, error)
+type ProviderPublisherServer interface {
+	RegisterProvider(context.Context, *RegisterProviderRequest) (*Response, error)
 	EndProvider(context.Context, *EndProviderRequest) (*Response, error)
-	mustEmbedUnimplementedPublisherServer()
+	mustEmbedUnimplementedProviderPublisherServer()
 }
 
-// UnimplementedPublisherServer must be embedded to have forward compatible implementations.
-type UnimplementedPublisherServer struct {
+// UnimplementedProviderPublisherServer must be embedded to have forward compatible implementations.
+type UnimplementedProviderPublisherServer struct {
 }
 
-func (UnimplementedPublisherServer) Register(context.Context, *RegisterProviderRequest) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+func (UnimplementedProviderPublisherServer) RegisterProvider(context.Context, *RegisterProviderRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterProvider not implemented")
 }
-func (UnimplementedPublisherServer) EndProvider(context.Context, *EndProviderRequest) (*Response, error) {
+func (UnimplementedProviderPublisherServer) EndProvider(context.Context, *EndProviderRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndProvider not implemented")
 }
-func (UnimplementedPublisherServer) mustEmbedUnimplementedPublisherServer() {}
+func (UnimplementedProviderPublisherServer) mustEmbedUnimplementedProviderPublisherServer() {}
 
-// UnsafePublisherServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PublisherServer will
+// UnsafeProviderPublisherServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ProviderPublisherServer will
 // result in compilation errors.
-type UnsafePublisherServer interface {
-	mustEmbedUnimplementedPublisherServer()
+type UnsafeProviderPublisherServer interface {
+	mustEmbedUnimplementedProviderPublisherServer()
 }
 
-func RegisterPublisherServer(s grpc.ServiceRegistrar, srv PublisherServer) {
-	s.RegisterService(&Publisher_ServiceDesc, srv)
+func RegisterProviderPublisherServer(s grpc.ServiceRegistrar, srv ProviderPublisherServer) {
+	s.RegisterService(&ProviderPublisher_ServiceDesc, srv)
 }
 
-func _Publisher_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProviderPublisher_RegisterProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublisherServer).Register(ctx, in)
+		return srv.(ProviderPublisherServer).RegisterProvider(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/terrarium.provider.Publisher/Register",
+		FullMethod: "/terrarium.provider.ProviderPublisher/RegisterProvider",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublisherServer).Register(ctx, req.(*RegisterProviderRequest))
+		return srv.(ProviderPublisherServer).RegisterProvider(ctx, req.(*RegisterProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Publisher_EndProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProviderPublisher_EndProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EndProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublisherServer).EndProvider(ctx, in)
+		return srv.(ProviderPublisherServer).EndProvider(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/terrarium.provider.Publisher/EndProvider",
+		FullMethod: "/terrarium.provider.ProviderPublisher/EndProvider",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublisherServer).EndProvider(ctx, req.(*EndProviderRequest))
+		return srv.(ProviderPublisherServer).EndProvider(ctx, req.(*EndProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Publisher_ServiceDesc is the grpc.ServiceDesc for Publisher service.
+// ProviderPublisher_ServiceDesc is the grpc.ServiceDesc for ProviderPublisher service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Publisher_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "terrarium.provider.Publisher",
-	HandlerType: (*PublisherServer)(nil),
+var ProviderPublisher_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "terrarium.provider.ProviderPublisher",
+	HandlerType: (*ProviderPublisherServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Register",
-			Handler:    _Publisher_Register_Handler,
+			MethodName: "RegisterProvider",
+			Handler:    _ProviderPublisher_RegisterProvider_Handler,
 		},
 		{
 			MethodName: "EndProvider",
-			Handler:    _Publisher_EndProvider_Handler,
+			Handler:    _ProviderPublisher_EndProvider_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -16,7 +16,7 @@ function BrowseProviders() {
                     <Typography variant="body2">{provider.description || "A provider"}</Typography>
                 </CardContent>
                 <CardActions>
-                    <Button size="small" href={provider.source_url || ""}>Source</Button>
+                    <Button size="small" href={provider.source_repo_url || ""}>Source</Button>
                     <Button size="small" component={RouterLink} to={providerPage}>Provider Info</Button>
                 </CardActions>
             </Card>

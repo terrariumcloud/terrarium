@@ -2,6 +2,7 @@ package version_manager
 
 import (
 	"context"
+	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
 	"github.com/terrariumcloud/terrarium/internal/provider/services"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	"google.golang.org/grpc"
@@ -16,7 +17,7 @@ func NewVersionManagerGrpcClient(endpoint string) services.VersionManagerClient 
 }
 
 func (v versionManagerGrpcClient) ListProviderVersions(ctx context.Context, in *services.ProviderName, opts ...grpc.CallOption) (*services.ProviderVersionsResponse, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -27,7 +28,7 @@ func (v versionManagerGrpcClient) ListProviderVersions(ctx context.Context, in *
 }
 
 func (v versionManagerGrpcClient) GetVersionData(ctx context.Context, in *services.VersionDataRequest, opts ...grpc.CallOption) (*services.PlatformMetadataResponse, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -38,7 +39,7 @@ func (v versionManagerGrpcClient) GetVersionData(ctx context.Context, in *servic
 }
 
 func (v versionManagerGrpcClient) ListProviders(ctx context.Context, in *services.ListProvidersRequest, opts ...grpc.CallOption) (*services.ListProvidersResponse, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -49,7 +50,7 @@ func (v versionManagerGrpcClient) ListProviders(ctx context.Context, in *service
 }
 
 func (v versionManagerGrpcClient) GetProvider(ctx context.Context, in *services.ProviderName, opts ...grpc.CallOption) (*services.GetProviderResponse, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -60,7 +61,7 @@ func (v versionManagerGrpcClient) GetProvider(ctx context.Context, in *services.
 }
 
 func (v versionManagerGrpcClient) Register(ctx context.Context, in *terrarium.RegisterProviderRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -71,7 +72,7 @@ func (v versionManagerGrpcClient) Register(ctx context.Context, in *terrarium.Re
 }
 
 func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -82,7 +83,7 @@ func (v versionManagerGrpcClient) PublishVersion(ctx context.Context, in *servic
 }
 
 func (v versionManagerGrpcClient) AbortProviderVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*terrarium.Response, error) {
-	if conn, err := services.CreateGRPCConnection(v.endpoint); err != nil {
+	if conn, err := grpcService.CreateGRPCConnection(v.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
