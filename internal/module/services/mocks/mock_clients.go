@@ -52,9 +52,9 @@ func (m *MockVersionManagerClient) AbortVersion(ctx context.Context, in *moduleS
 
 type MockProviderVersionManagerClient struct {
 	providerServices.VersionManagerClient
-	RegisterInvocations 	  int
-	RegisterResponse 		  *terrariumProvider.Response
-	RegisterError       	  error
+	RegisterInvocations       int
+	RegisterResponse          *terrariumProvider.Response
+	RegisterError             error
 	PublishVersionInvocations int
 	PublishVersionResponse    *terrariumProvider.Response
 	PublishVersionError       error

@@ -6,11 +6,11 @@ import (
 	"log"
 
 	moduleServices "github.com/terrariumcloud/terrarium/internal/module/services"
-	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 	release "github.com/terrariumcloud/terrarium/internal/release/services"
-	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	terrariumModule "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	releasePkg "github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -38,12 +38,12 @@ type TerrariumGrpcGateway struct {
 	releasePkg.UnimplementedReleasePublisherServer
 	terrariumProvider.UnimplementedProviderPublisherServer
 	providerVersionManagerClient providerServices.VersionManagerClient
-	registrarClient         moduleServices.RegistrarClient
-	tagManagerClient        moduleServices.TagManagerClient
-	moduleVersionManagerClient    moduleServices.VersionManagerClient
-	storageClient           moduleServices.StorageClient
-	dependencyManagerClient moduleServices.DependencyManagerClient
-	releasePublisherClient  release.PublisherClient
+	registrarClient              moduleServices.RegistrarClient
+	tagManagerClient             moduleServices.TagManagerClient
+	moduleVersionManagerClient   moduleServices.VersionManagerClient
+	storageClient                moduleServices.StorageClient
+	dependencyManagerClient      moduleServices.DependencyManagerClient
+	releasePublisherClient       release.PublisherClient
 }
 
 func New(registrarClient moduleServices.RegistrarClient,
@@ -54,12 +54,12 @@ func New(registrarClient moduleServices.RegistrarClient,
 	releasePublisherClient release.PublisherClient,
 	providerVersionManagerClient providerServices.VersionManagerClient) *TerrariumGrpcGateway {
 	return &TerrariumGrpcGateway{
-		registrarClient:         registrarClient,
-		tagManagerClient:        tagManagerClient,
-		moduleVersionManagerClient: moduleVersionManagerClient,
-		storageClient:           storageClient,
-		dependencyManagerClient: dependencyManagerClient,
-		releasePublisherClient:  releasePublisherClient,
+		registrarClient:              registrarClient,
+		tagManagerClient:             tagManagerClient,
+		moduleVersionManagerClient:   moduleVersionManagerClient,
+		storageClient:                storageClient,
+		dependencyManagerClient:      dependencyManagerClient,
+		releasePublisherClient:       releasePublisherClient,
 		providerVersionManagerClient: providerVersionManagerClient,
 	}
 }

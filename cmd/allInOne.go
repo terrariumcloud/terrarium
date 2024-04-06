@@ -11,12 +11,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium/internal/common/gateway"
+	grpcServices "github.com/terrariumcloud/terrarium/internal/common/grpcService"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	storage2 "github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	grpcServices "github.com/terrariumcloud/terrarium/internal/common/grpcService"
 	providerVersionManager "github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
@@ -103,7 +103,7 @@ var allInOneCmd = &cobra.Command{
 		}
 
 		otelShutdown := initOpenTelemetry("all-in-one")
-		defer otelShutdown() 
+		defer otelShutdown()
 
 		startAllInOneGrpcServices(services, allInOneInternalEndpoint)
 
@@ -164,7 +164,7 @@ func startAllInOneGrpcServices(services []grpcServices.Service, endpoint string)
 			log.Fatalf("Failed to start: %v", err)
 		}
 	}
-	
+
 	go func() {
 		log.Printf("Listening at %s", endpoint)
 		if err := grpcServer.Serve(listener); err != nil {

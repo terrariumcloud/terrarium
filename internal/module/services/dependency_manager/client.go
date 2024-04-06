@@ -2,8 +2,8 @@ package dependency_manager
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
 	"io"

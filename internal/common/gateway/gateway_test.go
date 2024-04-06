@@ -11,8 +11,8 @@ import (
 	releaseMocks "github.com/terrariumcloud/terrarium/internal/release/services/mocks"
 
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
-	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 )
 
 // Test_RegisterWithClient checks:
@@ -933,7 +933,7 @@ func Test_EndProviderWithClient(t *testing.T) {
 		client := &mocks.MockProviderVersionManagerClient{PublishVersionResponse: response}
 		gw := &TerrariumGrpcGateway{}
 		req := &terrariumProvider.EndProviderRequest{
-			Action: terrariumProvider.EndProviderRequest_PUBLISH,
+			Action:   terrariumProvider.EndProviderRequest_PUBLISH,
 			Provider: &terrariumProvider.Provider{},
 		}
 
@@ -957,7 +957,7 @@ func Test_EndProviderWithClient(t *testing.T) {
 		client := &mocks.MockProviderVersionManagerClient{PublishVersionError: expected}
 		gw := &TerrariumGrpcGateway{}
 		req := &terrariumProvider.EndProviderRequest{
-			Action: terrariumProvider.EndProviderRequest_PUBLISH,
+			Action:   terrariumProvider.EndProviderRequest_PUBLISH,
 			Provider: &terrariumProvider.Provider{},
 		}
 
@@ -977,7 +977,7 @@ func Test_EndProviderWithClient(t *testing.T) {
 		client := &mocks.MockProviderVersionManagerClient{AbortVersionResponse: response}
 		gw := &TerrariumGrpcGateway{}
 		req := &terrariumProvider.EndProviderRequest{
-			Action: terrariumProvider.EndProviderRequest_DISCARD_VERSION,
+			Action:   terrariumProvider.EndProviderRequest_DISCARD_VERSION,
 			Provider: &terrariumProvider.Provider{},
 		}
 
@@ -1004,7 +1004,7 @@ func Test_EndProviderWithClient(t *testing.T) {
 		gw := &TerrariumGrpcGateway{}
 
 		req := &terrariumProvider.EndProviderRequest{
-			Action: terrariumProvider.EndProviderRequest_DISCARD_VERSION,
+			Action:   terrariumProvider.EndProviderRequest_DISCARD_VERSION,
 			Provider: &terrariumProvider.Provider{},
 		}
 
@@ -1025,7 +1025,7 @@ func Test_EndProviderWithClient(t *testing.T) {
 		gw := &TerrariumGrpcGateway{}
 
 		req := &terrariumProvider.EndProviderRequest{
-			Action: 123,
+			Action:   123,
 			Provider: &terrariumProvider.Provider{},
 		}
 

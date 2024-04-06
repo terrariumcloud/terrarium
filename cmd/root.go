@@ -11,8 +11,8 @@ import (
 
 	"go.opentelemetry.io/otel/propagation"
 
-	"github.com/terrariumcloud/terrarium/internal/restapi"
 	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	"github.com/terrariumcloud/terrarium/internal/restapi"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"

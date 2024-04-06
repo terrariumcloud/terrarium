@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/common/gateway"
+	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	providerVersionManager "github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
+	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 
 	"github.com/spf13/cobra"
 )

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	providersv1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 	"github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
+	providersv1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 
 	"github.com/spf13/cobra"
 )
