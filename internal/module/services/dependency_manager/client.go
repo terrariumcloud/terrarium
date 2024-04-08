@@ -2,7 +2,7 @@ package dependency_manager
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ func NewDependencyManagerGrpcClient(endpoint string) services.DependencyManagerC
 }
 
 func (d dependencyManagerGrpcClient) RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := grpcService.CreateGRPCConnection(d.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(d.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -29,7 +29,7 @@ func (d dependencyManagerGrpcClient) RegisterModuleDependencies(ctx context.Cont
 }
 
 func (d dependencyManagerGrpcClient) RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := grpcService.CreateGRPCConnection(d.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(d.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -40,7 +40,7 @@ func (d dependencyManagerGrpcClient) RegisterContainerDependencies(ctx context.C
 }
 
 func (d dependencyManagerGrpcClient) RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequestV2, opts ...grpc.CallOption) (services.DependencyManager_RetrieveContainerDependenciesClient, error) {
-	if conn, err := grpcService.CreateGRPCConnection(d.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(d.endpoint); err != nil {
 		return nil, err
 	} else {
 		client := services.NewDependencyManagerClient(conn)
@@ -57,7 +57,7 @@ func (d dependencyManagerGrpcClient) RetrieveContainerDependencies(ctx context.C
 }
 
 func (d dependencyManagerGrpcClient) RetrieveModuleDependencies(ctx context.Context, in *module.RetrieveModuleDependenciesRequest, opts ...grpc.CallOption) (services.DependencyManager_RetrieveModuleDependenciesClient, error) {
-	if conn, err := grpcService.CreateGRPCConnection(d.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(d.endpoint); err != nil {
 		return nil, err
 	} else {
 		client := services.NewDependencyManagerClient(conn)

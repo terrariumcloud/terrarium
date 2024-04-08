@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/terrariumcloud/terrarium/internal/common/gateway"
-	grpcServices "github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	grpcServices "github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	storage2 "github.com/terrariumcloud/terrarium/internal/module/services/storage"

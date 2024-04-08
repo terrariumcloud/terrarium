@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
@@ -19,7 +19,7 @@ func NewStorageGrpcClient(endpoint string) services.StorageClient {
 }
 
 func (s storageGrpcClient) UploadSourceZip(ctx context.Context, opts ...grpc.CallOption) (services.Storage_UploadSourceZipClient, error) {
-	if conn, err := grpcService.CreateGRPCConnection(s.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
 		return nil, err
 	} else {
 		client := services.NewStorageClient(conn)
@@ -33,7 +33,7 @@ func (s storageGrpcClient) UploadSourceZip(ctx context.Context, opts ...grpc.Cal
 }
 
 func (s storageGrpcClient) DownloadSourceZip(ctx context.Context, in *module.DownloadSourceZipRequest, opts ...grpc.CallOption) (services.Storage_DownloadSourceZipClient, error) {
-	if conn, err := grpcService.CreateGRPCConnection(s.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
 		return nil, err
 	} else {
 		client := services.NewStorageClient(conn)

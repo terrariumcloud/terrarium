@@ -11,7 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel/propagation"
 
-	"github.com/terrariumcloud/terrarium/internal/common/grpcService"
+	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/restapi"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -118,7 +118,7 @@ func initOpenTelemetry(name string) func() {
 	}
 }
 
-func startGRPCService(name string, service grpcService.Service) {
+func startGRPCService(name string, service grpc_service.Service) {
 	log.Printf("Starting %s", name)
 	if !opentelemetryInited {
 		otelShutdown := initOpenTelemetry(name)
