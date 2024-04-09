@@ -292,6 +292,11 @@ func (s *VersionManagerService) Register(ctx context.Context, request *terrarium
 // Only versions that have been published should be reported.
 func (s *VersionManagerService) ListProviderVersions(ctx context.Context, request *services.ProviderName) (*services.ProviderVersionsResponse, error) {
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("provider.name", request.GetProvider()),
+	)
+
 	filter := expression.And(
 		expression.Name("name").Equal(expression.Value(request.GetProvider())),
 		expression.Name("published_on").AttributeExists())
@@ -299,6 +304,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
@@ -313,6 +319,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 
 	response, err := s.Db.Scan(ctx, scanInputs)
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
@@ -323,6 +330,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 		for _, item := range response.Items {
 			versionItem, err := unmarshalProviderVersionItem(item)
 			if err != nil {
+				span.RecordError(err)
 				log.Printf("UnmarshalMap failed: %v", err)
 				return nil, err
 			}
@@ -335,6 +343,7 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 	for _, providerVersion := range grpcResponse.Versions {
 		parsedVersion, err := versions.ParseVersion(providerVersion.Version)
 		if err != nil {
+			span.RecordError(err)
 			log.Printf("Skipping invalid semantic version: %v", providerVersion.Version)
 		} else {
 			semverList = append(semverList, parsedVersion)
@@ -360,15 +369,25 @@ func (s *VersionManagerService) ListProviderVersions(ctx context.Context, reques
 
 func (s *VersionManagerService) GetVersionData(ctx context.Context, request *services.VersionDataRequest) (*services.PlatformMetadataResponse, error) {
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("provider.name", request.GetName()),
+		attribute.String("provider.version", request.GetVersion()),
+		attribute.String("provider.os", request.GetOs()),
+		attribute.String("provider.arch", request.GetArch()),
+	)
+
 	providerID, err := attributevalue.Marshal(request.GetName())
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ProviderGetError
 	}
 
 	providerVersion, err := attributevalue.Marshal(request.GetVersion())
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ProviderGetError
 	}
 
@@ -381,11 +400,13 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 	})
 	if err != nil {
 		log.Println(err)
+		span.RecordError(err)
 		return nil, ProviderGetError
 	} else {
 		providerMetadata, err := unmarshalProviderMetadata(response.Item, request.Os, request.Arch)
 		if err != nil {
 			log.Println(err)
+			span.RecordError(err)
 			return nil, MarshalProviderError
 		}
 		return providerMetadata, nil
@@ -394,6 +415,8 @@ func (s *VersionManagerService) GetVersionData(ctx context.Context, request *ser
 
 func (s *VersionManagerService) ListProviders(ctx context.Context, request *services.ListProvidersRequest) (*services.ListProvidersResponse, error) {
 
+	span := trace.SpanFromContext(ctx)
+
 	// Initialize a map to store providers uniquely
 	uniqueProviders := make(map[string]*services.ListProviderItem)
 
@@ -401,6 +424,7 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 
 	expr, err := expression.NewBuilder().WithProjection(projection).Build()
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
@@ -413,6 +437,7 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 
 	response, err := s.Db.Scan(ctx, scanInputs)
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
@@ -420,6 +445,7 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 	if response.Items != nil {
 		for _, item := range response.Items {
 			if providerMetadata, err := unmarshalProvider(item); err != nil {
+				span.RecordError(err)
 				return nil, err
 			} else {
 				key := providerMetadata.Name
@@ -446,10 +472,16 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 
 func (s *VersionManagerService) GetProvider(ctx context.Context, request *services.ProviderName) (*services.GetProviderResponse, error) {
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("provider.name", request.GetProvider()),
+	)
+
 	filter := expression.Name("name").Equal(expression.Value(request.GetProvider()))
 	projection := expression.NamesList(expression.Name("name"), expression.Name("description"), expression.Name("maturity"), expression.Name("source_repo_url"))
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(projection).Build()
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("Expression Builder failed creation: %v", err)
 		return nil, err
 	}
@@ -464,17 +496,21 @@ func (s *VersionManagerService) GetProvider(ctx context.Context, request *servic
 
 	response, err := s.Db.Scan(ctx, scanInputs)
 	if err != nil {
+		span.RecordError(err)
 		log.Printf("ScanInput failed: %v", err)
 		return nil, err
 	}
 
 	if response.Items == nil || len(response.Items) < 1 {
-		return nil, fmt.Errorf("provider not found '%v'", request.GetProvider())
+		err := fmt.Errorf("provider not found '%v'", request.GetProvider())
+		span.RecordError(err)
+		return nil, err
 	}
 
 	grpcResponse := services.GetProviderResponse{}
 
 	if providerMetadata, err := unmarshalProvider(response.Items[0]); err != nil {
+		span.RecordError(err)
 		return nil, err
 	} else {
 		grpcResponse.Provider = providerMetadata
