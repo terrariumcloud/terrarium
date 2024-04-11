@@ -71,11 +71,11 @@ func Test_createProviderMetadataResponse(t *testing.T) {
 			name: "Provider Metadata Response",
 			args: args{
 				providerMetadata: &providerServices.ListProviderItem{
-					Organization: "cie",
-					Name:         "test-provider",
-					Description:  "This is the description for the provider it is supposedly a long text",
-					SourceUrl:    "https://github.com/...",
-					Maturity:     "4",
+					Organization:  "cie",
+					Name:          "test-provider",
+					Description:   "This is the description for the provider it is supposedly a long text",
+					SourceRepoUrl: "https://github.com/...",
+					Maturity:      6,
 				},
 				providerVersions: []string{
 					"1.0.3",
@@ -83,11 +83,11 @@ func Test_createProviderMetadataResponse(t *testing.T) {
 				},
 			},
 			want: &providerItem{
-				Organization: "cie",
-				Name:         "test-provider",
-				Description:  "This is the description for the provider it is supposedly a long text",
-				SourceUrl:    "https://github.com/...",
-				Maturity:     "4",
+				Organization:  "cie",
+				Name:          "test-provider",
+				Description:   "This is the description for the provider it is supposedly a long text",
+				SourceRepoUrl: "https://github.com/...",
+				Maturity:      "DEPRECATED",
 				Versions: []string{
 					"1.0.3",
 					"1.0.4",

@@ -4,7 +4,7 @@ export interface ProviderMetadata {
     organization: string
     name: string
     description?: string
-    source_url: string
+    source_repo_url: string
     maturity?: string
     versions: string[]
 }

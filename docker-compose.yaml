@@ -107,6 +107,27 @@ services:
       - "$AWS_SECRET_ACCESS_KEY"
       - "--aws-region"
       - "$AWS_DEFAULT_REGION"
+  provider_version_manager:
+    build: .
+    image: terrarium:dev
+    container_name: provider-version-service
+    environment:
+     - AWS_ACCESS_KEY_ID
+     - AWS_SECRET_ACCESS_KEY
+     - AWS_DEFAULT_REGION
+     - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
+    ports:
+      - 50009:3001
+    networks:
+      - terrarium
+    command:
+      - provider-version-manager
+      - "--aws-access-key-id"
+      - "$AWS_ACCESS_KEY_ID"
+      - "--aws-secret-access-key"
+      - "$AWS_SECRET_ACCESS_KEY"
+      - "--aws-region"
+      - "$AWS_DEFAULT_REGION"
   dependency_manager:
     build: .
     image: terrarium:dev

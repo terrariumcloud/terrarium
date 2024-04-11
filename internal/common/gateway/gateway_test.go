@@ -11,6 +11,7 @@ import (
 	releaseMocks "github.com/terrariumcloud/terrarium/internal/release/services/mocks"
 
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/release"
 )
 
@@ -871,6 +872,175 @@ func Test_PublishWithClient(t *testing.T) {
 
 		if client.PublishInvocations != 1 {
 			t.Errorf("Expected 1 call to Register, got %v", client.PublishInvocations)
+		}
+	})
+}
+
+// Test_RegisterProviderWithClient checks:
+// - if correct response is returned when client returns response
+// - if error is returned when client returns error
+func Test_RegisterProviderWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns response", func(t *testing.T) {
+		response := &terrariumProvider.Response{}
+		client := &mocks.MockProviderVersionManagerClient{RegisterResponse: response}
+		gw := &TerrariumGrpcGateway{}
+
+		res, err := gw.RegisterProviderWithClient(context.TODO(), &terrariumProvider.RegisterProviderRequest{}, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.RegisterInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.RegisterInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &mocks.MockProviderVersionManagerClient{RegisterError: expected}
+		gw := &TerrariumGrpcGateway{}
+
+		_, actual := gw.RegisterProviderWithClient(context.TODO(), &terrariumProvider.RegisterProviderRequest{}, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.RegisterInvocations != 1 {
+			t.Errorf("Expected 1 call to Register, got %v", client.RegisterInvocations)
+		}
+	})
+}
+
+// Test_EndProviderWithClient checks:
+// - if correct response is returned when client returns publish response
+// - if error is returned when client returns publish error
+// - if correct response is returned when client returns abort response
+// - if error is returned when client returns abort error
+// - if error is returned when unknown action is requested
+func Test_EndProviderWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client returns publish response", func(t *testing.T) {
+		response := &terrariumProvider.Response{}
+		client := &mocks.MockProviderVersionManagerClient{PublishVersionResponse: response}
+		gw := &TerrariumGrpcGateway{}
+		req := &terrariumProvider.EndProviderRequest{
+			Action:   terrariumProvider.EndProviderRequest_PUBLISH,
+			Provider: &terrariumProvider.Provider{},
+		}
+
+		res, err := gw.EndProviderWithClient(context.TODO(), req, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.PublishVersionInvocations != 1 {
+			t.Errorf("Expected 1 call to PublishVersion, got %v", client.PublishVersionInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns publish error", func(t *testing.T) {
+		expected := errors.New("Test")
+		client := &mocks.MockProviderVersionManagerClient{PublishVersionError: expected}
+		gw := &TerrariumGrpcGateway{}
+		req := &terrariumProvider.EndProviderRequest{
+			Action:   terrariumProvider.EndProviderRequest_PUBLISH,
+			Provider: &terrariumProvider.Provider{},
+		}
+
+		_, actual := gw.EndProviderWithClient(context.TODO(), req, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.PublishVersionInvocations != 1 {
+			t.Errorf("Expected 1 call to PublishVersion, got %v", client.PublishVersionInvocations)
+		}
+	})
+
+	t.Run("when client returns abort response", func(t *testing.T) {
+		response := &terrariumProvider.Response{}
+		client := &mocks.MockProviderVersionManagerClient{AbortVersionResponse: response}
+		gw := &TerrariumGrpcGateway{}
+		req := &terrariumProvider.EndProviderRequest{
+			Action:   terrariumProvider.EndProviderRequest_DISCARD_VERSION,
+			Provider: &terrariumProvider.Provider{},
+		}
+
+		res, err := gw.EndProviderWithClient(context.TODO(), req, client)
+
+		if res != response {
+			t.Errorf("Expected %v, got %v.", response, res)
+		}
+
+		if client.AbortVersionInvocations != 1 {
+			t.Errorf("Expected 1 call to AbortVersion, got %v", client.AbortVersionInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when client returns abort error", func(t *testing.T) {
+		expected := errors.New("Test")
+
+		client := &mocks.MockProviderVersionManagerClient{AbortVersionError: expected}
+
+		gw := &TerrariumGrpcGateway{}
+
+		req := &terrariumProvider.EndProviderRequest{
+			Action:   terrariumProvider.EndProviderRequest_DISCARD_VERSION,
+			Provider: &terrariumProvider.Provider{},
+		}
+
+		_, actual := gw.EndProviderWithClient(context.TODO(), req, client)
+
+		if actual != expected {
+			t.Errorf("Expected %v, got %v.", expected, actual)
+		}
+
+		if client.AbortVersionInvocations != 1 {
+			t.Errorf("Expected 1 call to AbortVersion, got %v", client.AbortVersionInvocations)
+		}
+	})
+
+	t.Run("when unknown action is requested", func(t *testing.T) {
+		client := &mocks.MockProviderVersionManagerClient{}
+
+		gw := &TerrariumGrpcGateway{}
+
+		req := &terrariumProvider.EndProviderRequest{
+			Action:   123,
+			Provider: &terrariumProvider.Provider{},
+		}
+
+		_, actual := gw.EndProviderWithClient(context.TODO(), req, client)
+
+		if actual != UnknownVersionManagerActionError {
+			t.Errorf("Expected %v, got %v.", UnknownVersionManagerActionError, actual)
+		}
+
+		if client.PublishVersionInvocations != 0 {
+			t.Errorf("Expected 0 calls to PublishVersion, got %v", client.PublishVersionInvocations)
+		}
+
+		if client.AbortVersionInvocations != 0 {
+			t.Errorf("Expected 0 calls to AbortVersion, got %v", client.AbortVersionInvocations)
 		}
 	})
 }

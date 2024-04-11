@@ -9,5 +9,7 @@ protoc --go_out=. --go_opt=module=github.com/terrariumcloud/terrarium \
     pb/terrarium/release/release.proto \
     pb/terrarium/release/services/release.proto \
     pb/terrarium/usage/usage.proto \
-    pb/terrarium/common/paging.proto
+    pb/terrarium/common/paging.proto \
+    pb/terrarium/provider/provider.proto \
+    pb/terrarium/provider/services/version_manager.proto
 

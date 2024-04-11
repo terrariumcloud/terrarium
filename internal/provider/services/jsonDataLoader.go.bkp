@@ -10,14 +10,15 @@ import (
 	"gopkg.in/errgo.v2/errors"
 )
 
-type ProviderVersionManager interface {
+type ProviderVersionManager2 interface {
 	ListProviderVersions(providerName string) (*ProviderVersionsResponse, error)
 	GetVersionData(providerName string, version string, os string, arch string) (*PlatformMetadataResponse, error)
 	ListProviders() (*ListProviderResponse, error)
 	GetProviders(providerName string) (*ListProviderItem, error)
 }
 
-// Structs to load data into (from a JSON file for now, will be from DB later)
+// Structs to load data into
+
 type GPGPublicKey struct {
 	KeyID          string `json:"key_id"`
 	ASCIIArmor     string `json:"ascii_armor"`
@@ -30,7 +31,7 @@ type SigningKeys struct {
 	GPGPublicKeys []GPGPublicKey `json:"gpg_public_keys"`
 }
 
-type ProviderMetadata struct {
+type ProviderMetadata2 struct {
 	OS                  string      `json:"os"`
 	Arch                string      `json:"arch"`
 	Filename            string      `json:"filename"`
@@ -43,7 +44,7 @@ type ProviderMetadata struct {
 
 type VersionData struct {
 	Protocols []string           `json:"protocols"`
-	Platforms []ProviderMetadata `json:"platforms"`
+	Platforms []ProviderMetadata2 `json:"platforms"`
 }
 
 type ProviderData map[string]VersionData
@@ -115,7 +116,7 @@ func LoadData() (map[string]ProviderData, error) {
 	return providerObj, nil
 }
 
-func NewJSONFileProviderVersionManager() (ProviderVersionManager, error) {
+func NewJSONFileProviderVersionManager() (ProviderVersionManager2, error) {
 	if data, err := LoadData(); err == nil {
 		return &JSONFileProviderVersionManager{data: data}, nil
 	} else {

@@ -2,6 +2,7 @@ package registrar
 
 import (
 	"context"
+	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	"google.golang.org/grpc"
@@ -16,7 +17,7 @@ func NewRegistrarGrpcClient(endpoint string) services.RegistrarClient {
 }
 
 func (r registrarGrpcClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error) {
-	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -27,7 +28,7 @@ func (r registrarGrpcClient) Register(ctx context.Context, in *module.RegisterMo
 }
 
 func (r registrarGrpcClient) ListModules(ctx context.Context, in *services.ListModulesRequest, opts ...grpc.CallOption) (*services.ListModulesResponse, error) {
-	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()
@@ -38,7 +39,7 @@ func (r registrarGrpcClient) ListModules(ctx context.Context, in *services.ListM
 }
 
 func (r registrarGrpcClient) GetModule(ctx context.Context, in *services.GetModuleRequest, opts ...grpc.CallOption) (*services.GetModuleResponse, error) {
-	if conn, err := services.CreateGRPCConnection(r.endpoint); err != nil {
+	if conn, err := grpc_service.CreateGRPCConnection(r.endpoint); err != nil {
 		return nil, err
 	} else {
 		defer func() { _ = conn.Close() }()

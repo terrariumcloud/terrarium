@@ -2,76 +2,106 @@ package mocks
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
+	moduleServices "github.com/terrariumcloud/terrarium/internal/module/services"
+	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 
-	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	terrariumModule "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
+	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	"google.golang.org/grpc"
 )
 
 type MockRegistrarClient struct {
-	services.RegistrarClient
+	moduleServices.RegistrarClient
 	RegisterInvocations int
-	RegisterResponse    *module.Response
+	RegisterResponse    *terrariumModule.Response
 	RegisterError       error
 }
 
-func (m *MockRegistrarClient) Register(ctx context.Context, in *module.RegisterModuleRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockRegistrarClient) Register(ctx context.Context, in *terrariumModule.RegisterModuleRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
 	m.RegisterInvocations++
 	return m.RegisterResponse, m.RegisterError
 }
 
 type MockVersionManagerClient struct {
-	services.VersionManagerClient
+	moduleServices.VersionManagerClient
 	BeginVersionInvocations   int
-	BeginVersionResponse      *module.Response
+	BeginVersionResponse      *terrariumModule.Response
 	BeginVersionError         error
 	PublishVersionInvocations int
-	PublishVersionResponse    *module.Response
+	PublishVersionResponse    *terrariumModule.Response
 	PublishVersionError       error
 	AbortVersionInvocations   int
-	AbortVersionResponse      *module.Response
+	AbortVersionResponse      *terrariumModule.Response
 	AbortVersionError         error
 }
 
-func (m *MockVersionManagerClient) BeginVersion(ctx context.Context, in *module.BeginVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockVersionManagerClient) BeginVersion(ctx context.Context, in *terrariumModule.BeginVersionRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
 	m.BeginVersionInvocations++
 	return m.BeginVersionResponse, m.BeginVersionError
 }
 
-func (m *MockVersionManagerClient) PublishVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockVersionManagerClient) PublishVersion(ctx context.Context, in *moduleServices.TerminateVersionRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
 	m.PublishVersionInvocations++
 	return m.PublishVersionResponse, m.PublishVersionError
 }
 
-func (m *MockVersionManagerClient) AbortVersion(ctx context.Context, in *services.TerminateVersionRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockVersionManagerClient) AbortVersion(ctx context.Context, in *moduleServices.TerminateVersionRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
+	m.AbortVersionInvocations++
+	return m.AbortVersionResponse, m.AbortVersionError
+}
+
+type MockProviderVersionManagerClient struct {
+	providerServices.VersionManagerClient
+	RegisterInvocations       int
+	RegisterResponse          *terrariumProvider.Response
+	RegisterError             error
+	PublishVersionInvocations int
+	PublishVersionResponse    *terrariumProvider.Response
+	PublishVersionError       error
+	AbortVersionInvocations   int
+	AbortVersionResponse      *terrariumProvider.Response
+	AbortVersionError         error
+}
+
+func (m *MockProviderVersionManagerClient) Register(ctx context.Context, in *terrariumProvider.RegisterProviderRequest, opts ...grpc.CallOption) (*terrariumProvider.Response, error) {
+	m.RegisterInvocations++
+	return m.RegisterResponse, m.RegisterError
+}
+
+func (m *MockProviderVersionManagerClient) PublishVersion(ctx context.Context, in *providerServices.TerminateVersionRequest, opts ...grpc.CallOption) (*terrariumProvider.Response, error) {
+	m.PublishVersionInvocations++
+	return m.PublishVersionResponse, m.PublishVersionError
+}
+
+func (m *MockProviderVersionManagerClient) AbortProviderVersion(ctx context.Context, in *providerServices.TerminateVersionRequest, opts ...grpc.CallOption) (*terrariumProvider.Response, error) {
 	m.AbortVersionInvocations++
 	return m.AbortVersionResponse, m.AbortVersionError
 }
 
 type MockStorageClient struct {
-	services.StorageClient
+	moduleServices.StorageClient
 	UploadSourceZipInvocations   int
-	UploadSourceZipClient        services.Storage_UploadSourceZipClient
+	UploadSourceZipClient        moduleServices.Storage_UploadSourceZipClient
 	UploadSourceZipError         error
 	DownloadSourceZipInvocations int
-	DownloadSourceZipClient      services.Storage_DownloadSourceZipClient
+	DownloadSourceZipClient      moduleServices.Storage_DownloadSourceZipClient
 	DownloadSourceZipError       error
 }
 
-func (m *MockStorageClient) UploadSourceZip(ctx context.Context, opts ...grpc.CallOption) (services.Storage_UploadSourceZipClient, error) {
+func (m *MockStorageClient) UploadSourceZip(ctx context.Context, opts ...grpc.CallOption) (moduleServices.Storage_UploadSourceZipClient, error) {
 	m.UploadSourceZipInvocations++
 	return m.UploadSourceZipClient, m.UploadSourceZipError
 }
 
-func (m *MockStorageClient) DownloadSourceZip(ctx context.Context, in *module.DownloadSourceZipRequest, opts ...grpc.CallOption) (services.Storage_DownloadSourceZipClient, error) {
+func (m *MockStorageClient) DownloadSourceZip(ctx context.Context, in *terrariumModule.DownloadSourceZipRequest, opts ...grpc.CallOption) (moduleServices.Storage_DownloadSourceZipClient, error) {
 	m.DownloadSourceZipInvocations++
 	return m.DownloadSourceZipClient, m.DownloadSourceZipError
 }
 
 type MockStorage_UploadSourceZipClient struct {
-	services.Storage_UploadSourceZipClient
+	moduleServices.Storage_UploadSourceZipClient
 	CloseAndRecvInvocations int
-	CloseAndRecvResponse    *module.Response
+	CloseAndRecvResponse    *terrariumModule.Response
 	CloseAndRecvError       error
 	SendInvocations         int
 	SendError               error
@@ -79,12 +109,12 @@ type MockStorage_UploadSourceZipClient struct {
 	CloseSendError          error
 }
 
-func (m *MockStorage_UploadSourceZipClient) CloseAndRecv() (*module.Response, error) {
+func (m *MockStorage_UploadSourceZipClient) CloseAndRecv() (*terrariumModule.Response, error) {
 	m.CloseAndRecvInvocations++
 	return m.CloseAndRecvResponse, m.CloseAndRecvError
 }
 
-func (m *MockStorage_UploadSourceZipClient) Send(*module.UploadSourceZipRequest) error {
+func (m *MockStorage_UploadSourceZipClient) Send(*terrariumModule.UploadSourceZipRequest) error {
 	m.SendInvocations++
 	return m.SendError
 }
@@ -95,15 +125,15 @@ func (m *MockStorage_UploadSourceZipClient) CloseSend() error {
 }
 
 type MockStorage_DownloadSourceZipClient struct {
-	services.Storage_DownloadSourceZipClient
+	moduleServices.Storage_DownloadSourceZipClient
 	RecvInvocations      int
-	RecvResponse         *module.SourceZipResponse
+	RecvResponse         *terrariumModule.SourceZipResponse
 	RecvError            error
 	CloseSendInvocations int
 	CloseSendError       error
 }
 
-func (m *MockStorage_DownloadSourceZipClient) Recv() (*module.SourceZipResponse, error) {
+func (m *MockStorage_DownloadSourceZipClient) Recv() (*terrariumModule.SourceZipResponse, error) {
 	m.RecvInvocations++
 	return m.RecvResponse, m.RecvError
 }
@@ -114,50 +144,50 @@ func (m *MockStorage_DownloadSourceZipClient) CloseSend() error {
 }
 
 type MockDependencyManagerClient struct {
-	services.DependencyManagerClient
+	moduleServices.DependencyManagerClient
 	RegisterModuleDependenciesInvocations    int
-	RegisterModuleDependenciesResponse       *module.Response
+	RegisterModuleDependenciesResponse       *terrariumModule.Response
 	RegisterModuleDependenciesError          error
 	RegisterContainerDependenciesInvocations int
-	RegisterContainerDependenciesResponse    *module.Response
+	RegisterContainerDependenciesResponse    *terrariumModule.Response
 	RegisterContainerDependenciesError       error
 	RetrieveContainerDependenciesInvocations int
-	RetrieveContainerDependenciesClient      services.DependencyManager_RetrieveContainerDependenciesClient
+	RetrieveContainerDependenciesClient      moduleServices.DependencyManager_RetrieveContainerDependenciesClient
 	RetrieveContainerDependenciesError       error
 	RetrieveModuleDependenciesInvocations    int
-	RetrieveModuleDependenciesClient         services.DependencyManager_RetrieveModuleDependenciesClient
+	RetrieveModuleDependenciesClient         moduleServices.DependencyManager_RetrieveModuleDependenciesClient
 	RetrieveModuleDependenciesError          error
 }
 
-func (m *MockDependencyManagerClient) RegisterModuleDependencies(ctx context.Context, in *module.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockDependencyManagerClient) RegisterModuleDependencies(ctx context.Context, in *terrariumModule.RegisterModuleDependenciesRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
 	m.RegisterModuleDependenciesInvocations++
 	return m.RegisterModuleDependenciesResponse, m.RegisterModuleDependenciesError
 }
 
-func (m *MockDependencyManagerClient) RegisterContainerDependencies(ctx context.Context, in *module.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*module.Response, error) {
+func (m *MockDependencyManagerClient) RegisterContainerDependencies(ctx context.Context, in *terrariumModule.RegisterContainerDependenciesRequest, opts ...grpc.CallOption) (*terrariumModule.Response, error) {
 	m.RegisterContainerDependenciesInvocations++
 	return m.RegisterContainerDependenciesResponse, m.RegisterContainerDependenciesError
 }
 
-func (m *MockDependencyManagerClient) RetrieveContainerDependencies(ctx context.Context, in *module.RetrieveContainerDependenciesRequestV2, opts ...grpc.CallOption) (services.DependencyManager_RetrieveContainerDependenciesClient, error) {
+func (m *MockDependencyManagerClient) RetrieveContainerDependencies(ctx context.Context, in *terrariumModule.RetrieveContainerDependenciesRequestV2, opts ...grpc.CallOption) (moduleServices.DependencyManager_RetrieveContainerDependenciesClient, error) {
 	m.RetrieveContainerDependenciesInvocations++
 	return m.RetrieveContainerDependenciesClient, m.RetrieveContainerDependenciesError
 }
-func (m *MockDependencyManagerClient) RetrieveModuleDependencies(ctx context.Context, in *module.RetrieveModuleDependenciesRequest, opts ...grpc.CallOption) (services.DependencyManager_RetrieveModuleDependenciesClient, error) {
+func (m *MockDependencyManagerClient) RetrieveModuleDependencies(ctx context.Context, in *terrariumModule.RetrieveModuleDependenciesRequest, opts ...grpc.CallOption) (moduleServices.DependencyManager_RetrieveModuleDependenciesClient, error) {
 	m.RetrieveModuleDependenciesInvocations++
 	return m.RetrieveModuleDependenciesClient, m.RetrieveModuleDependenciesError
 }
 
 type MockDependencyManager_RetrieveContainerDependenciesClient struct {
-	services.DependencyManager_RetrieveContainerDependenciesClient
+	moduleServices.DependencyManager_RetrieveContainerDependenciesClient
 	RecvInvocations      int
-	RecvResponse         *module.ContainerDependenciesResponseV2
+	RecvResponse         *terrariumModule.ContainerDependenciesResponseV2
 	RecvError            error
 	CloseSendInvocations int
 	CloseSendError       error
 }
 
-func (m *MockDependencyManager_RetrieveContainerDependenciesClient) Recv() (*module.ContainerDependenciesResponseV2, error) {
+func (m *MockDependencyManager_RetrieveContainerDependenciesClient) Recv() (*terrariumModule.ContainerDependenciesResponseV2, error) {
 	m.RecvInvocations++
 	return m.RecvResponse, m.RecvError
 }
@@ -168,15 +198,15 @@ func (m *MockDependencyManager_RetrieveContainerDependenciesClient) CloseSend() 
 }
 
 type MockDependencyManager_RetrieveModuleDependenciesClient struct {
-	services.DependencyManager_RetrieveModuleDependenciesClient
+	moduleServices.DependencyManager_RetrieveModuleDependenciesClient
 	RecvInvocations      int
-	RecvResponse         *module.ModuleDependenciesResponse
+	RecvResponse         *terrariumModule.ModuleDependenciesResponse
 	RecvError            error
 	CloseSendInvocations int
 	CloseSendError       error
 }
 
-func (m *MockDependencyManager_RetrieveModuleDependenciesClient) Recv() (*module.ModuleDependenciesResponse, error) {
+func (m *MockDependencyManager_RetrieveModuleDependenciesClient) Recv() (*terrariumModule.ModuleDependenciesResponse, error) {
 	m.RecvInvocations++
 	return m.RecvResponse, m.RecvError
 }

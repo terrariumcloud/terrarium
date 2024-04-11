@@ -34,7 +34,7 @@ function ProviderMetadataInfo({provider}: { provider: ProviderMetadata }) {
                         </TableRow>
                         <TableRow>
                             <TableCell component={"th"} scope={"row"}><b>Source Repository</b></TableCell>
-                            <TableCell><Link href={provider.source_url}>{provider.source_url}</Link></TableCell>
+                            <TableCell><Link href={provider.source_repo_url}>{provider.source_repo_url}</Link></TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell component={"th"} scope={"row"}><b>Description</b></TableCell>

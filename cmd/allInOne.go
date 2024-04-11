@@ -4,25 +4,27 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"log"
+	"net"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	services2 "github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/common/gateway"
+	grpcServices "github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/module/services/dependency_manager"
-	"github.com/terrariumcloud/terrarium/internal/module/services/gateway"
 	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	storage2 "github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
-	providers_services "github.com/terrariumcloud/terrarium/internal/provider/services"
+	providerVersionManager "github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
 	modulesv1 "github.com/terrariumcloud/terrarium/internal/restapi/modules/v1"
+	providersv1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"log"
-	"net"
-	"net/http"
 )
 
 const (
@@ -84,13 +86,20 @@ var allInOneCmd = &cobra.Command{
 			ReleaseService: release.NewPublisherGrpcClient(allInOneInternalEndpoint),
 		}
 
-		services := []services2.Service{
+		providerVersionManagerServer := &providerVersionManager.VersionManagerService{
+			Db:     storage.NewDynamoDbClient(awsSessionConfig),
+			Table:  providerVersionManager.VersionsTableName,
+			Schema: providerVersionManager.GetProviderVersionsSchema(providerVersionManager.VersionsTableName),
+		}
+
+		services := []grpcServices.Service{
 			dependencyServiceServer,
 			registrarServiceServer,
 			storageServiceServer,
 			tagManagerServer,
 			releaseServiceServer,
 			versionManagerServer,
+			providerVersionManagerServer,
 		}
 
 		otelShutdown := initOpenTelemetry("all-in-one")
@@ -104,27 +113,26 @@ var allInOneCmd = &cobra.Command{
 			storage2.NewStorageGrpcClient(allInOneInternalEndpoint),
 			dependency_manager.NewDependencyManagerGrpcClient(allInOneInternalEndpoint),
 			release.NewPublisherGrpcClient(allInOneInternalEndpoint),
+			providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint),
 		)
-		startAllInOneGrpcServices([]services2.Service{gatewayServer}, allInOneGrpcGatewayEndpoint)
 
-		version_manager_svc, err := providers_services.NewJSONFileProviderVersionManager()
-		if err != nil {
-			panic(err)
-		}
+		startAllInOneGrpcServices([]grpcServices.Service{gatewayServer}, allInOneGrpcGatewayEndpoint)
 
 		restAPIServer := browse.New(registrar.NewRegistrarGrpcClient(allInOneInternalEndpoint),
 			version_manager.NewVersionManagerGrpcClient(allInOneInternalEndpoint),
-			release.NewBrowseGrpcClient(allInOneInternalEndpoint), version_manager_svc)
+			release.NewBrowseGrpcClient(allInOneInternalEndpoint),
+			providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint))
 
 		modulesAPIServer := modulesv1.New(version_manager.NewVersionManagerGrpcClient(allInOneInternalEndpoint), storage2.NewStorageGrpcClient(allInOneInternalEndpoint))
+		providersAPIServer := providersv1.New(providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint))
 
 		router := mux.NewRouter()
 		router.PathPrefix("/modules").Handler(modulesAPIServer.GetHttpHandler("/modules"))
+		router.PathPrefix("/providers").Handler(providersAPIServer.GetHttpHandler("/providers"))
 		router.PathPrefix("/").Handler(restAPIServer.GetHttpHandler(""))
 
 		endpoint = allInOneHTTPEndpoint
 		startRESTAPIService("browse", "", allInOneRestHandler{router: router})
-
 	},
 }
 
@@ -137,9 +145,10 @@ func init() {
 	allInOneCmd.Flags().StringVar(&registrar.RegistrarTableName, "registrar-table", registrar.DefaultRegistrarTableName, "Module Registrar table name")
 	allInOneCmd.Flags().StringVar(&dependency_manager.ModuleDependenciesTableName, "module-dependencies-table", dependency_manager.DefaultModuleDependenciesTableName, "Module dependencies table name")
 	allInOneCmd.Flags().StringVar(&dependency_manager.ContainerDependenciesTableName, "container-dependencies-table", dependency_manager.DefaultContainerDependenciesTableName, "Module container dependencies table name")
+	allInOneCmd.Flags().StringVar(&providerVersionManager.VersionsTableName, "provider-table", providerVersionManager.DefaultProviderVersionsTableName, "Provider versions table name")
 }
 
-func startAllInOneGrpcServices(services []services2.Service, endpoint string) {
+func startAllInOneGrpcServices(services []grpcServices.Service, endpoint string) {
 	listener, err := net.Listen("tcp4", endpoint)
 	if err != nil {
 		log.Fatalf("Failed to start: %v", err)

@@ -1,0 +1,75 @@
+syntax = "proto3";
+package terrarium.provider;
+
+option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/provider";
+
+service ProviderPublisher {
+  rpc RegisterProvider(RegisterProviderRequest) returns (Response) {}
+  rpc EndProvider(EndProviderRequest) returns (Response) {}
+}
+
+message RegisterProviderRequest {
+    string api_key = 1;
+    string name = 2;
+    string version = 3;
+    repeated string protocols = 4;
+    repeated PlatformItem platforms = 5;
+    string description = 6;
+    string source_repo_url = 7;
+    Maturity maturity = 8;
+    string created_on = 9;
+    string modified_on = 10;
+    string published_on = 11;
+}
+
+message PlatformItem {
+    string os = 1;
+    string arch = 2;
+    string filename = 3;
+    string download_url = 4;
+    string shasums_url = 5;
+    string shasums_signature_url = 6;
+    string shasum = 7;
+    SigningKeys signing_keys = 8;
+}
+
+message SigningKeys {
+    repeated GPGPublicKey gpg_public_keys = 1;
+}
+
+message GPGPublicKey {
+    string key_id = 1;
+    string ascii_armor = 2;
+    string trust_signature = 3;
+    string source = 4;
+    string source_url = 5;
+}
+
+enum Maturity {
+  IDEA = 0;
+  PLANNING = 1;
+  DEVELOPING = 2;
+  ALPHA = 3;
+  BETA = 4;
+  STABLE = 5;
+  DEPRECATED = 6;
+  END_OF_LIFE = 7;
+}
+
+message Response {
+  string message = 1;
+}
+
+message Provider {
+  string name = 1;
+  string version = 2;
+}
+
+message EndProviderRequest {
+  Provider provider = 1;
+  enum Action {
+    DISCARD_VERSION = 0;
+    PUBLISH = 1;
+  };
+  Action action = 4;
+}
