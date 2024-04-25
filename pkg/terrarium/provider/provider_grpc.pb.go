@@ -139,3 +139,242 @@ var ProviderPublisher_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "pb/terrarium/provider/provider.proto",
 }
+
+// ProviderConsumerClient is the client API for ProviderConsumer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ProviderConsumerClient interface {
+	DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadProviderSourceZipClient, error)
+	DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadShasumClient, error)
+	DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadShasumSignatureClient, error)
+}
+
+type providerConsumerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewProviderConsumerClient(cc grpc.ClientConnInterface) ProviderConsumerClient {
+	return &providerConsumerClient{cc}
+}
+
+func (c *providerConsumerClient) DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadProviderSourceZipClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProviderConsumer_ServiceDesc.Streams[0], "/terrarium.provider.ProviderConsumer/DownloadProviderSourceZip", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &providerConsumerDownloadProviderSourceZipClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProviderConsumer_DownloadProviderSourceZipClient interface {
+	Recv() (*SourceZipResponse, error)
+	grpc.ClientStream
+}
+
+type providerConsumerDownloadProviderSourceZipClient struct {
+	grpc.ClientStream
+}
+
+func (x *providerConsumerDownloadProviderSourceZipClient) Recv() (*SourceZipResponse, error) {
+	m := new(SourceZipResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *providerConsumerClient) DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadShasumClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProviderConsumer_ServiceDesc.Streams[1], "/terrarium.provider.ProviderConsumer/DownloadShasum", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &providerConsumerDownloadShasumClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProviderConsumer_DownloadShasumClient interface {
+	Recv() (*DownloadShasumResponse, error)
+	grpc.ClientStream
+}
+
+type providerConsumerDownloadShasumClient struct {
+	grpc.ClientStream
+}
+
+func (x *providerConsumerDownloadShasumClient) Recv() (*DownloadShasumResponse, error) {
+	m := new(DownloadShasumResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *providerConsumerClient) DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (ProviderConsumer_DownloadShasumSignatureClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProviderConsumer_ServiceDesc.Streams[2], "/terrarium.provider.ProviderConsumer/DownloadShasumSignature", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &providerConsumerDownloadShasumSignatureClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProviderConsumer_DownloadShasumSignatureClient interface {
+	Recv() (*DownloadShasumResponse, error)
+	grpc.ClientStream
+}
+
+type providerConsumerDownloadShasumSignatureClient struct {
+	grpc.ClientStream
+}
+
+func (x *providerConsumerDownloadShasumSignatureClient) Recv() (*DownloadShasumResponse, error) {
+	m := new(DownloadShasumResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// ProviderConsumerServer is the server API for ProviderConsumer service.
+// All implementations must embed UnimplementedProviderConsumerServer
+// for forward compatibility
+type ProviderConsumerServer interface {
+	DownloadProviderSourceZip(*DownloadSourceZipRequest, ProviderConsumer_DownloadProviderSourceZipServer) error
+	DownloadShasum(*DownloadShasumRequest, ProviderConsumer_DownloadShasumServer) error
+	DownloadShasumSignature(*DownloadShasumRequest, ProviderConsumer_DownloadShasumSignatureServer) error
+	mustEmbedUnimplementedProviderConsumerServer()
+}
+
+// UnimplementedProviderConsumerServer must be embedded to have forward compatible implementations.
+type UnimplementedProviderConsumerServer struct {
+}
+
+func (UnimplementedProviderConsumerServer) DownloadProviderSourceZip(*DownloadSourceZipRequest, ProviderConsumer_DownloadProviderSourceZipServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadProviderSourceZip not implemented")
+}
+func (UnimplementedProviderConsumerServer) DownloadShasum(*DownloadShasumRequest, ProviderConsumer_DownloadShasumServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadShasum not implemented")
+}
+func (UnimplementedProviderConsumerServer) DownloadShasumSignature(*DownloadShasumRequest, ProviderConsumer_DownloadShasumSignatureServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadShasumSignature not implemented")
+}
+func (UnimplementedProviderConsumerServer) mustEmbedUnimplementedProviderConsumerServer() {}
+
+// UnsafeProviderConsumerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ProviderConsumerServer will
+// result in compilation errors.
+type UnsafeProviderConsumerServer interface {
+	mustEmbedUnimplementedProviderConsumerServer()
+}
+
+func RegisterProviderConsumerServer(s grpc.ServiceRegistrar, srv ProviderConsumerServer) {
+	s.RegisterService(&ProviderConsumer_ServiceDesc, srv)
+}
+
+func _ProviderConsumer_DownloadProviderSourceZip_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadSourceZipRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ProviderConsumerServer).DownloadProviderSourceZip(m, &providerConsumerDownloadProviderSourceZipServer{stream})
+}
+
+type ProviderConsumer_DownloadProviderSourceZipServer interface {
+	Send(*SourceZipResponse) error
+	grpc.ServerStream
+}
+
+type providerConsumerDownloadProviderSourceZipServer struct {
+	grpc.ServerStream
+}
+
+func (x *providerConsumerDownloadProviderSourceZipServer) Send(m *SourceZipResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _ProviderConsumer_DownloadShasum_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadShasumRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ProviderConsumerServer).DownloadShasum(m, &providerConsumerDownloadShasumServer{stream})
+}
+
+type ProviderConsumer_DownloadShasumServer interface {
+	Send(*DownloadShasumResponse) error
+	grpc.ServerStream
+}
+
+type providerConsumerDownloadShasumServer struct {
+	grpc.ServerStream
+}
+
+func (x *providerConsumerDownloadShasumServer) Send(m *DownloadShasumResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _ProviderConsumer_DownloadShasumSignature_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadShasumRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ProviderConsumerServer).DownloadShasumSignature(m, &providerConsumerDownloadShasumSignatureServer{stream})
+}
+
+type ProviderConsumer_DownloadShasumSignatureServer interface {
+	Send(*DownloadShasumResponse) error
+	grpc.ServerStream
+}
+
+type providerConsumerDownloadShasumSignatureServer struct {
+	grpc.ServerStream
+}
+
+func (x *providerConsumerDownloadShasumSignatureServer) Send(m *DownloadShasumResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// ProviderConsumer_ServiceDesc is the grpc.ServiceDesc for ProviderConsumer service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ProviderConsumer_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "terrarium.provider.ProviderConsumer",
+	HandlerType: (*ProviderConsumerServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadProviderSourceZip",
+			Handler:       _ProviderConsumer_DownloadProviderSourceZip_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "DownloadShasum",
+			Handler:       _ProviderConsumer_DownloadShasum_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "DownloadShasumSignature",
+			Handler:       _ProviderConsumer_DownloadShasumSignature_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "pb/terrarium/provider/provider.proto",
+}

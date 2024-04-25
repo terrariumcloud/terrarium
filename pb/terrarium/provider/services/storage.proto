@@ -1,0 +1,12 @@
+syntax = "proto3";
+package terrarium.provider.services;
+
+import "pb/terrarium/provider/provider.proto";
+
+option go_package = "github.com/terrariumcloud/terrarium/internal/provider/services";
+
+service Storage {
+  rpc DownloadProviderSourceZip(terrarium.provider.DownloadSourceZipRequest) returns (stream terrarium.provider.SourceZipResponse) {}
+  rpc DownloadShasum(terrarium.provider.DownloadShasumRequest) returns (stream terrarium.provider.DownloadShasumResponse) {}
+  rpc DownloadShasumSignature(terrarium.provider.DownloadShasumRequest) returns (stream terrarium.provider.DownloadShasumResponse) {}
+}

@@ -8,6 +8,12 @@ service ProviderPublisher {
   rpc EndProvider(EndProviderRequest) returns (Response) {}
 }
 
+service ProviderConsumer {
+  rpc DownloadProviderSourceZip(DownloadSourceZipRequest) returns (stream SourceZipResponse) {}
+  rpc DownloadShasum(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
+  rpc DownloadShasumSignature(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
+}
+
 message RegisterProviderRequest {
     string api_key = 1;
     string name = 2;
@@ -72,4 +78,27 @@ message EndProviderRequest {
     PUBLISH = 1;
   };
   Action action = 4;
+}
+
+message ProviderRequest {
+  string name = 1;
+  string version = 2;
+  string os = 3;
+  string arch = 4;
+}
+
+message DownloadSourceZipRequest {
+  ProviderRequest provider = 1;
+}
+
+message SourceZipResponse {
+  bytes zip_data_chunk = 1;
+}
+
+message DownloadShasumRequest {
+  Provider provider = 1;
+}
+
+message DownloadShasumResponse {
+  bytes shasum_data_chunk = 1;
 }
