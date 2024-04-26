@@ -8,7 +8,6 @@ package services
 
 import (
 	context "context"
-	provider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,9 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StorageClient interface {
-	DownloadProviderSourceZip(ctx context.Context, in *provider.DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error)
-	DownloadShasum(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error)
-	DownloadShasumSignature(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error)
+	DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error)
+	DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error)
+	DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error)
 }
 
 type storageClient struct {
@@ -36,7 +35,7 @@ func NewStorageClient(cc grpc.ClientConnInterface) StorageClient {
 	return &storageClient{cc}
 }
 
-func (c *storageClient) DownloadProviderSourceZip(ctx context.Context, in *provider.DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error) {
+func (c *storageClient) DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[0], "/terrarium.provider.services.Storage/DownloadProviderSourceZip", opts...)
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func (c *storageClient) DownloadProviderSourceZip(ctx context.Context, in *provi
 }
 
 type Storage_DownloadProviderSourceZipClient interface {
-	Recv() (*provider.SourceZipResponse, error)
+	Recv() (*SourceZipResponse, error)
 	grpc.ClientStream
 }
 
@@ -60,15 +59,15 @@ type storageDownloadProviderSourceZipClient struct {
 	grpc.ClientStream
 }
 
-func (x *storageDownloadProviderSourceZipClient) Recv() (*provider.SourceZipResponse, error) {
-	m := new(provider.SourceZipResponse)
+func (x *storageDownloadProviderSourceZipClient) Recv() (*SourceZipResponse, error) {
+	m := new(SourceZipResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *storageClient) DownloadShasum(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error) {
+func (c *storageClient) DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[1], "/terrarium.provider.services.Storage/DownloadShasum", opts...)
 	if err != nil {
 		return nil, err
@@ -84,7 +83,7 @@ func (c *storageClient) DownloadShasum(ctx context.Context, in *provider.Downloa
 }
 
 type Storage_DownloadShasumClient interface {
-	Recv() (*provider.DownloadShasumResponse, error)
+	Recv() (*DownloadShasumResponse, error)
 	grpc.ClientStream
 }
 
@@ -92,15 +91,15 @@ type storageDownloadShasumClient struct {
 	grpc.ClientStream
 }
 
-func (x *storageDownloadShasumClient) Recv() (*provider.DownloadShasumResponse, error) {
-	m := new(provider.DownloadShasumResponse)
+func (x *storageDownloadShasumClient) Recv() (*DownloadShasumResponse, error) {
+	m := new(DownloadShasumResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *storageClient) DownloadShasumSignature(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error) {
+func (c *storageClient) DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[2], "/terrarium.provider.services.Storage/DownloadShasumSignature", opts...)
 	if err != nil {
 		return nil, err
@@ -116,7 +115,7 @@ func (c *storageClient) DownloadShasumSignature(ctx context.Context, in *provide
 }
 
 type Storage_DownloadShasumSignatureClient interface {
-	Recv() (*provider.DownloadShasumResponse, error)
+	Recv() (*DownloadShasumResponse, error)
 	grpc.ClientStream
 }
 
@@ -124,8 +123,8 @@ type storageDownloadShasumSignatureClient struct {
 	grpc.ClientStream
 }
 
-func (x *storageDownloadShasumSignatureClient) Recv() (*provider.DownloadShasumResponse, error) {
-	m := new(provider.DownloadShasumResponse)
+func (x *storageDownloadShasumSignatureClient) Recv() (*DownloadShasumResponse, error) {
+	m := new(DownloadShasumResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -136,9 +135,9 @@ func (x *storageDownloadShasumSignatureClient) Recv() (*provider.DownloadShasumR
 // All implementations must embed UnimplementedStorageServer
 // for forward compatibility
 type StorageServer interface {
-	DownloadProviderSourceZip(*provider.DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error
-	DownloadShasum(*provider.DownloadShasumRequest, Storage_DownloadShasumServer) error
-	DownloadShasumSignature(*provider.DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error
+	DownloadProviderSourceZip(*DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error
+	DownloadShasum(*DownloadShasumRequest, Storage_DownloadShasumServer) error
+	DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error
 	mustEmbedUnimplementedStorageServer()
 }
 
@@ -146,13 +145,13 @@ type StorageServer interface {
 type UnimplementedStorageServer struct {
 }
 
-func (UnimplementedStorageServer) DownloadProviderSourceZip(*provider.DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error {
+func (UnimplementedStorageServer) DownloadProviderSourceZip(*DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadProviderSourceZip not implemented")
 }
-func (UnimplementedStorageServer) DownloadShasum(*provider.DownloadShasumRequest, Storage_DownloadShasumServer) error {
+func (UnimplementedStorageServer) DownloadShasum(*DownloadShasumRequest, Storage_DownloadShasumServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadShasum not implemented")
 }
-func (UnimplementedStorageServer) DownloadShasumSignature(*provider.DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error {
+func (UnimplementedStorageServer) DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadShasumSignature not implemented")
 }
 func (UnimplementedStorageServer) mustEmbedUnimplementedStorageServer() {}
@@ -169,7 +168,7 @@ func RegisterStorageServer(s grpc.ServiceRegistrar, srv StorageServer) {
 }
 
 func _Storage_DownloadProviderSourceZip_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(provider.DownloadSourceZipRequest)
+	m := new(DownloadSourceZipRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -177,7 +176,7 @@ func _Storage_DownloadProviderSourceZip_Handler(srv interface{}, stream grpc.Ser
 }
 
 type Storage_DownloadProviderSourceZipServer interface {
-	Send(*provider.SourceZipResponse) error
+	Send(*SourceZipResponse) error
 	grpc.ServerStream
 }
 
@@ -185,12 +184,12 @@ type storageDownloadProviderSourceZipServer struct {
 	grpc.ServerStream
 }
 
-func (x *storageDownloadProviderSourceZipServer) Send(m *provider.SourceZipResponse) error {
+func (x *storageDownloadProviderSourceZipServer) Send(m *SourceZipResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
 func _Storage_DownloadShasum_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(provider.DownloadShasumRequest)
+	m := new(DownloadShasumRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -198,7 +197,7 @@ func _Storage_DownloadShasum_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type Storage_DownloadShasumServer interface {
-	Send(*provider.DownloadShasumResponse) error
+	Send(*DownloadShasumResponse) error
 	grpc.ServerStream
 }
 
@@ -206,12 +205,12 @@ type storageDownloadShasumServer struct {
 	grpc.ServerStream
 }
 
-func (x *storageDownloadShasumServer) Send(m *provider.DownloadShasumResponse) error {
+func (x *storageDownloadShasumServer) Send(m *DownloadShasumResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
 func _Storage_DownloadShasumSignature_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(provider.DownloadShasumRequest)
+	m := new(DownloadShasumRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -219,7 +218,7 @@ func _Storage_DownloadShasumSignature_Handler(srv interface{}, stream grpc.Serve
 }
 
 type Storage_DownloadShasumSignatureServer interface {
-	Send(*provider.DownloadShasumResponse) error
+	Send(*DownloadShasumResponse) error
 	grpc.ServerStream
 }
 
@@ -227,7 +226,7 @@ type storageDownloadShasumSignatureServer struct {
 	grpc.ServerStream
 }
 
-func (x *storageDownloadShasumSignatureServer) Send(m *provider.DownloadShasumResponse) error {
+func (x *storageDownloadShasumSignatureServer) Send(m *DownloadShasumResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
