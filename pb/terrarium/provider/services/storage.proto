@@ -6,7 +6,30 @@ import "pb/terrarium/provider/provider.proto";
 option go_package = "github.com/terrariumcloud/terrarium/internal/provider/services";
 
 service Storage {
-  rpc DownloadProviderSourceZip(terrarium.provider.DownloadSourceZipRequest) returns (stream terrarium.provider.SourceZipResponse) {}
-  rpc DownloadShasum(terrarium.provider.DownloadShasumRequest) returns (stream terrarium.provider.DownloadShasumResponse) {}
-  rpc DownloadShasumSignature(terrarium.provider.DownloadShasumRequest) returns (stream terrarium.provider.DownloadShasumResponse) {}
+  rpc DownloadProviderSourceZip(DownloadSourceZipRequest) returns (stream SourceZipResponse) {}
+  rpc DownloadShasum(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
+  rpc DownloadShasumSignature(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
+}
+
+message ProviderRequest {
+  string name = 1;
+  string version = 2;
+  string os = 3;
+  string arch = 4;
+}
+
+message DownloadSourceZipRequest {
+  ProviderRequest provider = 1;
+}
+
+message SourceZipResponse {
+  bytes zip_data_chunk = 1;
+}
+
+message DownloadShasumRequest {
+  terrarium.provider.Provider provider = 1;
+}
+
+message DownloadShasumResponse {
+  bytes shasum_data_chunk = 1;
 }
