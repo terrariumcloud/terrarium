@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	terrarium "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/internal/provider/services/mocks"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
-	 terrarium "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"google.golang.org/grpc"
 )
 
