@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/provider/services"
-	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"io"
@@ -18,7 +17,7 @@ func NewStorageGrpcClient(endpoint string) services.StorageClient {
 	return &storageGrpcClient{endpoint: endpoint}
 }
 
-func (s storageGrpcClient) DownloadProviderSourceZip(ctx context.Context, in *provider.DownloadSourceZipRequest, opts ...grpc.CallOption) (services.Storage_DownloadProviderSourceZipClient, error) {
+func (s storageGrpcClient) DownloadProviderSourceZip(ctx context.Context, in *services.DownloadSourceZipRequest, opts ...grpc.CallOption) (services.Storage_DownloadProviderSourceZipClient, error) {
 	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
 		return nil, err
 	} else {
@@ -32,7 +31,7 @@ func (s storageGrpcClient) DownloadProviderSourceZip(ctx context.Context, in *pr
 	}
 }
 
-func (s storageGrpcClient) DownloadShasum(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (services.Storage_DownloadShasumClient, error) {
+func (s storageGrpcClient) DownloadShasum(ctx context.Context, in *services.DownloadShasumRequest, opts ...grpc.CallOption) (services.Storage_DownloadShasumClient, error) {
 	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
 		return nil, err
 	} else {
@@ -46,7 +45,7 @@ func (s storageGrpcClient) DownloadShasum(ctx context.Context, in *provider.Down
 	}
 }
 
-func (s storageGrpcClient) DownloadShasumSignature(ctx context.Context, in *provider.DownloadShasumRequest, opts ...grpc.CallOption) (services.Storage_DownloadShasumSignatureClient, error) {
+func (s storageGrpcClient) DownloadShasumSignature(ctx context.Context, in *services.DownloadShasumRequest, opts ...grpc.CallOption) (services.Storage_DownloadShasumSignatureClient, error) {
 	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
 		return nil, err
 	} else {
@@ -65,7 +64,7 @@ type downloadSourceZipClient struct {
 	client services.Storage_DownloadProviderSourceZipClient
 }
 
-func (d downloadSourceZipClient) Recv() (*provider.SourceZipResponse, error) {
+func (d downloadSourceZipClient) Recv() (*services.SourceZipResponse, error) {
 	result, err := d.client.Recv()
 	if err == io.EOF {
 		_ = d.conn.Close()
@@ -102,7 +101,7 @@ type downloadShasumClient struct {
 	client services.Storage_DownloadShasumClient
 }
 
-func (d downloadShasumClient) Recv() (*provider.DownloadShasumResponse, error) {
+func (d downloadShasumClient) Recv() (*services.DownloadShasumResponse, error) {
 	result, err := d.client.Recv()
 	if err == io.EOF {
 		_ = d.conn.Close()
@@ -139,7 +138,7 @@ type downloadShasumSignatureClient struct {
 	client services.Storage_DownloadShasumSignatureClient
 }
 
-func (d downloadShasumSignatureClient) Recv() (*provider.DownloadShasumResponse, error) {
+func (d downloadShasumSignatureClient) Recv() (*services.DownloadShasumResponse, error) {
 	result, err := d.client.Recv()
 	if err == io.EOF {
 		_ = d.conn.Close()

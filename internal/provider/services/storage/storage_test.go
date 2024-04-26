@@ -8,7 +8,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/terrariumcloud/terrarium/internal/provider/services/mocks"
-	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
+	 terrarium "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"google.golang.org/grpc"
 )
 
@@ -224,7 +225,7 @@ func Test_DownloadShasum(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumServer{SendResponse: res}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasum(req, mds)
@@ -254,7 +255,7 @@ func Test_DownloadShasum(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumServer{}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasum(req, mds)
@@ -283,7 +284,7 @@ func Test_DownloadShasum(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumServer{SendError: errors.New("some error")}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasum(req, mds)
@@ -313,7 +314,7 @@ func Test_DownloadShasum(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumServer{SendResponse: res}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasum(req, mds)
@@ -353,7 +354,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumSignatureServer{SendResponse: res}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasumSignature(req, mds)
@@ -383,7 +384,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumSignatureServer{}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasumSignature(req, mds)
@@ -412,7 +413,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumSignatureServer{SendError: errors.New("some error")}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasumSignature(req, mds)
@@ -442,7 +443,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 		mds := &mocks.MockDownloadProviderShasumSignatureServer{SendResponse: res}
 
 		req := &terrarium.DownloadShasumRequest{
-			Provider: &terrarium.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 		}
 
 		err := svc.DownloadShasum(req, mds)

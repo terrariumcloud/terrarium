@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
-	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -60,7 +59,7 @@ func (s *StorageService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) er
 }
 
 // Download Source Zip from storage
-func (s *StorageService) DownloadProviderSourceZip(request *terrarium.DownloadSourceZipRequest, server services.Storage_DownloadProviderSourceZipServer) error {
+func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSourceZipRequest, server services.Storage_DownloadProviderSourceZipServer) error {
 
 	log.Println("Downloading source zip.")
 
@@ -96,7 +95,7 @@ func (s *StorageService) DownloadProviderSourceZip(request *terrarium.DownloadSo
 	outContentLength := out.ContentLength
 
 	if int64(len(bb)) == outContentLength {
-		res := &terrarium.SourceZipResponse{}
+		res := &services.SourceZipResponse{}
 		for i := int64(0); i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
 				res.ZipDataChunk = bb[i:outContentLength]
@@ -120,7 +119,7 @@ func (s *StorageService) DownloadProviderSourceZip(request *terrarium.DownloadSo
 }
 
 // Download Shasum from storage
-func (s *StorageService) DownloadShasum(request *terrarium.DownloadShasumRequest, server services.Storage_DownloadShasumServer) error {
+func (s *StorageService) DownloadShasum(request *services.DownloadShasumRequest, server services.Storage_DownloadShasumServer) error {
 
 	log.Println("Downloading shasum file.")
 
@@ -154,7 +153,7 @@ func (s *StorageService) DownloadShasum(request *terrarium.DownloadShasumRequest
 	outContentLength := out.ContentLength
 
 	if int64(len(bb)) == outContentLength {
-		res := &terrarium.DownloadShasumResponse{}
+		res := &services.DownloadShasumResponse{}
 		for i := int64(0); i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
 				res.ShasumDataChunk = bb[i:outContentLength]
@@ -178,7 +177,7 @@ func (s *StorageService) DownloadShasum(request *terrarium.DownloadShasumRequest
 }
 
 // Download Shasum Signature from storage
-func (s *StorageService) DownloadShasumSignature(request *terrarium.DownloadShasumRequest, server services.Storage_DownloadShasumSignatureServer) error {
+func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasumRequest, server services.Storage_DownloadShasumSignatureServer) error {
 
 	log.Println("Downloading shasum signature file.")
 
@@ -212,7 +211,7 @@ func (s *StorageService) DownloadShasumSignature(request *terrarium.DownloadShas
 	outContentLength := out.ContentLength
 
 	if int64(len(bb)) == outContentLength {
-		res := &terrarium.DownloadShasumResponse{}
+		res := &services.DownloadShasumResponse{}
 		for i := int64(0); i < outContentLength; i += ChunkSize {
 			if i+ChunkSize > outContentLength {
 				res.ShasumDataChunk = bb[i:outContentLength]
