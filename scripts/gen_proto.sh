@@ -11,5 +11,6 @@ protoc --go_out=. --go_opt=module=github.com/terrariumcloud/terrarium \
     pb/terrarium/usage/usage.proto \
     pb/terrarium/common/paging.proto \
     pb/terrarium/provider/provider.proto \
-    pb/terrarium/provider/services/version_manager.proto
+    pb/terrarium/provider/services/version_manager.proto \
+    pb/terrarium/provider/services/storage.proto
 
