@@ -49,7 +49,7 @@ func Test_GetProviderInputsFromRequest(t *testing.T) {
 }
 
 func Test_GetProviderLocationFromRequest(t *testing.T) {
-	req := httptest.NewRequest("GET", "/providers/v1/test-org/test-provider/2.0.0/linux/amd64/archive", nil)
+	req := httptest.NewRequest("GET", "/providers/v1/test-org/test-provider/2.0.0/linux/amd64/terraform-provider-test-provider_2.0.0_linux_amd64.zip", nil)
 	req = mux.SetURLVars(req, map[string]string{
 		"organization_name": "test-org",
 		"name":              "test-provider",
@@ -82,7 +82,7 @@ func Test_GetProviderLocationFromRequest(t *testing.T) {
 }
 
 func Test_GetVersionedProviderFromRequest(t *testing.T) {
-	req := httptest.NewRequest("GET", "/providers/v1/test-org/test-provider/2.0.0/shasum", nil)
+	req := httptest.NewRequest("GET", "/providers/v1/test-org/test-provider/2.0.0/terraform-provider-test-provider_2.0.0_SHA256SUMS", nil)
 	req = mux.SetURLVars(req, map[string]string{
 		"organization_name": "test-org",
 		"name":              "test-provider",
