@@ -130,7 +130,6 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 	})
 }
 
-
 // archiveHandler performs a fetch of the provider binary from the chosen backing store and presents it to the client.
 func (h *providersV1HttpService) archiveHandler() http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
