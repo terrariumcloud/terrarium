@@ -144,12 +144,12 @@ func (h *providersV1HttpService) archiveHandler() http.Handler {
 			attribute.String("provider.os", providerOS),
 			attribute.String("provider.arch", providerArch),
 		)
-		downloadStream, err2 := h.storageClient.DownloadProviderSourceZip(r.Context(), &services.DownloadSourceZipRequest{
+		downloadStream, err := h.storageClient.DownloadProviderSourceZip(r.Context(), &services.DownloadSourceZipRequest{
 			Provider: GetProviderLocationFromRequest(r),
 		})
-		if err2 != nil {
-			log.Printf("Failed to connect: %v", err2)
-			span.RecordError(err2)
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the archive from storage backend service"), http.StatusInternalServerError)
 			return
 		}
