@@ -84,14 +84,13 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 
 	t.Run("when source zip is downloaded", func(t *testing.T) {
 		var length int64 = 50000
-		data := make([]byte, length)
-		buf := &ClosingBuffer{bytes.NewBuffer(data)}
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
 
 		svc := &StorageService{Client: s3Client}
 
-		res := &terrarium.SourceZipResponse{ZipDataChunk: data}
+		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, length)}
 
 		mds := &mocks.MockDownloadProviderSourceZipServer{SendResponse: res}
 
@@ -145,7 +144,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 10000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -182,7 +181,7 @@ func Test_DownloadShasum(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -243,7 +242,7 @@ func Test_DownloadShasum(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -280,7 +279,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum signature file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -341,7 +340,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
