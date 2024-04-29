@@ -177,12 +177,12 @@ func (h *providersV1HttpService) shasumHandler() http.Handler {
 			attribute.String("provider.version", providerVersion),
 		)
 
-		downloadStream, err2 := h.storageClient.DownloadShasum(r.Context(), &services.DownloadShasumRequest{
+		downloadStream, err := h.storageClient.DownloadShasum(r.Context(), &services.DownloadShasumRequest{
 			Provider: GetVersionedProviderFromRequest(r),
 		})
-		if err2 != nil {
-			log.Printf("Failed to connect: %v", err2)
-			span.RecordError(err2)
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the shasum file from storage backend service"), http.StatusInternalServerError)
 			return
 		}
@@ -211,12 +211,12 @@ func (h *providersV1HttpService) shasumSignatureHandler() http.Handler {
 			attribute.String("provider.version", providerVersion),
 		)
 
-		downloadStream, err2 := h.storageClient.DownloadShasumSignature(r.Context(), &services.DownloadShasumRequest{
+		downloadStream, err := h.storageClient.DownloadShasumSignature(r.Context(), &services.DownloadShasumRequest{
 			Provider: GetVersionedProviderFromRequest(r),
 		})
-		if err2 != nil {
-			log.Printf("Failed to connect: %v", err2)
-			span.RecordError(err2)
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
 			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the shasum signature file from storage backend service"), http.StatusInternalServerError)
 			return
 		}
