@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 
@@ -74,7 +74,7 @@ func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSou
 
 	providerAddress := strings.Split(request.Provider.GetName(), "/")
 	filename := fmt.Sprintf("terraform-provider-%s_%s_%s_%s.zip", providerAddress[1], request.GetProvider().GetVersion(), request.GetProvider().GetOs(), request.GetProvider().GetArch())
-	fileLocation := services.ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), filename)
+	fileLocation := ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), filename)
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
@@ -84,38 +84,35 @@ func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSou
 	out, err := s.Client.GetObject(ctx, in)
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
+		log.Println("Error downloading source zip for provider binary", err)
 		return DownloadSourceZipError
 	}
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(out.Body)
-	bb := buf.Bytes()
+	buf := make([]byte, ChunkSize)
+	res := &services.SourceZipResponse{}
 
-	outContentLength := out.ContentLength
-
-	if int64(len(bb)) == outContentLength {
-		res := &services.SourceZipResponse{}
-		for i := int64(0); i < outContentLength; i += ChunkSize {
-			if i+ChunkSize > outContentLength {
-				res.ZipDataChunk = bb[i:outContentLength]
-			} else {
-				res.ZipDataChunk = bb[i : i+ChunkSize]
-			}
-
-			if err := server.Send(res); err != nil {
-				span.RecordError(err)
-				log.Println(err)
-				return SendSourceZipError
-			}
+	for {
+		n, err := out.Body.Read(buf)
+		if err != nil && err != io.EOF {
+			span.RecordError(err)
+			log.Println(err)
+			return DownloadSourceZipError
+		}
+		if n == 0 {
+			break
 		}
 
-		log.Println("Source zip downloaded.")
-		return nil
-	} else {
-		span.RecordError(err)
-		return ContentLengthError
+		res.ZipDataChunk = buf[:n]
+		if err := server.Send(res); err != nil {
+			span.RecordError(err)
+			log.Println(err)
+			return SendSourceZipError
+		}
 	}
+
+	log.Println("Source zip downloaded.")
+	return nil
+
 }
 
 // Download Shasum from storage
@@ -131,8 +128,8 @@ func (s *StorageService) DownloadShasum(request *services.DownloadShasumRequest,
 	)
 
 	providerAddress := strings.Split(request.GetProvider().GetName(), "/")
-	prefix := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS", providerAddress[1], request.GetProvider().GetVersion())
-	fileLocation := services.ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), prefix)
+	suffix := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS", providerAddress[1], request.GetProvider().GetVersion())
+	fileLocation := ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), suffix)
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
@@ -142,38 +139,34 @@ func (s *StorageService) DownloadShasum(request *services.DownloadShasumRequest,
 	out, err := s.Client.GetObject(ctx, in)
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
+		log.Println("Error downloading shasum file", err)
 		return DownloadShasumError
 	}
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(out.Body)
-	bb := buf.Bytes()
+	buf := make([]byte, ChunkSize)
+	res := &services.DownloadShasumResponse{}
 
-	outContentLength := out.ContentLength
-
-	if int64(len(bb)) == outContentLength {
-		res := &services.DownloadShasumResponse{}
-		for i := int64(0); i < outContentLength; i += ChunkSize {
-			if i+ChunkSize > outContentLength {
-				res.ShasumDataChunk = bb[i:outContentLength]
-			} else {
-				res.ShasumDataChunk = bb[i : i+ChunkSize]
-			}
-
-			if err := server.Send(res); err != nil {
-				span.RecordError(err)
-				log.Println(err)
-				return SendShasumError
-			}
+	for {
+		n, err := out.Body.Read(buf)
+		if err != nil && err != io.EOF {
+			span.RecordError(err)
+			log.Println(err)
+			return DownloadShasumError
+		}
+		if n == 0 {
+			break
 		}
 
-		log.Println("Shasum file downloaded.")
-		return nil
-	} else {
-		span.RecordError(err)
-		return ContentLengthError
+		res.ShasumDataChunk = buf[:n]
+		if err := server.Send(res); err != nil {
+			span.RecordError(err)
+			log.Println(err)
+			return SendShasumError
+		}
 	}
+
+	log.Println("Shasum file downloaded.")
+	return nil
 }
 
 // Download Shasum Signature from storage
@@ -189,8 +182,8 @@ func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasu
 	)
 
 	providerAddress := strings.Split(request.GetProvider().GetName(), "/")
-	prefix := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS.sig", providerAddress[1], request.GetProvider().GetVersion())
-	fileLocation := services.ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), prefix)
+	suffix := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS.sig", providerAddress[1], request.GetProvider().GetVersion())
+	fileLocation := ResolveS3Locations(request.Provider.GetName(), request.Provider.GetVersion(), suffix)
 
 	in := &s3.GetObjectInput{
 		Bucket: aws.String(BucketName),
@@ -200,36 +193,37 @@ func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasu
 	out, err := s.Client.GetObject(ctx, in)
 	if err != nil {
 		span.RecordError(err)
-		log.Println(err)
+		log.Println("Error downloading shasum signature file", err)
 		return DownloadShasumError
 	}
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(out.Body)
-	bb := buf.Bytes()
+	buf := make([]byte, ChunkSize)
+	res := &services.DownloadShasumResponse{}
 
-	outContentLength := out.ContentLength
-
-	if int64(len(bb)) == outContentLength {
-		res := &services.DownloadShasumResponse{}
-		for i := int64(0); i < outContentLength; i += ChunkSize {
-			if i+ChunkSize > outContentLength {
-				res.ShasumDataChunk = bb[i:outContentLength]
-			} else {
-				res.ShasumDataChunk = bb[i : i+ChunkSize]
-			}
-
-			if err := server.Send(res); err != nil {
-				span.RecordError(err)
-				log.Println(err)
-				return SendShasumError
-			}
+	for {
+		n, err := out.Body.Read(buf)
+		if err != nil && err != io.EOF {
+			span.RecordError(err)
+			log.Println(err)
+			return DownloadShasumError
+		}
+		if n == 0 {
+			break
 		}
 
-		log.Println("Shasum signature file downloaded.")
-		return nil
-	} else {
-		span.RecordError(err)
-		return ContentLengthError
+		res.ShasumDataChunk = buf[:n]
+		if err := server.Send(res); err != nil {
+			span.RecordError(err)
+			log.Println(err)
+			return SendShasumError
+		}
 	}
+
+	log.Println("Shasum signature file downloaded.")
+	return nil
+}
+
+func ResolveS3Locations(providerID, providerVersion, value string) string {
+	fileLocation := fmt.Sprintf("%s/%s/%s", providerID, providerVersion, value)
+	return fileLocation
 }
