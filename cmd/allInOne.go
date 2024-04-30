@@ -17,6 +17,7 @@ import (
 	storage2 "github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/module/services/tag_manager"
 	"github.com/terrariumcloud/terrarium/internal/module/services/version_manager"
+	providerStorage "github.com/terrariumcloud/terrarium/internal/provider/services/storage"
 	providerVersionManager "github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
 	"github.com/terrariumcloud/terrarium/internal/release/services/release"
 	"github.com/terrariumcloud/terrarium/internal/restapi/browse"
@@ -92,6 +93,12 @@ var allInOneCmd = &cobra.Command{
 			Schema: providerVersionManager.GetProviderVersionsSchema(providerVersionManager.VersionsTableName),
 		}
 
+		providerStorageServiceServer := &providerStorage.StorageService{
+			Client:     storage.NewS3Client(awsSessionConfig),
+			BucketName: providerStorage.BucketName,
+			Region:     awsSessionConfig.Region,
+		}
+
 		services := []grpcServices.Service{
 			dependencyServiceServer,
 			registrarServiceServer,
@@ -100,6 +107,7 @@ var allInOneCmd = &cobra.Command{
 			releaseServiceServer,
 			versionManagerServer,
 			providerVersionManagerServer,
+			providerStorageServiceServer,
 		}
 
 		otelShutdown := initOpenTelemetry("all-in-one")
@@ -114,6 +122,7 @@ var allInOneCmd = &cobra.Command{
 			dependency_manager.NewDependencyManagerGrpcClient(allInOneInternalEndpoint),
 			release.NewPublisherGrpcClient(allInOneInternalEndpoint),
 			providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint),
+			providerStorage.NewStorageGrpcClient(allInOneInternalEndpoint),
 		)
 
 		startAllInOneGrpcServices([]grpcServices.Service{gatewayServer}, allInOneGrpcGatewayEndpoint)
@@ -124,7 +133,7 @@ var allInOneCmd = &cobra.Command{
 			providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint))
 
 		modulesAPIServer := modulesv1.New(version_manager.NewVersionManagerGrpcClient(allInOneInternalEndpoint), storage2.NewStorageGrpcClient(allInOneInternalEndpoint))
-		providersAPIServer := providersv1.New(providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint))
+		providersAPIServer := providersv1.New(providerVersionManager.NewVersionManagerGrpcClient(allInOneInternalEndpoint), providerStorage.NewStorageGrpcClient(allInOneInternalEndpoint))
 
 		router := mux.NewRouter()
 		router.PathPrefix("/modules").Handler(modulesAPIServer.GetHttpHandler("/modules"))
@@ -146,6 +155,7 @@ func init() {
 	allInOneCmd.Flags().StringVar(&dependency_manager.ModuleDependenciesTableName, "module-dependencies-table", dependency_manager.DefaultModuleDependenciesTableName, "Module dependencies table name")
 	allInOneCmd.Flags().StringVar(&dependency_manager.ContainerDependenciesTableName, "container-dependencies-table", dependency_manager.DefaultContainerDependenciesTableName, "Module container dependencies table name")
 	allInOneCmd.Flags().StringVar(&providerVersionManager.VersionsTableName, "provider-table", providerVersionManager.DefaultProviderVersionsTableName, "Provider versions table name")
+	allInOneCmd.Flags().StringVar(&providerStorage.BucketName, "provider-storage-bucket", providerStorage.DefaultBucketName, "Provider bucket name")
 }
 
 func startAllInOneGrpcServices(services []grpcServices.Service, endpoint string) {

@@ -2,7 +2,9 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -20,12 +22,16 @@ import (
 
 type providersV1HttpService struct {
 	versionManagerClient services.VersionManagerClient
+	storageClient        services.StorageClient
 	responseHandler      restapi.ResponseHandler
 	errorHandler         restapi.ErrorHandler
 }
 
-func New(versionManagerClient services.VersionManagerClient) *providersV1HttpService {
-	return &providersV1HttpService{versionManagerClient: versionManagerClient}
+func New(versionManagerClient services.VersionManagerClient, storageClient services.StorageClient) *providersV1HttpService {
+	return &providersV1HttpService{
+		versionManagerClient: versionManagerClient,
+		storageClient:        storageClient,
+	}
 }
 
 func (h *providersV1HttpService) GetHttpHandler(mountPath string) http.Handler {
@@ -43,6 +49,9 @@ func (h *providersV1HttpService) createRouter(mountPath string) *mux.Router {
 	sr.StrictSlash(true)
 	sr.Handle("/{organization_name}/{name}/versions", h.getProviderVersionHandler()).Methods(http.MethodGet)
 	sr.Handle("/{organization_name}/{name}/{version}/download/{os}/{arch}", h.downloadProviderHandler()).Methods(http.MethodGet)
+	sr.Handle("/{organization_name}/{name}/{version}/{os}/{arch}/terraform-provider-{name}_{version}_{os}_{arch}.zip", h.archiveHandler()).Methods(http.MethodGet)
+	sr.Handle("/{organization_name}/{name}/{version}/terraform-provider-{name}_{version}_SHA256SUMS", h.shasumHandler()).Methods(http.MethodGet)
+	sr.Handle("/{organization_name}/{name}/{version}/terraform-provider-{name}_{version}_SHA256SUMS.sig", h.shasumSignatureHandler()).Methods(http.MethodGet)
 	return r
 }
 
@@ -118,5 +127,107 @@ func (h *providersV1HttpService) downloadProviderHandler() http.Handler {
 		data, _ := json.Marshal(providerMetadata)
 		rw.Header().Add("Content-Type", "application/json")
 		_, _ = rw.Write(data)
+	})
+}
+
+// archiveHandler performs a fetch of the provider binary from the chosen backing store and presents it to the client.
+func (h *providersV1HttpService) archiveHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		providerName := GetProviderNameFromRequest(r)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		providerVersion, providerOS, providerArch := GetProviderInputsFromRequest(r)
+		span.SetAttributes(
+			attribute.String("provider.name", providerName),
+			attribute.String("provider.version", providerVersion),
+			attribute.String("provider.os", providerOS),
+			attribute.String("provider.arch", providerArch),
+		)
+		downloadStream, err := h.storageClient.DownloadProviderSourceZip(r.Context(), &services.DownloadSourceZipRequest{
+			Provider: GetProviderLocationFromRequest(r),
+		})
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the archive from storage backend service"), http.StatusInternalServerError)
+			return
+		}
+		r.Header.Set("Content-Type", "application/zip")
+		for {
+			chunk, err := downloadStream.Recv()
+			if err == io.EOF {
+				return
+			}
+			_, _ = rw.Write(chunk.ZipDataChunk)
+		}
+	})
+}
+
+// shasumHandler performs a fetch of the shasum file from the chosen backing store and presents it to the client.
+func (h *providersV1HttpService) shasumHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		providerName := GetProviderNameFromRequest(r)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		providerVersion, _, _ := GetProviderInputsFromRequest(r)
+		span.SetAttributes(
+			attribute.String("provider.name", providerName),
+			attribute.String("provider.version", providerVersion),
+		)
+
+		downloadStream, err := h.storageClient.DownloadShasum(r.Context(), &services.DownloadShasumRequest{
+			Provider: GetVersionedProviderFromRequest(r),
+		})
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the shasum file from storage backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		r.Header.Set("Content-Type", "text/plain")
+		for {
+			chunk, err := downloadStream.Recv()
+			if err == io.EOF {
+				return
+			}
+			_, _ = rw.Write(chunk.ShasumDataChunk)
+		}
+	})
+}
+
+// shasumSignatureHandler performs a fetch of the shasum signature file from the chosen backing store and presents it to the client.
+func (h *providersV1HttpService) shasumSignatureHandler() http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		providerName := GetProviderNameFromRequest(r)
+
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+		providerVersion, _, _ := GetProviderInputsFromRequest(r)
+		span.SetAttributes(
+			attribute.String("provider.name", providerName),
+			attribute.String("provider.version", providerVersion),
+		)
+
+		downloadStream, err := h.storageClient.DownloadShasumSignature(r.Context(), &services.DownloadShasumRequest{
+			Provider: GetVersionedProviderFromRequest(r),
+		})
+		if err != nil {
+			log.Printf("Failed to connect: %v", err)
+			span.RecordError(err)
+			h.errorHandler.Write(rw, errors.New("failed to initiate the download of the shasum signature file from storage backend service"), http.StatusInternalServerError)
+			return
+		}
+
+		r.Header.Set("Content-Type", "text/plain")
+		for {
+			chunk, err := downloadStream.Recv()
+			if err == io.EOF {
+				return
+			}
+			_, _ = rw.Write(chunk.ShasumDataChunk)
+		}
 	})
 }

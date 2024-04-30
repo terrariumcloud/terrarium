@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/terrariumcloud/terrarium/internal/provider/services/storage"
 	"github.com/terrariumcloud/terrarium/internal/provider/services/version_manager"
 	providersv1 "github.com/terrariumcloud/terrarium/internal/restapi/providers/v1"
 
@@ -25,10 +26,15 @@ func init() {
 		"Mount path for the rest API server used to process request relative to a particular URL in a reverse proxy type setup",
 	)
 	providersV1Cmd.Flags().StringVarP(&version_manager.VersionManagerEndpoint, "provider-version-manager", "", version_manager.DefaultProviderVersionManagerEndpoint, "GRPC Endpoint for Version Manager Service")
+	providersV1Cmd.Flags().StringVarP(&storage.StorageServiceEndpoint, "provider-storage", "", storage.DefaultStorageServiceDefaultEndpoint, "GRPC Endpoint for Provider Storage Service")
+
 	rootCmd.AddCommand(providersV1Cmd)
 }
 
 func runRESTProvidersV1Server(cmd *cobra.Command, args []string) {
-	restAPIServer := providersv1.New(version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint))
+	restAPIServer := providersv1.New(
+		version_manager.NewVersionManagerGrpcClient(version_manager.VersionManagerEndpoint),
+		storage.NewStorageGrpcClient(storage.StorageServiceEndpoint),
+	)
 	startRESTAPIService("rest-providers-v1", mountPathProviders, restAPIServer)
 }
