@@ -11,6 +11,7 @@ type MockDownloadProviderSourceZipServer struct {
 	SendInvocations int
 	SendResponse    *providerServices.SourceZipResponse
 	SendError       error
+	TotalReceived   []byte
 }
 
 func (mds *MockDownloadProviderSourceZipServer) Context() context.Context {
@@ -20,6 +21,7 @@ func (mds *MockDownloadProviderSourceZipServer) Context() context.Context {
 func (mds *MockDownloadProviderSourceZipServer) Send(res *providerServices.SourceZipResponse) error {
 	mds.SendInvocations++
 	mds.SendResponse = res
+	mds.TotalReceived = append(mds.TotalReceived, mds.SendResponse.ZipDataChunk...)
 	return mds.SendError
 }
 
@@ -28,6 +30,7 @@ type MockDownloadProviderShasumServer struct {
 	SendInvocations int
 	SendResponse    *providerServices.DownloadShasumResponse
 	SendError       error
+	TotalReceived   []byte
 }
 
 func (mds *MockDownloadProviderShasumServer) Context() context.Context {
@@ -37,6 +40,7 @@ func (mds *MockDownloadProviderShasumServer) Context() context.Context {
 func (mds *MockDownloadProviderShasumServer) Send(res *providerServices.DownloadShasumResponse) error {
 	mds.SendInvocations++
 	mds.SendResponse = res
+	mds.TotalReceived = append(mds.TotalReceived, mds.SendResponse.ShasumDataChunk...)
 	return mds.SendError
 }
 
@@ -45,6 +49,7 @@ type MockDownloadProviderShasumSignatureServer struct {
 	SendInvocations int
 	SendResponse    *providerServices.DownloadShasumResponse
 	SendError       error
+	TotalReceived   []byte
 }
 
 func (mds *MockDownloadProviderShasumSignatureServer) Context() context.Context {
@@ -54,5 +59,6 @@ func (mds *MockDownloadProviderShasumSignatureServer) Context() context.Context 
 func (mds *MockDownloadProviderShasumSignatureServer) Send(res *providerServices.DownloadShasumResponse) error {
 	mds.SendInvocations++
 	mds.SendResponse = res
+	mds.TotalReceived = append(mds.TotalReceived, mds.SendResponse.ShasumDataChunk...)
 	return mds.SendError
 }

@@ -82,8 +82,8 @@ func Test_RegisterStorageWithServer(t *testing.T) {
 func Test_DownloadProviderSourceZip(t *testing.T) {
 	t.Parallel()
 
-	t.Run("when source zip is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+	t.Run("When source zip is downloaded", func(t *testing.T) {
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -108,11 +108,11 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
-		if mds.SendInvocations != 1 {
-			t.Errorf("Expected 1 call to Send, got %v", mds.SendInvocations)
+		if mds.SendInvocations != 2 {
+			t.Errorf("Expected 2 call to Send, got %v", mds.SendInvocations)
 		}
 
-		if !bytes.Equal(mds.SendResponse.ZipDataChunk, res.ZipDataChunk) {
+		if !bytes.Equal(mds.TotalReceived, res.ZipDataChunk) {
 			t.Errorf("Expected same data to be returned.")
 		}
 	})
@@ -144,7 +144,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -181,7 +181,7 @@ func Test_DownloadShasum(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -206,11 +206,11 @@ func Test_DownloadShasum(t *testing.T) {
 			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
-		if mds.SendInvocations != 1 {
-			t.Errorf("Expected 1 call to Send, got %v", mds.SendInvocations)
+		if mds.SendInvocations != 2 {
+			t.Errorf("Expected 2 call to Send, got %v", mds.SendInvocations)
 		}
 
-		if !bytes.Equal(mds.SendResponse.ShasumDataChunk, res.ShasumDataChunk) {
+		if !bytes.Equal(mds.TotalReceived, res.ShasumDataChunk) {
 			t.Errorf("Expected same data to be returned.")
 		}
 	})
@@ -242,7 +242,7 @@ func Test_DownloadShasum(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -279,7 +279,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum signature file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -304,11 +304,11 @@ func Test_DownloadShasumSignature(t *testing.T) {
 			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
 		}
 
-		if mds.SendInvocations != 1 {
-			t.Errorf("Expected 1 call to Send, got %v", mds.SendInvocations)
+		if mds.SendInvocations != 2 {
+			t.Errorf("Expected 2 call to Send, got %v", mds.SendInvocations)
 		}
 
-		if !bytes.Equal(mds.SendResponse.ShasumDataChunk, res.ShasumDataChunk) {
+		if !bytes.Equal(mds.TotalReceived, res.ShasumDataChunk) {
 			t.Errorf("Expected same data to be returned.")
 		}
 	})
@@ -340,7 +340,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 70000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
