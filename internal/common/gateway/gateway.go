@@ -44,6 +44,7 @@ type TerrariumGrpcGateway struct {
 	storageClient                moduleServices.StorageClient
 	dependencyManagerClient      moduleServices.DependencyManagerClient
 	releasePublisherClient       release.PublisherClient
+	providerStorageClient        providerServices.StorageClient
 }
 
 func New(registrarClient moduleServices.RegistrarClient,
@@ -52,7 +53,8 @@ func New(registrarClient moduleServices.RegistrarClient,
 	storageClient moduleServices.StorageClient,
 	dependencyManagerClient moduleServices.DependencyManagerClient,
 	releasePublisherClient release.PublisherClient,
-	providerVersionManagerClient providerServices.VersionManagerClient) *TerrariumGrpcGateway {
+	providerVersionManagerClient providerServices.VersionManagerClient,
+	providerStorageClient providerServices.StorageClient) *TerrariumGrpcGateway {
 	return &TerrariumGrpcGateway{
 		registrarClient:              registrarClient,
 		tagManagerClient:             tagManagerClient,
@@ -61,6 +63,7 @@ func New(registrarClient moduleServices.RegistrarClient,
 		dependencyManagerClient:      dependencyManagerClient,
 		releasePublisherClient:       releasePublisherClient,
 		providerVersionManagerClient: providerVersionManagerClient,
+		providerStorageClient:        providerStorageClient,
 	}
 }
 
