@@ -100,7 +100,6 @@ func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSou
 		if n == 0 {
 			break
 		}
-
 		res.ZipDataChunk = buf[:n]
 		if err := server.Send(res); err != nil {
 			span.RecordError(err)
