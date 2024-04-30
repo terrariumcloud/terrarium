@@ -35,6 +35,7 @@ var (
 	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
 	SendSourceZipError        = status.Error(codes.Unknown, "Failed to send source zip.")
 	SendShasumError           = status.Error(codes.Unknown, "Failed to send shasum file.")
+	ContentLengthError        = status.Error(codes.Unknown, "Failed to read correct content length.")
 	DownloadShasumError       = status.Error(codes.Unknown, "Failed to download shasum.")
 )
 

@@ -70,7 +70,7 @@ func Test_RegisterStorageWithServer(t *testing.T) {
 		}
 
 		if s3Client.CreateBucketInvocations != 1 {
-			t.Errorf("Expected 1 calls to CreateTable, got %v.", s3Client.CreateBucketInvocations)
+			t.Errorf("Expected 0 calls to CreateTable, got %v.", s3Client.CreateBucketInvocations)
 		}
 	})
 }
@@ -79,19 +79,19 @@ func Test_RegisterStorageWithServer(t *testing.T) {
 // - if correct response is returned when source zip is downloaded
 // - if error is returned when GetObject fails
 // - if error is returned when Send fails
+// - if error is returned when wrong content lenght is read
 func Test_DownloadProviderSourceZip(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when source zip is downloaded", func(t *testing.T) {
-		var length int64 = 50000
-		data := make([]byte, length)
-		buf := &ClosingBuffer{bytes.NewBuffer(data)}
+		var length int64 = 1000
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
 
 		svc := &StorageService{Client: s3Client}
 
-		res := &terrarium.SourceZipResponse{ZipDataChunk: data}
+		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, length)}
 
 		mds := &mocks.MockDownloadProviderSourceZipServer{SendResponse: res}
 
@@ -145,7 +145,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -172,17 +172,48 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", SendSourceZipError, err)
 		}
 	})
+
+	t.Run("when wrong content length is read", func(t *testing.T) {
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
+
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: 10001}}
+
+		svc := &StorageService{Client: s3Client}
+
+		res := &terrarium.SourceZipResponse{ZipDataChunk: make([]byte, 1000)}
+
+		mds := &mocks.MockDownloadProviderSourceZipServer{SendResponse: res}
+
+		req := &terrarium.DownloadSourceZipRequest{
+			Provider: &terrarium.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
+		}
+
+		err := svc.DownloadProviderSourceZip(req, mds)
+
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
+		}
+
+		if mds.SendInvocations != 0 {
+			t.Errorf("Expected 0 calls to Send, got %v", mds.SendInvocations)
+		}
+
+		if err != ContentLengthError {
+			t.Errorf("Expected %v, got %v.", ContentLengthError, err)
+		}
+	})
 }
 
 // Test_DownloadShasum checks:
 // - if correct response is returned when shasum file is downloaded
 // - if error is returned when GetObject fails
 // - if error is returned when Send fails
+// - if error is returned when wrong content lenght is read
 func Test_DownloadShasum(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -243,7 +274,7 @@ func Test_DownloadShasum(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -270,17 +301,48 @@ func Test_DownloadShasum(t *testing.T) {
 			t.Errorf("Expected %v, got %v.", SendShasumError, err)
 		}
 	})
+
+	t.Run("when wrong content length is read", func(t *testing.T) {
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
+
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: 10001}}
+
+		svc := &StorageService{Client: s3Client}
+
+		res := &terrarium.DownloadShasumResponse{ShasumDataChunk: make([]byte, 1000)}
+
+		mds := &mocks.MockDownloadProviderShasumServer{SendResponse: res}
+
+		req := &terrarium.DownloadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+		}
+
+		err := svc.DownloadShasum(req, mds)
+
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
+		}
+
+		if mds.SendInvocations != 0 {
+			t.Errorf("Expected 0 calls to Send, got %v", mds.SendInvocations)
+		}
+
+		if err != ContentLengthError {
+			t.Errorf("Expected %v, got %v.", ContentLengthError, err)
+		}
+	})
 }
 
 // Test_DownloadShasumSignature checks:
 // - if correct response is returned when shasum signature file is downloaded
 // - if error is returned when GetObject fails
 // - if error is returned when Send fails
+// - if error is returned when wrong content lenght is read
 func Test_DownloadShasumSignature(t *testing.T) {
 	t.Parallel()
 
 	t.Run("when shasum signature file is downloaded", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -341,7 +403,7 @@ func Test_DownloadShasumSignature(t *testing.T) {
 	})
 
 	t.Run("when Send fails", func(t *testing.T) {
-		var length int64 = 50000
+		var length int64 = 1000
 		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, length))}
 
 		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: length}}
@@ -366,6 +428,36 @@ func Test_DownloadShasumSignature(t *testing.T) {
 
 		if err != SendShasumError {
 			t.Errorf("Expected %v, got %v.", SendShasumError, err)
+		}
+	})
+
+	t.Run("when wrong content length is read", func(t *testing.T) {
+		buf := &ClosingBuffer{bytes.NewBuffer(make([]byte, 1000))}
+
+		s3Client := &mocks2.S3{GetObjectOut: &s3.GetObjectOutput{Body: buf, ContentLength: 10001}}
+
+		svc := &StorageService{Client: s3Client}
+
+		res := &terrarium.DownloadShasumResponse{ShasumDataChunk: make([]byte, 1000)}
+
+		mds := &mocks.MockDownloadProviderShasumSignatureServer{SendResponse: res}
+
+		req := &terrarium.DownloadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+		}
+
+		err := svc.DownloadShasum(req, mds)
+
+		if s3Client.GetObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to GetObject, got %v", s3Client.GetObjectInvocations)
+		}
+
+		if mds.SendInvocations != 0 {
+			t.Errorf("Expected 0 calls to Send, got %v", mds.SendInvocations)
+		}
+
+		if err != ContentLengthError {
+			t.Errorf("Expected %v, got %v.", ContentLengthError, err)
 		}
 	})
 }
