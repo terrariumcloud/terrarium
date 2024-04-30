@@ -95,7 +95,7 @@ func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSou
 		n, err := out.Body.Read(buf)
 		if err != nil && err != io.EOF {
 			span.RecordError(err)
-			log.Println("Failed to download source zip", err)
+			log.Println(err)
 			return DownloadSourceZipError
 		}
 		if n == 0 {
@@ -105,7 +105,7 @@ func (s *StorageService) DownloadProviderSourceZip(request *services.DownloadSou
 		res.ZipDataChunk = buf[:n]
 		if err := server.Send(res); err != nil {
 			span.RecordError(err)
-			log.Println("Failed to send source zip", err)
+			log.Println(err)
 			return SendSourceZipError
 		}
 	}
@@ -150,7 +150,7 @@ func (s *StorageService) DownloadShasum(request *services.DownloadShasumRequest,
 		n, err := out.Body.Read(buf)
 		if err != nil && err != io.EOF {
 			span.RecordError(err)
-			log.Println("Failed to download shasum file", err)
+			log.Println(err)
 			return DownloadShasumError
 		}
 		if n == 0 {
@@ -160,7 +160,7 @@ func (s *StorageService) DownloadShasum(request *services.DownloadShasumRequest,
 		res.ShasumDataChunk = buf[:n]
 		if err := server.Send(res); err != nil {
 			span.RecordError(err)
-			log.Println("Failed to send shasum file", err)
+			log.Println(err)
 			return SendShasumError
 		}
 	}
@@ -204,7 +204,7 @@ func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasu
 		n, err := out.Body.Read(buf)
 		if err != nil && err != io.EOF {
 			span.RecordError(err)
-			log.Println("Failed to download shasum signature file", err)
+			log.Println(err)
 			return DownloadShasumError
 		}
 		if n == 0 {
@@ -214,7 +214,7 @@ func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasu
 		res.ShasumDataChunk = buf[:n]
 		if err := server.Send(res); err != nil {
 			span.RecordError(err)
-			log.Println("Failed to send shasum signature file", err)
+			log.Println(err)
 			return SendShasumError
 		}
 	}
