@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"testing"
@@ -14,4 +15,9 @@ func MustMarshallString(value string, t *testing.T) types.AttributeValue {
 	} else {
 		return result
 	}
+}
+
+func ResolveS3Locations(providerID, providerVersion, value string) string {
+	fileLocation := fmt.Sprintf("%s/%s/%s", providerID, providerVersion, value)
+	return fileLocation
 }
