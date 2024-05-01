@@ -57,7 +57,7 @@ type VersionManagerService struct {
 }
 
 type Provider struct {
-	Name 		  string 					`json:"name,omitempty" bson:"name,omitempty" dynamodbav:"name,omitempty"`
+	Name          string                    `json:"name,omitempty" bson:"name,omitempty" dynamodbav:"name,omitempty"`
 	Version       string                    `json:"version,omitempty" bson:"version,omitempty" dynamodbav:"version,omitempty"`
 	Protocols     []string                  `json:"protocols,omitempty" bson:"protocols,omitempty" dynamodbav:"protocols,omitempty"`
 	Platforms     []*terrarium.PlatformItem `json:"platforms,omitempty" bson:"platforms,omitempty" dynamodbav:"platforms,omitempty"`
