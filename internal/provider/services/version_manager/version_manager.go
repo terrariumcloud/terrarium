@@ -57,16 +57,16 @@ type VersionManagerService struct {
 }
 
 type Provider struct {
-	Name          string                    `json:"name" bson:"name" dynamodbav:"name"`
-	Version       string                    `json:"version" bson:"version" dynamodbav:"version"`
-	Protocols     []string                  `json:"protocols" bson:"protocols" dynamodbav:"protocols"`
-	Platforms     []*terrarium.PlatformItem `json:"platforms" bson:"platforms" dynamodbav:"platforms"`
-	Description   string                    `json:"description" bson:"description" dynamodbav:"description"`
-	SourceRepoUrl string                    `json:"source_repo_url" bson:"source_repo_url" dynamodbav:"source_repo_url"`
-	Maturity      string                    `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
-	CreatedOn     string                    `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
-	ModifiedOn    string                    `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
-	PublishedOn   string                    `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+	Name 		  string 					`json:"name,omitempty" bson:"name,omitempty" dynamodbav:"name,omitempty"`
+	Version       string                    `json:"version,omitempty" bson:"version,omitempty" dynamodbav:"version,omitempty"`
+	Protocols     []string                  `json:"protocols,omitempty" bson:"protocols,omitempty" dynamodbav:"protocols,omitempty"`
+	Platforms     []*terrarium.PlatformItem `json:"platforms,omitempty" bson:"platforms,omitempty" dynamodbav:"platforms,omitempty"`
+	Description   string                    `json:"description,omitempty" bson:"description,omitempty" dynamodbav:"description,omitempty"`
+	SourceRepoUrl string                    `json:"source_repo_url,omitempty" bson:"source_repo_url,omitempty" dynamodbav:"source_repo_url,omitempty"`
+	Maturity      string                    `json:"maturity,omitempty" bson:"maturity,omitempty" dynamodbav:"maturity,omitempty"`
+	CreatedOn     string                    `json:"created_on,omitempty" bson:"created_on,omitempty" dynamodbav:"created_on"`
+	ModifiedOn    string                    `json:"modified_on,omitempty" bson:"modified_on,omitempty" dynamodbav:"modified_on,omitempty"`
+	PublishedOn   string                    `json:"published_on,omitempty" bson:"published_on,omitempty" dynamodbav:"published_on,omitempty"`
 }
 
 // RegisterWithServer Registers VersionManagerService with grpc server
