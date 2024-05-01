@@ -417,6 +417,7 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 
 	span := trace.SpanFromContext(ctx)
 
+	var providersList []*services.ListProviderItem
 	// Initialize a map to store providers uniquely
 	uniqueProviders := make(map[string]*services.ListProviderItem)
 
@@ -450,17 +451,13 @@ func (s *VersionManagerService) ListProviders(ctx context.Context, request *serv
 			} else {
 				key := providerMetadata.Name
 				// Check if the provider already exists in the map
-				if _, ok := uniqueProviders[key]; !ok {
+				if _, exists := uniqueProviders[key]; !exists {
 					// Add the provider to the map if it doesn't exist
 					uniqueProviders[key] = providerMetadata
+					providersList = append(providersList, providerMetadata)
 				}
 			}
 		}
-	}
-
-	providersList := make([]*services.ListProviderItem, 0, len(uniqueProviders))
-	for _, provider := range uniqueProviders {
-		providersList = append(providersList, provider)
 	}
 
 	grpcResponse := services.ListProvidersResponse{
