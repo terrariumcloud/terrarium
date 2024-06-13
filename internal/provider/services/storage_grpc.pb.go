@@ -8,6 +8,7 @@ package services
 
 import (
 	context "context"
+	provider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -25,6 +26,9 @@ type StorageClient interface {
 	DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error)
 	DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error)
 	DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error)
+	UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderSourceZipClient, error)
+	UploadShasum(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumClient, error)
+	UploadShasumSignature(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumSignatureClient, error)
 }
 
 type storageClient struct {
@@ -131,6 +135,108 @@ func (x *storageDownloadShasumSignatureClient) Recv() (*DownloadShasumResponse, 
 	return m, nil
 }
 
+func (c *storageClient) UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderSourceZipClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[3], "/terrarium.provider.services.Storage/UploadProviderSourceZip", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &storageUploadProviderSourceZipClient{stream}
+	return x, nil
+}
+
+type Storage_UploadProviderSourceZipClient interface {
+	Send(*provider.UploadProviderSourceZipRequest) error
+	CloseAndRecv() (*provider.Response, error)
+	grpc.ClientStream
+}
+
+type storageUploadProviderSourceZipClient struct {
+	grpc.ClientStream
+}
+
+func (x *storageUploadProviderSourceZipClient) Send(m *provider.UploadProviderSourceZipRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *storageUploadProviderSourceZipClient) CloseAndRecv() (*provider.Response, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(provider.Response)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *storageClient) UploadShasum(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[4], "/terrarium.provider.services.Storage/UploadShasum", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &storageUploadShasumClient{stream}
+	return x, nil
+}
+
+type Storage_UploadShasumClient interface {
+	Send(*provider.UploadShasumRequest) error
+	CloseAndRecv() (*provider.Response, error)
+	grpc.ClientStream
+}
+
+type storageUploadShasumClient struct {
+	grpc.ClientStream
+}
+
+func (x *storageUploadShasumClient) Send(m *provider.UploadShasumRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *storageUploadShasumClient) CloseAndRecv() (*provider.Response, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(provider.Response)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *storageClient) UploadShasumSignature(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumSignatureClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[5], "/terrarium.provider.services.Storage/UploadShasumSignature", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &storageUploadShasumSignatureClient{stream}
+	return x, nil
+}
+
+type Storage_UploadShasumSignatureClient interface {
+	Send(*provider.UploadShasumRequest) error
+	CloseAndRecv() (*provider.Response, error)
+	grpc.ClientStream
+}
+
+type storageUploadShasumSignatureClient struct {
+	grpc.ClientStream
+}
+
+func (x *storageUploadShasumSignatureClient) Send(m *provider.UploadShasumRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *storageUploadShasumSignatureClient) CloseAndRecv() (*provider.Response, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(provider.Response)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // StorageServer is the server API for Storage service.
 // All implementations must embed UnimplementedStorageServer
 // for forward compatibility
@@ -138,6 +244,9 @@ type StorageServer interface {
 	DownloadProviderSourceZip(*DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error
 	DownloadShasum(*DownloadShasumRequest, Storage_DownloadShasumServer) error
 	DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error
+	UploadProviderSourceZip(Storage_UploadProviderSourceZipServer) error
+	UploadShasum(Storage_UploadShasumServer) error
+	UploadShasumSignature(Storage_UploadShasumSignatureServer) error
 	mustEmbedUnimplementedStorageServer()
 }
 
@@ -153,6 +262,15 @@ func (UnimplementedStorageServer) DownloadShasum(*DownloadShasumRequest, Storage
 }
 func (UnimplementedStorageServer) DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadShasumSignature not implemented")
+}
+func (UnimplementedStorageServer) UploadProviderSourceZip(Storage_UploadProviderSourceZipServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadProviderSourceZip not implemented")
+}
+func (UnimplementedStorageServer) UploadShasum(Storage_UploadShasumServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadShasum not implemented")
+}
+func (UnimplementedStorageServer) UploadShasumSignature(Storage_UploadShasumSignatureServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadShasumSignature not implemented")
 }
 func (UnimplementedStorageServer) mustEmbedUnimplementedStorageServer() {}
 
@@ -230,6 +348,84 @@ func (x *storageDownloadShasumSignatureServer) Send(m *DownloadShasumResponse) e
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Storage_UploadProviderSourceZip_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StorageServer).UploadProviderSourceZip(&storageUploadProviderSourceZipServer{stream})
+}
+
+type Storage_UploadProviderSourceZipServer interface {
+	SendAndClose(*provider.Response) error
+	Recv() (*provider.UploadProviderSourceZipRequest, error)
+	grpc.ServerStream
+}
+
+type storageUploadProviderSourceZipServer struct {
+	grpc.ServerStream
+}
+
+func (x *storageUploadProviderSourceZipServer) SendAndClose(m *provider.Response) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *storageUploadProviderSourceZipServer) Recv() (*provider.UploadProviderSourceZipRequest, error) {
+	m := new(provider.UploadProviderSourceZipRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Storage_UploadShasum_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StorageServer).UploadShasum(&storageUploadShasumServer{stream})
+}
+
+type Storage_UploadShasumServer interface {
+	SendAndClose(*provider.Response) error
+	Recv() (*provider.UploadShasumRequest, error)
+	grpc.ServerStream
+}
+
+type storageUploadShasumServer struct {
+	grpc.ServerStream
+}
+
+func (x *storageUploadShasumServer) SendAndClose(m *provider.Response) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *storageUploadShasumServer) Recv() (*provider.UploadShasumRequest, error) {
+	m := new(provider.UploadShasumRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Storage_UploadShasumSignature_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StorageServer).UploadShasumSignature(&storageUploadShasumSignatureServer{stream})
+}
+
+type Storage_UploadShasumSignatureServer interface {
+	SendAndClose(*provider.Response) error
+	Recv() (*provider.UploadShasumRequest, error)
+	grpc.ServerStream
+}
+
+type storageUploadShasumSignatureServer struct {
+	grpc.ServerStream
+}
+
+func (x *storageUploadShasumSignatureServer) SendAndClose(m *provider.Response) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *storageUploadShasumSignatureServer) Recv() (*provider.UploadShasumRequest, error) {
+	m := new(provider.UploadShasumRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Storage_ServiceDesc is the grpc.ServiceDesc for Storage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +448,21 @@ var Storage_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "DownloadShasumSignature",
 			Handler:       _Storage_DownloadShasumSignature_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadProviderSourceZip",
+			Handler:       _Storage_UploadProviderSourceZip_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadShasum",
+			Handler:       _Storage_UploadShasum_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadShasumSignature",
+			Handler:       _Storage_UploadShasumSignature_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "pb/terrarium/provider/services/storage.proto",

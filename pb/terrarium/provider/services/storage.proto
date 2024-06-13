@@ -9,17 +9,13 @@ service Storage {
   rpc DownloadProviderSourceZip(DownloadSourceZipRequest) returns (stream SourceZipResponse) {}
   rpc DownloadShasum(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
   rpc DownloadShasumSignature(DownloadShasumRequest) returns (stream DownloadShasumResponse) {}
-}
-
-message ProviderRequest {
-  string name = 1;
-  string version = 2;
-  string os = 3;
-  string arch = 4;
+  rpc UploadProviderSourceZip (stream terrarium.provider.UploadProviderSourceZipRequest) returns (terrarium.provider.Response) {}
+  rpc UploadShasum (stream terrarium.provider.UploadShasumRequest) returns (terrarium.provider.Response) {}
+  rpc UploadShasumSignature (stream terrarium.provider.UploadShasumRequest) returns (terrarium.provider.Response) {}
 }
 
 message DownloadSourceZipRequest {
-  ProviderRequest provider = 1;
+  terrarium.provider.ProviderRequest provider = 1;
 }
 
 message SourceZipResponse {

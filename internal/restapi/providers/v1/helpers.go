@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/terrariumcloud/terrarium/internal/provider/services"
 	pb "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 )
 
@@ -22,14 +21,14 @@ func GetProviderInputsFromRequest(r *http.Request) (string, string, string) {
 	return params["version"], params["os"], params["arch"]
 }
 
-func GetProviderLocationFromRequest(r *http.Request) *services.ProviderRequest {
+func GetProviderLocationFromRequest(r *http.Request) *pb.ProviderRequest {
 	params := mux.Vars(r)
 	orgName := params["organization_name"]
 	providerName := params["name"]
 	version := params["version"]
 	os := params["os"]
 	arch := params["arch"]
-	return &services.ProviderRequest{
+	return &pb.ProviderRequest{
 		Name:    fmt.Sprintf("%s/%s", orgName, providerName),
 		Version: version,
 		Os:      os,

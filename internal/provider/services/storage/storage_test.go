@@ -95,7 +95,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 		mds := &mocks.MockDownloadProviderSourceZipServer{SendResponse: res}
 
 		req := &terrarium.DownloadSourceZipRequest{
-			Provider: &terrarium.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
+			Provider: &provider.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
 		}
 
 		err := svc.DownloadProviderSourceZip(req, mds)
@@ -125,7 +125,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 		mds := &mocks.MockDownloadProviderSourceZipServer{}
 
 		req := &terrarium.DownloadSourceZipRequest{
-			Provider: &terrarium.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
+			Provider: &provider.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
 		}
 
 		err := svc.DownloadProviderSourceZip(req, mds)
@@ -154,7 +154,7 @@ func Test_DownloadProviderSourceZip(t *testing.T) {
 		mds := &mocks.MockDownloadProviderSourceZipServer{SendError: errors.New("some error")}
 
 		req := &terrarium.DownloadSourceZipRequest{
-			Provider: &terrarium.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
+			Provider: &provider.ProviderRequest{Name: "TestOrg/TestProvider", Version: "v1", Os: "linux", Arch: "amd64"},
 		}
 
 		err := svc.DownloadProviderSourceZip(req, mds)
