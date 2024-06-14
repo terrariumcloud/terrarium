@@ -26,7 +26,7 @@ type StorageClient interface {
 	DownloadProviderSourceZip(ctx context.Context, in *DownloadSourceZipRequest, opts ...grpc.CallOption) (Storage_DownloadProviderSourceZipClient, error)
 	DownloadShasum(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumClient, error)
 	DownloadShasumSignature(ctx context.Context, in *DownloadShasumRequest, opts ...grpc.CallOption) (Storage_DownloadShasumSignatureClient, error)
-	UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderSourceZipClient, error)
+	UploadProviderBinary(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderBinaryClient, error)
 	UploadShasum(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumClient, error)
 	UploadShasumSignature(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadShasumSignatureClient, error)
 }
@@ -135,30 +135,30 @@ func (x *storageDownloadShasumSignatureClient) Recv() (*DownloadShasumResponse, 
 	return m, nil
 }
 
-func (c *storageClient) UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderSourceZipClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[3], "/terrarium.provider.services.Storage/UploadProviderSourceZip", opts...)
+func (c *storageClient) UploadProviderBinary(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadProviderBinaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Storage_ServiceDesc.Streams[3], "/terrarium.provider.services.Storage/UploadProviderBinary", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &storageUploadProviderSourceZipClient{stream}
+	x := &storageUploadProviderBinaryClient{stream}
 	return x, nil
 }
 
-type Storage_UploadProviderSourceZipClient interface {
-	Send(*provider.UploadProviderSourceZipRequest) error
+type Storage_UploadProviderBinaryClient interface {
+	Send(*provider.UploadProviderBinaryRequest) error
 	CloseAndRecv() (*provider.Response, error)
 	grpc.ClientStream
 }
 
-type storageUploadProviderSourceZipClient struct {
+type storageUploadProviderBinaryClient struct {
 	grpc.ClientStream
 }
 
-func (x *storageUploadProviderSourceZipClient) Send(m *provider.UploadProviderSourceZipRequest) error {
+func (x *storageUploadProviderBinaryClient) Send(m *provider.UploadProviderBinaryRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *storageUploadProviderSourceZipClient) CloseAndRecv() (*provider.Response, error) {
+func (x *storageUploadProviderBinaryClient) CloseAndRecv() (*provider.Response, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ type StorageServer interface {
 	DownloadProviderSourceZip(*DownloadSourceZipRequest, Storage_DownloadProviderSourceZipServer) error
 	DownloadShasum(*DownloadShasumRequest, Storage_DownloadShasumServer) error
 	DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error
-	UploadProviderSourceZip(Storage_UploadProviderSourceZipServer) error
+	UploadProviderBinary(Storage_UploadProviderBinaryServer) error
 	UploadShasum(Storage_UploadShasumServer) error
 	UploadShasumSignature(Storage_UploadShasumSignatureServer) error
 	mustEmbedUnimplementedStorageServer()
@@ -263,8 +263,8 @@ func (UnimplementedStorageServer) DownloadShasum(*DownloadShasumRequest, Storage
 func (UnimplementedStorageServer) DownloadShasumSignature(*DownloadShasumRequest, Storage_DownloadShasumSignatureServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadShasumSignature not implemented")
 }
-func (UnimplementedStorageServer) UploadProviderSourceZip(Storage_UploadProviderSourceZipServer) error {
-	return status.Errorf(codes.Unimplemented, "method UploadProviderSourceZip not implemented")
+func (UnimplementedStorageServer) UploadProviderBinary(Storage_UploadProviderBinaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadProviderBinary not implemented")
 }
 func (UnimplementedStorageServer) UploadShasum(Storage_UploadShasumServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadShasum not implemented")
@@ -348,26 +348,26 @@ func (x *storageDownloadShasumSignatureServer) Send(m *DownloadShasumResponse) e
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Storage_UploadProviderSourceZip_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(StorageServer).UploadProviderSourceZip(&storageUploadProviderSourceZipServer{stream})
+func _Storage_UploadProviderBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StorageServer).UploadProviderBinary(&storageUploadProviderBinaryServer{stream})
 }
 
-type Storage_UploadProviderSourceZipServer interface {
+type Storage_UploadProviderBinaryServer interface {
 	SendAndClose(*provider.Response) error
-	Recv() (*provider.UploadProviderSourceZipRequest, error)
+	Recv() (*provider.UploadProviderBinaryRequest, error)
 	grpc.ServerStream
 }
 
-type storageUploadProviderSourceZipServer struct {
+type storageUploadProviderBinaryServer struct {
 	grpc.ServerStream
 }
 
-func (x *storageUploadProviderSourceZipServer) SendAndClose(m *provider.Response) error {
+func (x *storageUploadProviderBinaryServer) SendAndClose(m *provider.Response) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *storageUploadProviderSourceZipServer) Recv() (*provider.UploadProviderSourceZipRequest, error) {
-	m := new(provider.UploadProviderSourceZipRequest)
+func (x *storageUploadProviderBinaryServer) Recv() (*provider.UploadProviderBinaryRequest, error) {
+	m := new(provider.UploadProviderBinaryRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -450,8 +450,8 @@ var Storage_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "UploadProviderSourceZip",
-			Handler:       _Storage_UploadProviderSourceZip_Handler,
+			StreamName:    "UploadProviderBinary",
+			Handler:       _Storage_UploadProviderBinary_Handler,
 			ClientStreams: true,
 		},
 		{

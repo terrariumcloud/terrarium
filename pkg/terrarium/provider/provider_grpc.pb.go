@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProviderPublisherClient interface {
-	UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadProviderSourceZipClient, error)
+	UploadProviderBinary(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadProviderBinaryClient, error)
 	UploadShasum(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadShasumClient, error)
 	UploadShasumSignature(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadShasumSignatureClient, error)
 	RegisterProvider(ctx context.Context, in *RegisterProviderRequest, opts ...grpc.CallOption) (*Response, error)
@@ -37,30 +37,30 @@ func NewProviderPublisherClient(cc grpc.ClientConnInterface) ProviderPublisherCl
 	return &providerPublisherClient{cc}
 }
 
-func (c *providerPublisherClient) UploadProviderSourceZip(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadProviderSourceZipClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProviderPublisher_ServiceDesc.Streams[0], "/terrarium.provider.ProviderPublisher/UploadProviderSourceZip", opts...)
+func (c *providerPublisherClient) UploadProviderBinary(ctx context.Context, opts ...grpc.CallOption) (ProviderPublisher_UploadProviderBinaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProviderPublisher_ServiceDesc.Streams[0], "/terrarium.provider.ProviderPublisher/UploadProviderBinary", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &providerPublisherUploadProviderSourceZipClient{stream}
+	x := &providerPublisherUploadProviderBinaryClient{stream}
 	return x, nil
 }
 
-type ProviderPublisher_UploadProviderSourceZipClient interface {
-	Send(*UploadProviderSourceZipRequest) error
+type ProviderPublisher_UploadProviderBinaryClient interface {
+	Send(*UploadProviderBinaryRequest) error
 	CloseAndRecv() (*Response, error)
 	grpc.ClientStream
 }
 
-type providerPublisherUploadProviderSourceZipClient struct {
+type providerPublisherUploadProviderBinaryClient struct {
 	grpc.ClientStream
 }
 
-func (x *providerPublisherUploadProviderSourceZipClient) Send(m *UploadProviderSourceZipRequest) error {
+func (x *providerPublisherUploadProviderBinaryClient) Send(m *UploadProviderBinaryRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *providerPublisherUploadProviderSourceZipClient) CloseAndRecv() (*Response, error) {
+func (x *providerPublisherUploadProviderBinaryClient) CloseAndRecv() (*Response, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *providerPublisherClient) EndProvider(ctx context.Context, in *EndProvid
 // All implementations must embed UnimplementedProviderPublisherServer
 // for forward compatibility
 type ProviderPublisherServer interface {
-	UploadProviderSourceZip(ProviderPublisher_UploadProviderSourceZipServer) error
+	UploadProviderBinary(ProviderPublisher_UploadProviderBinaryServer) error
 	UploadShasum(ProviderPublisher_UploadShasumServer) error
 	UploadShasumSignature(ProviderPublisher_UploadShasumSignatureServer) error
 	RegisterProvider(context.Context, *RegisterProviderRequest) (*Response, error)
@@ -173,8 +173,8 @@ type ProviderPublisherServer interface {
 type UnimplementedProviderPublisherServer struct {
 }
 
-func (UnimplementedProviderPublisherServer) UploadProviderSourceZip(ProviderPublisher_UploadProviderSourceZipServer) error {
-	return status.Errorf(codes.Unimplemented, "method UploadProviderSourceZip not implemented")
+func (UnimplementedProviderPublisherServer) UploadProviderBinary(ProviderPublisher_UploadProviderBinaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadProviderBinary not implemented")
 }
 func (UnimplementedProviderPublisherServer) UploadShasum(ProviderPublisher_UploadShasumServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadShasum not implemented")
@@ -201,26 +201,26 @@ func RegisterProviderPublisherServer(s grpc.ServiceRegistrar, srv ProviderPublis
 	s.RegisterService(&ProviderPublisher_ServiceDesc, srv)
 }
 
-func _ProviderPublisher_UploadProviderSourceZip_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ProviderPublisherServer).UploadProviderSourceZip(&providerPublisherUploadProviderSourceZipServer{stream})
+func _ProviderPublisher_UploadProviderBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProviderPublisherServer).UploadProviderBinary(&providerPublisherUploadProviderBinaryServer{stream})
 }
 
-type ProviderPublisher_UploadProviderSourceZipServer interface {
+type ProviderPublisher_UploadProviderBinaryServer interface {
 	SendAndClose(*Response) error
-	Recv() (*UploadProviderSourceZipRequest, error)
+	Recv() (*UploadProviderBinaryRequest, error)
 	grpc.ServerStream
 }
 
-type providerPublisherUploadProviderSourceZipServer struct {
+type providerPublisherUploadProviderBinaryServer struct {
 	grpc.ServerStream
 }
 
-func (x *providerPublisherUploadProviderSourceZipServer) SendAndClose(m *Response) error {
+func (x *providerPublisherUploadProviderBinaryServer) SendAndClose(m *Response) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *providerPublisherUploadProviderSourceZipServer) Recv() (*UploadProviderSourceZipRequest, error) {
-	m := new(UploadProviderSourceZipRequest)
+func (x *providerPublisherUploadProviderBinaryServer) Recv() (*UploadProviderBinaryRequest, error) {
+	m := new(UploadProviderBinaryRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -333,8 +333,8 @@ var ProviderPublisher_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "UploadProviderSourceZip",
-			Handler:       _ProviderPublisher_UploadProviderSourceZip_Handler,
+			StreamName:    "UploadProviderBinary",
+			Handler:       _ProviderPublisher_UploadProviderBinary_Handler,
 			ClientStreams: true,
 		},
 		{
