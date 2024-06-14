@@ -4,7 +4,7 @@ package terrarium.provider;
 option go_package = "github.com/terrariumcloud/terrarium/pkg/terrarium/provider";
 
 service ProviderPublisher {
-  rpc UploadProviderBinary (stream UploadProviderBinaryRequest) returns (Response) {}
+  rpc UploadProviderBinaryZip (stream UploadProviderBinaryZipRequest) returns (Response) {}
   rpc UploadShasum (stream UploadShasumRequest) returns (Response) {}
   rpc UploadShasumSignature (stream UploadShasumRequest) returns (Response) {}
   rpc RegisterProvider(RegisterProviderRequest) returns (Response) {}
@@ -84,7 +84,7 @@ message ProviderRequest {
   string arch = 4;
 }
 
-message UploadProviderBinaryRequest {
+message UploadProviderBinaryZipRequest {
   ProviderRequest provider = 1;
   bytes zip_data_chunk = 2;
 }
