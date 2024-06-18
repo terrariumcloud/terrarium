@@ -65,8 +65,8 @@ type Provider struct {
 	SourceRepoUrl string                    `json:"source_repo_url" bson:"source_repo_url" dynamodbav:"source_repo_url"`
 	Maturity      string                    `json:"maturity" bson:"maturity" dynamodbav:"maturity"`
 	CreatedOn     string                    `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
-	ModifiedOn    string                    `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
-	PublishedOn   string                    `json:"published_on" bson:"published_on" dynamodbav:"published_on"`
+	ModifiedOn    string                    `json:"modified_on,omitempty" bson:"modified_on,omitempty" dynamodbav:"modified_on,omitempty"`
+	PublishedOn   string                    `json:"published_on,omitempty" bson:"published_on,omitempty" dynamodbav:"published_on,omitempty"`
 }
 
 // RegisterWithServer Registers VersionManagerService with grpc server
