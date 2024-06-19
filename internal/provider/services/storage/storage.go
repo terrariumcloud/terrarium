@@ -34,9 +34,8 @@ var (
 	ChunkSize              = DefaultChunkSize
 
 	BinaryZipUploaded = &terrarium.Response{Message: "Binary zip uploaded successfully."}
-	ShasumUploaded = &terrarium.Response{Message: "Shasum file uploaded successfully."}
+	ShasumUploaded    = &terrarium.Response{Message: "Shasum file uploaded successfully."}
 	ShasumSigUploaded = &terrarium.Response{Message: "Shasum signature uploaded successfully."}
-
 
 	BucketInitializationError = status.Error(codes.Unknown, "Failed to initialize bucket for storage.")
 	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
@@ -45,10 +44,10 @@ var (
 	DownloadShasumError       = status.Error(codes.Unknown, "Failed to download shasum.")
 	UploadBinaryZipError      = status.Error(codes.Unknown, "Failed to upload binary zip.")
 	ReceiveBinaryZipError     = status.Error(codes.Unknown, "Failed to receive binary zip.")
-	UploadShasumError      	  = status.Error(codes.Unknown, "Failed to upload shasum file.")
-	ReceiveShasumError     	  = status.Error(codes.Unknown, "Failed to receive shasum file.")
-	UploadShasumSigError      	  = status.Error(codes.Unknown, "Failed to upload shasum signature file.")
-	ReceiveShasumSigError     	  = status.Error(codes.Unknown, "Failed to receive shasum signature file.")
+	UploadShasumError         = status.Error(codes.Unknown, "Failed to upload shasum file.")
+	ReceiveShasumError        = status.Error(codes.Unknown, "Failed to receive shasum file.")
+	UploadShasumSigError      = status.Error(codes.Unknown, "Failed to upload shasum signature file.")
+	ReceiveShasumSigError     = status.Error(codes.Unknown, "Failed to receive shasum signature file.")
 )
 
 type StorageService struct {

@@ -222,7 +222,7 @@ func (u *uploadBinaryZipClient) Send(request *provider.UploadProviderBinaryZipRe
 	return u.client.Send(request)
 }
 
-func (u *uploadBinaryZipClient) CloseAndRecv() (*provider.Response ,error) {
+func (u *uploadBinaryZipClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
 	return u.client.CloseAndRecv()
 }
@@ -260,7 +260,7 @@ func (u *uploadShasumClient) Send(request *provider.UploadShasumRequest) error {
 	return u.client.Send(request)
 }
 
-func (u *uploadShasumClient) CloseAndRecv() (*provider.Response ,error) {
+func (u *uploadShasumClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
 	return u.client.CloseAndRecv()
 }
@@ -298,7 +298,7 @@ func (u *uploadShasumSignatureClient) Send(request *provider.UploadShasumRequest
 	return u.client.Send(request)
 }
 
-func (u *uploadShasumSignatureClient) CloseAndRecv() (*provider.Response ,error) {
+func (u *uploadShasumSignatureClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
 	return u.client.CloseAndRecv()
 }

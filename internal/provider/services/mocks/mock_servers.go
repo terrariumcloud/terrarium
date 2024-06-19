@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"io"
 	"context"
+	"io"
 
 	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"

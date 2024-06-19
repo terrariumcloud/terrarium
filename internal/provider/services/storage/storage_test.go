@@ -382,14 +382,14 @@ func Test_UploadProviderBinaryZip(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadProviderBinaryZipRequest{
-			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
-			Os: "linux",
-			Arch: "amd64",
+			Provider:     &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Os:           "linux",
+			Arch:         "amd64",
 			ZipDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadProviderBinaryZipServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
@@ -422,14 +422,14 @@ func Test_UploadProviderBinaryZip(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadProviderBinaryZipRequest{
-			Provider:       &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
-			Os: "linux",
-			Arch: "amd64",
+			Provider:     &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Os:           "linux",
+			Arch:         "amd64",
 			ZipDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadProviderBinaryZipServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
@@ -495,12 +495,12 @@ func Test_UploadShasum(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadShasumRequest{
-			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider:        &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 			ShasumDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadShasumServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
@@ -533,12 +533,12 @@ func Test_UploadShasum(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadShasumRequest{
-			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider:        &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 			ShasumDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadShasumServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
@@ -604,12 +604,12 @@ func Test_UploadShasumSignature(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadShasumRequest{
-			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider:        &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 			ShasumDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadShasumSignatureServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
@@ -642,12 +642,12 @@ func Test_UploadShasumSignature(t *testing.T) {
 		svc := &StorageService{Client: s3Client}
 
 		req := &provider.UploadShasumRequest{
-			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Provider:        &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
 			ShasumDataChunk: make([]byte, 1000),
 		}
 
 		mus := &mocks.MockUploadShasumSignatureServer{
-			RecvRequest: req,
+			RecvRequest:        req,
 			RecvMaxInvocations: 2,
 		}
 
