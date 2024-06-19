@@ -368,3 +368,334 @@ func Test_DownloadShasumSignature(t *testing.T) {
 		}
 	})
 }
+
+// Test_UploadProviderBinaryZip checks:
+// - if correct response is returned when the binary zip is uploaded
+// - if error is returned when PutObject fails
+// - if error is returned when Recv fails
+func Test_UploadProviderBinaryZip(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when binary zip is uploaded", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadProviderBinaryZipRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Os: "linux",
+			Arch: "amd64",
+			ZipDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadProviderBinaryZipServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadProviderBinaryZip(mus)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if mus.SendAndCloseResponse != BinaryZipUploaded {
+			t.Errorf("Expected %v, got %v.", BinaryZipUploaded, mus.SendAndCloseResponse)
+		}
+	})
+
+	t.Run("when PutObject fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{PutObjectError: errors.New("some error")}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadProviderBinaryZipRequest{
+			Provider:       &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			Os: "linux",
+			Arch: "amd64",
+			ZipDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadProviderBinaryZipServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadProviderBinaryZip(mus)
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != UploadBinaryZipError {
+			t.Errorf("Expected %v, got %v.", UploadBinaryZipError, err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		mus := &mocks.MockUploadProviderBinaryZipServer{
+			RecvError:          errors.New("some error"),
+			RecvMaxInvocations: 1,
+		}
+
+		err := svc.UploadProviderBinaryZip(mus)
+
+		if mus.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 0 {
+			t.Errorf("Expected 0 calls to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != ReceiveBinaryZipError {
+			t.Errorf("Expected %v, got %v.", ReceiveBinaryZipError, err)
+		}
+	})
+}
+
+// Test_UploadShasum checks:
+// - if correct response is returned when the shasum file is uploaded
+// - if error is returned when PutObject fails
+// - if error is returned when Recv fails
+func Test_UploadShasum(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when shasum file is uploaded", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			ShasumDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadShasumServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadShasum(mus)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if mus.SendAndCloseResponse != ShasumUploaded {
+			t.Errorf("Expected %v, got %v.", ShasumUploaded, mus.SendAndCloseResponse)
+		}
+	})
+
+	t.Run("when PutObject fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{PutObjectError: errors.New("some error")}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			ShasumDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadShasumServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadShasum(mus)
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != UploadShasumError {
+			t.Errorf("Expected %v, got %v.", UploadShasumError, err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		mus := &mocks.MockUploadShasumServer{
+			RecvError:          errors.New("some error"),
+			RecvMaxInvocations: 1,
+		}
+
+		err := svc.UploadShasum(mus)
+
+		if mus.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 0 {
+			t.Errorf("Expected 0 calls to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != ReceiveShasumError {
+			t.Errorf("Expected %v, got %v.", ReceiveShasumError, err)
+		}
+	})
+}
+
+// Test_UploadShasumSignature checks:
+// - if correct response is returned when the shasum signature file is uploaded
+// - if error is returned when PutObject fails
+// - if error is returned when Recv fails
+func Test_UploadShasumSignature(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when shasum signature file is uploaded", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			ShasumDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadShasumSignatureServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadShasumSignature(mus)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if mus.SendAndCloseResponse != ShasumSigUploaded {
+			t.Errorf("Expected %v, got %v.", ShasumSigUploaded, mus.SendAndCloseResponse)
+		}
+	})
+
+	t.Run("when PutObject fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{PutObjectError: errors.New("some error")}
+
+		svc := &StorageService{Client: s3Client}
+
+		req := &provider.UploadShasumRequest{
+			Provider: &provider.Provider{Name: "TestOrg/TestProvider", Version: "v1"},
+			ShasumDataChunk: make([]byte, 1000),
+		}
+
+		mus := &mocks.MockUploadShasumSignatureServer{
+			RecvRequest: req,
+			RecvMaxInvocations: 2,
+		}
+
+		err := svc.UploadShasumSignature(mus)
+
+		if mus.RecvInvocations != 2 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 1 {
+			t.Errorf("Expected 1 call to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != UploadShasumSigError {
+			t.Errorf("Expected %v, got %v.", UploadShasumSigError, err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		s3Client := &mocks2.S3{}
+
+		svc := &StorageService{Client: s3Client}
+
+		mus := &mocks.MockUploadShasumSignatureServer{
+			RecvError:          errors.New("some error"),
+			RecvMaxInvocations: 1,
+		}
+
+		err := svc.UploadShasumSignature(mus)
+
+		if mus.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", mus.RecvInvocations)
+		}
+
+		if s3Client.PutObjectInvocations != 0 {
+			t.Errorf("Expected 0 calls to PutObject, got %v", s3Client.PutObjectInvocations)
+		}
+
+		if mus.SendAndCloseInvocations != 0 {
+			t.Errorf("Expected 0 calls to SendAndClose, got %v", mus.SendAndCloseInvocations)
+		}
+
+		if err != ReceiveShasumSigError {
+			t.Errorf("Expected %v, got %v.", ReceiveShasumSigError, err)
+		}
+	})
+}

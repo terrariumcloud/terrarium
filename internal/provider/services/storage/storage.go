@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
+	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -31,11 +33,22 @@ var (
 	StorageServiceEndpoint = DefaultStorageServiceDefaultEndpoint
 	ChunkSize              = DefaultChunkSize
 
+	BinaryZipUploaded = &terrarium.Response{Message: "Binary zip uploaded successfully."}
+	ShasumUploaded = &terrarium.Response{Message: "Shasum file uploaded successfully."}
+	ShasumSigUploaded = &terrarium.Response{Message: "Shasum signature uploaded successfully."}
+
+
 	BucketInitializationError = status.Error(codes.Unknown, "Failed to initialize bucket for storage.")
 	DownloadSourceZipError    = status.Error(codes.Unknown, "Failed to download source zip.")
 	SendSourceZipError        = status.Error(codes.Unknown, "Failed to send source zip.")
 	SendShasumError           = status.Error(codes.Unknown, "Failed to send shasum file.")
 	DownloadShasumError       = status.Error(codes.Unknown, "Failed to download shasum.")
+	UploadBinaryZipError      = status.Error(codes.Unknown, "Failed to upload binary zip.")
+	ReceiveBinaryZipError     = status.Error(codes.Unknown, "Failed to receive binary zip.")
+	UploadShasumError      	  = status.Error(codes.Unknown, "Failed to upload shasum file.")
+	ReceiveShasumError     	  = status.Error(codes.Unknown, "Failed to receive shasum file.")
+	UploadShasumSigError      	  = status.Error(codes.Unknown, "Failed to upload shasum signature file.")
+	ReceiveShasumSigError     	  = status.Error(codes.Unknown, "Failed to receive shasum signature file.")
 )
 
 type StorageService struct {
@@ -224,4 +237,166 @@ func (s *StorageService) DownloadShasumSignature(request *services.DownloadShasu
 func ResolveS3Locations(providerID, providerVersion, value string) string {
 	fileLocation := fmt.Sprintf("%s/%s/%s", providerID, providerVersion, value)
 	return fileLocation
+}
+
+// Upload Provider Binary Zip to storage
+func (s *StorageService) UploadProviderBinaryZip(server services.Storage_UploadProviderBinaryZipServer) error {
+	log.Println("Uploading provider binary zip.")
+
+	binary_zip := []byte{}
+	var fileLocation string
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+
+	for {
+		req, err := server.Recv()
+
+		span.SetAttributes(
+			attribute.String("provider.name", req.GetProvider().GetName()),
+			attribute.String("provider.version", req.GetProvider().GetVersion()),
+			attribute.String("provider.os", req.GetOs()),
+			attribute.String("provider.arch", req.GetArch()),
+		)
+
+		providerAddress := strings.Split(req.GetProvider().GetName(), "/")
+		if fileLocation == "" && req != nil {
+			filename := fmt.Sprintf("terraform-provider-%s_%s_%s_%s.zip", providerAddress[1], req.GetProvider().GetVersion(), req.GetOs(), req.GetArch())
+			fileLocation = ResolveS3Locations(req.Provider.GetName(), req.GetProvider().GetVersion(), filename)
+		}
+
+		if err == io.EOF {
+			log.Printf("Received file with total length: %v", len(binary_zip))
+
+			in := &s3.PutObjectInput{
+				Bucket: aws.String(BucketName),
+				Key:    aws.String(fileLocation),
+				Body:   bytes.NewReader(binary_zip),
+			}
+
+			if _, err := s.Client.PutObject(ctx, in); err != nil {
+				span.RecordError(err)
+				log.Println(err)
+				return UploadBinaryZipError
+			}
+
+			log.Println("Binary zip uploaded successfully.")
+			return server.SendAndClose(BinaryZipUploaded)
+		}
+
+		if err != nil {
+			log.Println(err)
+			return ReceiveBinaryZipError
+		}
+
+		log.Printf("Received %v bytes", len(req.ZipDataChunk))
+		binary_zip = append(binary_zip, req.ZipDataChunk...)
+
+	}
+}
+
+// Upload Shasum to storage
+func (s *StorageService) UploadShasum(server services.Storage_UploadShasumServer) error {
+	log.Println("Uploading shasum file.")
+
+	shasum := []byte{}
+	var fileLocation string
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+
+	for {
+		req, err := server.Recv()
+
+		span.SetAttributes(
+			attribute.String("provider.name", req.GetProvider().GetName()),
+			attribute.String("provider.version", req.GetProvider().GetVersion()),
+		)
+
+		providerAddress := strings.Split(req.GetProvider().GetName(), "/")
+		if fileLocation == "" && req != nil {
+			filename := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS", providerAddress[1], req.GetProvider().GetVersion())
+			fileLocation = ResolveS3Locations(req.GetProvider().GetName(), req.GetProvider().GetVersion(), filename)
+		}
+
+		if err == io.EOF {
+			log.Printf("Received file with total length: %v", len(shasum))
+
+			in := &s3.PutObjectInput{
+				Bucket: aws.String(BucketName),
+				Key:    aws.String(fileLocation),
+				Body:   bytes.NewReader(shasum),
+			}
+
+			if _, err := s.Client.PutObject(ctx, in); err != nil {
+				span.RecordError(err)
+				log.Println(err)
+				return UploadShasumError
+			}
+
+			log.Println("Shasum file uploaded successfully.")
+			return server.SendAndClose(ShasumUploaded)
+		}
+
+		if err != nil {
+			log.Println(err)
+			return ReceiveShasumError
+		}
+
+		log.Printf("Received %v bytes", len(req.ShasumDataChunk))
+		shasum = append(shasum, req.ShasumDataChunk...)
+	}
+}
+
+// Upload Shasum Signature to storage
+func (s *StorageService) UploadShasumSignature(server services.Storage_UploadShasumSignatureServer) error {
+	log.Println("Uploading shasum signature.")
+
+	shasum_sig := []byte{}
+	var fileLocation string
+
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+
+	for {
+		req, err := server.Recv()
+
+		span.SetAttributes(
+			attribute.String("provider.name", req.GetProvider().GetName()),
+			attribute.String("provider.version", req.GetProvider().GetVersion()),
+		)
+
+		providerAddress := strings.Split(req.GetProvider().GetName(), "/")
+		if fileLocation == "" && req != nil {
+			filename := fmt.Sprintf("terraform-provider-%s_%s_SHA256SUMS.sig", providerAddress[1], req.GetProvider().GetVersion())
+			fileLocation = ResolveS3Locations(req.GetProvider().GetName(), req.GetProvider().GetVersion(), filename)
+		}
+
+		if err == io.EOF {
+			log.Printf("Received file with total length: %v", len(shasum_sig))
+
+			in := &s3.PutObjectInput{
+				Bucket: aws.String(BucketName),
+				Key:    aws.String(fileLocation),
+				Body:   bytes.NewReader(shasum_sig),
+			}
+
+			if _, err := s.Client.PutObject(ctx, in); err != nil {
+				span.RecordError(err)
+				log.Println(err)
+				return UploadShasumSigError
+			}
+
+			log.Println("Shasum signature uploaded successfully.")
+			return server.SendAndClose(ShasumSigUploaded)
+		}
+
+		if err != nil {
+			log.Println(err)
+			return ReceiveShasumSigError
+		}
+
+		log.Printf("Received %v bytes", len(req.ShasumDataChunk))
+		shasum_sig = append(shasum_sig, req.ShasumDataChunk...)
+	}
 }
