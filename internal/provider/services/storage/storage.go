@@ -261,7 +261,7 @@ func (s *StorageService) UploadProviderBinaryZip(server services.Storage_UploadP
 		providerAddress := strings.Split(req.GetProvider().GetName(), "/")
 		if fileLocation == "" && req != nil {
 			filename := fmt.Sprintf("terraform-provider-%s_%s_%s_%s.zip", providerAddress[1], req.GetProvider().GetVersion(), req.GetOs(), req.GetArch())
-			fileLocation = ResolveS3Locations(req.Provider.GetName(), req.GetProvider().GetVersion(), filename)
+			fileLocation = ResolveS3Locations(req.GetProvider().GetName(), req.GetProvider().GetVersion(), filename)
 		}
 
 		if err == io.EOF {
