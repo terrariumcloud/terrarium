@@ -66,7 +66,9 @@ func (s storageGrpcClient) UploadProviderBinaryZip(ctx context.Context, opts ...
 	} else {
 		client := services.NewStorageClient(conn)
 		if upload, err := client.UploadProviderBinaryZip(ctx, opts...); err == nil {
-			return &uploadBinaryZipClient{client: upload, conn: conn}, nil
+			return &uploadBinaryZipClient{
+				Storage_UploadProviderBinaryZipClient: upload,
+				conn:                                  conn}, nil
 		} else {
 			_ = conn.Close()
 			return nil, err
@@ -80,7 +82,9 @@ func (s storageGrpcClient) UploadShasum(ctx context.Context, opts ...grpc.CallOp
 	} else {
 		client := services.NewStorageClient(conn)
 		if upload, err := client.UploadShasum(ctx, opts...); err == nil {
-			return &uploadShasumClient{client: upload, conn: conn}, nil
+			return &uploadShasumClient{
+				Storage_UploadShasumClient: upload,
+				conn:                       conn}, nil
 		} else {
 			_ = conn.Close()
 			return nil, err
@@ -94,7 +98,9 @@ func (s storageGrpcClient) UploadShasumSignature(ctx context.Context, opts ...gr
 	} else {
 		client := services.NewStorageClient(conn)
 		if upload, err := client.UploadShasumSignature(ctx, opts...); err == nil {
-			return &uploadShasumSignatureClient{client: upload, conn: conn}, nil
+			return &uploadShasumSignatureClient{
+				Storage_UploadShasumSignatureClient: upload,
+				conn:                                conn}, nil
 		} else {
 			_ = conn.Close()
 			return nil, err
@@ -214,115 +220,31 @@ func (d downloadShasumSignatureClient) RecvMsg(m any) error {
 }
 
 type uploadBinaryZipClient struct {
-	conn   *grpc.ClientConn
-	client services.Storage_UploadProviderBinaryZipClient
-}
-
-func (u *uploadBinaryZipClient) Send(request *provider.UploadProviderBinaryZipRequest) error {
-	return u.client.Send(request)
+	conn *grpc.ClientConn
+	services.Storage_UploadProviderBinaryZipClient
 }
 
 func (u *uploadBinaryZipClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
-	return u.client.CloseAndRecv()
-}
-
-func (u *uploadBinaryZipClient) Header() (metadata.MD, error) {
-	return u.client.Header()
-}
-
-func (u *uploadBinaryZipClient) Trailer() metadata.MD {
-	return u.client.Trailer()
-}
-
-func (u *uploadBinaryZipClient) CloseSend() error {
-	return u.client.CloseSend()
-}
-
-func (u *uploadBinaryZipClient) Context() context.Context {
-	return u.client.Context()
-}
-
-func (u *uploadBinaryZipClient) SendMsg(m any) error {
-	return u.client.SendMsg(m)
-}
-
-func (u *uploadBinaryZipClient) RecvMsg(m any) error {
-	return u.client.RecvMsg(m)
+	return u.Storage_UploadProviderBinaryZipClient.CloseAndRecv()
 }
 
 type uploadShasumClient struct {
-	conn   *grpc.ClientConn
-	client services.Storage_UploadShasumClient
-}
-
-func (u *uploadShasumClient) Send(request *provider.UploadShasumRequest) error {
-	return u.client.Send(request)
+	conn *grpc.ClientConn
+	services.Storage_UploadShasumClient
 }
 
 func (u *uploadShasumClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
-	return u.client.CloseAndRecv()
-}
-
-func (u *uploadShasumClient) Header() (metadata.MD, error) {
-	return u.client.Header()
-}
-
-func (u *uploadShasumClient) Trailer() metadata.MD {
-	return u.client.Trailer()
-}
-
-func (u *uploadShasumClient) CloseSend() error {
-	return u.client.CloseSend()
-}
-
-func (u *uploadShasumClient) Context() context.Context {
-	return u.client.Context()
-}
-
-func (u *uploadShasumClient) SendMsg(m any) error {
-	return u.client.SendMsg(m)
-}
-
-func (u *uploadShasumClient) RecvMsg(m any) error {
-	return u.client.RecvMsg(m)
+	return u.Storage_UploadShasumClient.CloseAndRecv()
 }
 
 type uploadShasumSignatureClient struct {
-	conn   *grpc.ClientConn
-	client services.Storage_UploadShasumSignatureClient
-}
-
-func (u *uploadShasumSignatureClient) Send(request *provider.UploadShasumRequest) error {
-	return u.client.Send(request)
+	conn *grpc.ClientConn
+	services.Storage_UploadShasumSignatureClient
 }
 
 func (u *uploadShasumSignatureClient) CloseAndRecv() (*provider.Response, error) {
 	defer func() { _ = u.conn.Close() }()
-	return u.client.CloseAndRecv()
-}
-
-func (u *uploadShasumSignatureClient) Header() (metadata.MD, error) {
-	return u.client.Header()
-}
-
-func (u *uploadShasumSignatureClient) Trailer() metadata.MD {
-	return u.client.Trailer()
-}
-
-func (u *uploadShasumSignatureClient) CloseSend() error {
-	return u.client.CloseSend()
-}
-
-func (u *uploadShasumSignatureClient) Context() context.Context {
-	return u.client.Context()
-}
-
-func (u *uploadShasumSignatureClient) SendMsg(m any) error {
-	return u.client.SendMsg(m)
-}
-
-func (u *uploadShasumSignatureClient) RecvMsg(m any) error {
-	return u.client.RecvMsg(m)
+	return u.Storage_UploadShasumSignatureClient.CloseAndRecv()
 }
