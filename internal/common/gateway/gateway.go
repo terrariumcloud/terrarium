@@ -8,6 +8,7 @@ import (
 	moduleServices "github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
 	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
+	providerStorage "github.com/terrariumcloud/terrarium/internal/provider/services/storage"
 	release "github.com/terrariumcloud/terrarium/internal/release/services"
 	terrariumModule "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
 	terrariumProvider "github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
@@ -534,5 +535,158 @@ func (gw *TerrariumGrpcGateway) EndProviderWithClient(ctx context.Context, reque
 	} else {
 		log.Printf("Unknown Version manager action requested: %v", request.GetAction())
 		return nil, UnknownVersionManagerActionError
+	}
+}
+
+// UploadProviderBinaryZip uploads provider binary zip to Storage service
+func (gw *TerrariumGrpcGateway) UploadProviderBinaryZip(server terrariumProvider.ProviderPublisher_UploadProviderBinaryZipServer) error {
+	return gw.UploadProviderBinaryZipWithClient(server, gw.providerStorageClient)
+}
+
+// UploadSourceZipWithClient calls UploadProviderBinaryZip on Storage client
+func (gw *TerrariumGrpcGateway) UploadProviderBinaryZipWithClient(server terrariumProvider.ProviderPublisher_UploadProviderBinaryZipServer, client providerServices.StorageClient) error {
+	upstream, upErr := client.UploadProviderBinaryZip(server.Context())
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	if upErr != nil {
+		log.Println(upErr)
+		span.RecordError(upErr)
+		return upErr
+	}
+
+	for {
+		req, err := server.Recv()
+
+		if err == io.EOF {
+			res, upErr := upstream.CloseAndRecv()
+
+			if upErr != nil {
+				return upErr
+			}
+			log.Println("Done <= Store")
+			return server.SendAndClose(res)
+		}
+
+		if err != nil {
+			log.Printf("Failed to receive: %v", err)
+			span.RecordError(err)
+			return providerStorage.ReceiveBinaryZipError
+		}
+
+		upErr = upstream.Send(req)
+
+		if upErr == io.EOF {
+			log.Println("Done <= Store")
+			upstream.CloseSend()
+			return server.SendAndClose(providerStorage.BinaryZipUploaded)
+		}
+
+		if upErr != nil {
+			log.Printf("Failed to send: %v", upErr)
+			span.RecordError(upErr)
+			return upErr
+		}
+	}
+}
+
+// UploadShasum uploads shasum file to Storage service
+func (gw *TerrariumGrpcGateway) UploadShasum(server terrariumProvider.ProviderPublisher_UploadShasumServer) error {
+	return gw.UploadShasumWithClient(server, gw.providerStorageClient)
+}
+
+// UploadShasumWithClient calls UploadShasum on Storage client
+func (gw *TerrariumGrpcGateway) UploadShasumWithClient(server terrariumProvider.ProviderPublisher_UploadShasumServer, client providerServices.StorageClient) error {
+	upstream, upErr := client.UploadShasum(server.Context())
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	if upErr != nil {
+		log.Println(upErr)
+		span.RecordError(upErr)
+		return upErr
+	}
+
+	for {
+		req, err := server.Recv()
+
+		if err == io.EOF {
+			res, upErr := upstream.CloseAndRecv()
+
+			if upErr != nil {
+				return upErr
+			}
+			log.Println("Done <= Store")
+			return server.SendAndClose(res)
+		}
+
+		if err != nil {
+			log.Printf("Failed to receive: %v", err)
+			span.RecordError(err)
+			return providerStorage.ReceiveShasumError
+		}
+
+		upErr = upstream.Send(req)
+
+		if upErr == io.EOF {
+			log.Println("Done <= Store")
+			upstream.CloseSend()
+			return server.SendAndClose(providerStorage.ShasumUploaded)
+		}
+
+		if upErr != nil {
+			log.Printf("Failed to send: %v", upErr)
+			span.RecordError(upErr)
+			return upErr
+		}
+	}
+}
+
+// UploadShasumSignature uploads shasum signature file to Storage service
+func (gw *TerrariumGrpcGateway) UploadShasumSignature(server terrariumProvider.ProviderPublisher_UploadShasumSignatureServer) error {
+	return gw.UploadShasumSignatureWithClient(server, gw.providerStorageClient)
+}
+
+// UploadShasumSignatureWithClient calls UploadShasumSignature on Storage client
+func (gw *TerrariumGrpcGateway) UploadShasumSignatureWithClient(server terrariumProvider.ProviderPublisher_UploadShasumSignatureServer, client providerServices.StorageClient) error {
+	upstream, upErr := client.UploadShasumSignature(server.Context())
+	ctx := server.Context()
+	span := trace.SpanFromContext(ctx)
+	if upErr != nil {
+		log.Println(upErr)
+		span.RecordError(upErr)
+		return upErr
+	}
+
+	for {
+		req, err := server.Recv()
+
+		if err == io.EOF {
+			res, upErr := upstream.CloseAndRecv()
+
+			if upErr != nil {
+				return upErr
+			}
+			log.Println("Done <= Store")
+			return server.SendAndClose(res)
+		}
+
+		if err != nil {
+			log.Printf("Failed to receive: %v", err)
+			span.RecordError(err)
+			return providerStorage.ReceiveShasumSigError
+		}
+
+		upErr = upstream.Send(req)
+
+		if upErr == io.EOF {
+			log.Println("Done <= Store")
+			upstream.CloseSend()
+			return server.SendAndClose(providerStorage.ShasumSigUploaded)
+		}
+
+		if upErr != nil {
+			log.Printf("Failed to send: %v", upErr)
+			span.RecordError(upErr)
+			return upErr
+		}
 	}
 }

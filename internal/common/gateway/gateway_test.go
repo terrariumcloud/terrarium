@@ -8,6 +8,8 @@ import (
 
 	"github.com/terrariumcloud/terrarium/internal/module/services/mocks"
 	"github.com/terrariumcloud/terrarium/internal/module/services/storage"
+	providerMocks "github.com/terrariumcloud/terrarium/internal/provider/services/mocks"
+	providerStorage "github.com/terrariumcloud/terrarium/internal/provider/services/storage"
 	releaseMocks "github.com/terrariumcloud/terrarium/internal/release/services/mocks"
 
 	"github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -1041,6 +1043,531 @@ func Test_EndProviderWithClient(t *testing.T) {
 
 		if client.AbortVersionInvocations != 0 {
 			t.Errorf("Expected 0 calls to AbortVersion, got %v", client.AbortVersionInvocations)
+		}
+	})
+}
+
+// Test_UploadProviderBinaryZipWithClient checks:
+// - if error is returned when client UploadProviderBinaryZip fails
+// - if error is returned when Recv returns EOF and client fails
+// - if no error is returned when Recv returns EOF and both client and server close stream
+// - if error is returned when Recv fails
+// - if no error is returned when Send returns EOF
+// - if error is returned when Send fails
+func Test_UploadProviderBinaryZipWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client UploadProviderBinaryZip fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadProviderBinaryZipError: errors.New("some error")}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and client fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadProviderBinaryZipClient{CloseAndRecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadProviderBinaryZipClient: c}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and both client and server close stream", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadProviderBinaryZipClient{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadProviderBinaryZipClient: c}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{RecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err != providerStorage.ReceiveBinaryZipError {
+			t.Errorf("Expected %v, got %v.", providerStorage.ReceiveBinaryZipError, err)
+		}
+	})
+
+	t.Run("when Send returns EOF", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{}
+
+		c := &providerMocks.MockStorage_UploadProviderBinaryZipClient{SendError: io.EOF}
+
+		client := &providerMocks.MockProviderStorageClient{UploadProviderBinaryZipClient: c}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseSendInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseSend, got %v", c.CloseSendInvocations)
+		}
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Send fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadProviderBinaryZipServer{}
+
+		c := &providerMocks.MockStorage_UploadProviderBinaryZipClient{SendError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadProviderBinaryZipClient: c}
+
+		err := gw.UploadProviderBinaryZipWithClient(server, client)
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadProviderBinaryZipInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadProviderBinaryZip, got %v", client.UploadProviderBinaryZipInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+}
+
+// Test_UploadShasumWithClient checks:
+// - if error is returned when client UploadShasum fails
+// - if error is returned when Recv returns EOF and client fails
+// - if no error is returned when Recv returns EOF and both client and server close stream
+// - if error is returned when Recv fails
+// - if no error is returned when Send returns EOF
+// - if error is returned when Send fails
+func Test_UploadShasumWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client UploadShasum fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumError: errors.New("some error")}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and client fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadShasumClient{CloseAndRecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumClient: c}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and both client and server close stream", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadShasumClient{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumClient: c}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{RecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err != providerStorage.ReceiveShasumError {
+			t.Errorf("Expected %v, got %v.", providerStorage.ReceiveShasumError, err)
+		}
+	})
+
+	t.Run("when Send returns EOF", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{}
+
+		c := &providerMocks.MockStorage_UploadShasumClient{SendError: io.EOF}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumClient: c}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseSendInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseSend, got %v", c.CloseSendInvocations)
+		}
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Send fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumServer{}
+
+		c := &providerMocks.MockStorage_UploadShasumClient{SendError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumClient: c}
+
+		err := gw.UploadShasumWithClient(server, client)
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasum, got %v", client.UploadShasumInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+}
+
+// Test_UploadShasumSignatureWithClient checks:
+// - if error is returned when client UploadShasumSignature fails
+// - if error is returned when Recv returns EOF and client fails
+// - if no error is returned when Recv returns EOF and both client and server close stream
+// - if error is returned when Recv fails
+// - if no error is returned when Send returns EOF
+// - if error is returned when Send fails
+func Test_UploadShasumSignatureWithClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("when client UploadShasumSignature fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumSignatureError: errors.New("some error")}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and client fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadShasumSignatureClient{CloseAndRecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumSignatureClient: c}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
+		}
+	})
+
+	t.Run("when Recv returns EOF and both client and server close stream", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{RecvError: io.EOF}
+
+		c := &providerMocks.MockStorage_UploadShasumSignatureClient{}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumSignatureClient: c}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseAndRecvInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseAndRecv, got %v", c.CloseAndRecvInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Recv fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{RecvError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err != providerStorage.ReceiveShasumSigError {
+			t.Errorf("Expected %v, got %v.", providerStorage.ReceiveShasumSigError, err)
+		}
+	})
+
+	t.Run("when Send returns EOF", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{}
+
+		c := &providerMocks.MockStorage_UploadShasumSignatureClient{SendError: io.EOF}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumSignatureClient: c}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if server.SendAndCloseInvocations != 1 {
+			t.Errorf("Expected 1 call to SendAndClose, got %v", server.SendAndCloseInvocations)
+		}
+
+		if c.CloseSendInvocations != 1 {
+			t.Errorf("Expected 1 call to CloseSend, got %v", c.CloseSendInvocations)
+		}
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v.", err)
+		}
+	})
+
+	t.Run("when Send fails", func(t *testing.T) {
+		gw := &TerrariumGrpcGateway{}
+
+		server := &providerMocks.MockUploadShasumSignatureServer{}
+
+		c := &providerMocks.MockStorage_UploadShasumSignatureClient{SendError: errors.New("some error")}
+
+		client := &providerMocks.MockProviderStorageClient{UploadShasumSignatureClient: c}
+
+		err := gw.UploadShasumSignatureWithClient(server, client)
+
+		if c.SendInvocations != 1 {
+			t.Errorf("Expected 1 call to Send, got %v", c.SendInvocations)
+		}
+
+		if server.RecvInvocations != 1 {
+			t.Errorf("Expected 1 call to Recv, got %v", server.RecvInvocations)
+		}
+
+		if client.UploadShasumSignatureInvocations != 1 {
+			t.Errorf("Expected 1 call to UploadShasumSignature, got %v", client.UploadShasumSignatureInvocations)
+		}
+
+		if err == nil {
+			t.Errorf("Expected error, got nil.")
 		}
 	})
 }
