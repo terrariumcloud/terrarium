@@ -564,7 +564,6 @@ func (gw *TerrariumGrpcGateway) UploadProviderBinaryZipWithClient(server terrari
 				return upErr
 			}
 			log.Println("Done <= Store")
-			span.AddEvent("Success. End of file. No more input is available.")
 			return server.SendAndClose(res)
 		}
 
@@ -578,7 +577,6 @@ func (gw *TerrariumGrpcGateway) UploadProviderBinaryZipWithClient(server terrari
 
 		if upErr == io.EOF {
 			log.Println("Done <= Store")
-			span.AddEvent("Success.")
 			upstream.CloseSend()
 			return server.SendAndClose(providerStorage.BinaryZipUploaded)
 		}
@@ -617,7 +615,6 @@ func (gw *TerrariumGrpcGateway) UploadShasumWithClient(server terrariumProvider.
 				return upErr
 			}
 			log.Println("Done <= Store")
-			span.AddEvent("Success. End of file. No more input is available.")
 			return server.SendAndClose(res)
 		}
 
@@ -631,7 +628,6 @@ func (gw *TerrariumGrpcGateway) UploadShasumWithClient(server terrariumProvider.
 
 		if upErr == io.EOF {
 			log.Println("Done <= Store")
-			span.AddEvent("Success.")
 			upstream.CloseSend()
 			return server.SendAndClose(providerStorage.ShasumUploaded)
 		}
@@ -670,7 +666,6 @@ func (gw *TerrariumGrpcGateway) UploadShasumSignatureWithClient(server terrarium
 				return upErr
 			}
 			log.Println("Done <= Store")
-			span.AddEvent("Success. End of file. No more input is available.")
 			return server.SendAndClose(res)
 		}
 
@@ -684,7 +679,6 @@ func (gw *TerrariumGrpcGateway) UploadShasumSignatureWithClient(server terrarium
 
 		if upErr == io.EOF {
 			log.Println("Done <= Store")
-			span.AddEvent("Success.")
 			upstream.CloseSend()
 			return server.SendAndClose(providerStorage.ShasumSigUploaded)
 		}
