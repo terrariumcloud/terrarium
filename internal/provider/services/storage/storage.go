@@ -24,7 +24,7 @@ import (
 
 const (
 	DefaultBucketName                          = "terrarium-providers"
-	DefaultStorageServiceDefaultEndpoint       = "storage:3001"
+	DefaultStorageServiceDefaultEndpoint       = "provider_storage:3001"
 	DefaultChunkSize                     int64 = 64 * 1024 // 64 KB
 )
 
