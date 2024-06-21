@@ -2,8 +2,10 @@ package mocks
 
 import (
 	"context"
+	"io"
 
 	providerServices "github.com/terrariumcloud/terrarium/internal/provider/services"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 )
 
 type MockDownloadProviderSourceZipServer struct {
@@ -61,4 +63,103 @@ func (mds *MockDownloadProviderShasumSignatureServer) Send(res *providerServices
 	mds.SendResponse = res
 	mds.TotalReceived = append(mds.TotalReceived, mds.SendResponse.ShasumDataChunk...)
 	return mds.SendError
+}
+
+type MockUploadProviderBinaryZipServer struct {
+	providerServices.Storage_UploadProviderBinaryZipServer
+	SendAndCloseInvocations int
+	SendAndCloseResponse    *provider.Response
+	SendAndCloseError       error
+	RecvInvocations         int
+	RecvMaxInvocations      int
+	RecvRequest             *provider.UploadProviderBinaryZipRequest
+	RecvError               error
+}
+
+func (mus *MockUploadProviderBinaryZipServer) Context() context.Context {
+	return context.TODO()
+}
+
+func (mus *MockUploadProviderBinaryZipServer) SendAndClose(response *provider.Response) error {
+	mus.SendAndCloseInvocations++
+	mus.SendAndCloseResponse = response
+	return mus.SendAndCloseError
+}
+
+func (mus *MockUploadProviderBinaryZipServer) Recv() (*provider.UploadProviderBinaryZipRequest, error) {
+	mus.RecvInvocations++
+
+	if mus.RecvError != nil {
+		return nil, mus.RecvError
+	}
+	if mus.RecvInvocations == mus.RecvMaxInvocations {
+		return nil, io.EOF
+	}
+	return mus.RecvRequest, mus.RecvError
+}
+
+type MockUploadShasumServer struct {
+	providerServices.Storage_UploadShasumServer
+	SendAndCloseInvocations int
+	SendAndCloseResponse    *provider.Response
+	SendAndCloseError       error
+	RecvInvocations         int
+	RecvMaxInvocations      int
+	RecvRequest             *provider.UploadShasumRequest
+	RecvError               error
+}
+
+func (mus *MockUploadShasumServer) Context() context.Context {
+	return context.TODO()
+}
+
+func (mus *MockUploadShasumServer) SendAndClose(response *provider.Response) error {
+	mus.SendAndCloseInvocations++
+	mus.SendAndCloseResponse = response
+	return mus.SendAndCloseError
+}
+
+func (mus *MockUploadShasumServer) Recv() (*provider.UploadShasumRequest, error) {
+	mus.RecvInvocations++
+
+	if mus.RecvError != nil {
+		return nil, mus.RecvError
+	}
+	if mus.RecvInvocations == mus.RecvMaxInvocations {
+		return nil, io.EOF
+	}
+	return mus.RecvRequest, mus.RecvError
+}
+
+type MockUploadShasumSignatureServer struct {
+	providerServices.Storage_UploadShasumSignatureServer
+	SendAndCloseInvocations int
+	SendAndCloseResponse    *provider.Response
+	SendAndCloseError       error
+	RecvInvocations         int
+	RecvMaxInvocations      int
+	RecvRequest             *provider.UploadShasumRequest
+	RecvError               error
+}
+
+func (mus *MockUploadShasumSignatureServer) Context() context.Context {
+	return context.TODO()
+}
+
+func (mus *MockUploadShasumSignatureServer) SendAndClose(response *provider.Response) error {
+	mus.SendAndCloseInvocations++
+	mus.SendAndCloseResponse = response
+	return mus.SendAndCloseError
+}
+
+func (mus *MockUploadShasumSignatureServer) Recv() (*provider.UploadShasumRequest, error) {
+	mus.RecvInvocations++
+
+	if mus.RecvError != nil {
+		return nil, mus.RecvError
+	}
+	if mus.RecvInvocations == mus.RecvMaxInvocations {
+		return nil, io.EOF
+	}
+	return mus.RecvRequest, mus.RecvError
 }

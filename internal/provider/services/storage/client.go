@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/terrariumcloud/terrarium/internal/common/grpc_service"
 	"github.com/terrariumcloud/terrarium/internal/provider/services"
+	"github.com/terrariumcloud/terrarium/pkg/terrarium/provider"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"io"
@@ -52,6 +53,54 @@ func (s storageGrpcClient) DownloadShasumSignature(ctx context.Context, in *serv
 		client := services.NewStorageClient(conn)
 		if download, err := client.DownloadShasumSignature(ctx, in, opts...); err == nil {
 			return &downloadShasumSignatureClient{conn: conn, client: download}, nil
+		} else {
+			_ = conn.Close()
+			return nil, err
+		}
+	}
+}
+
+func (s storageGrpcClient) UploadProviderBinaryZip(ctx context.Context, opts ...grpc.CallOption) (services.Storage_UploadProviderBinaryZipClient, error) {
+	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
+		return nil, err
+	} else {
+		client := services.NewStorageClient(conn)
+		if upload, err := client.UploadProviderBinaryZip(ctx, opts...); err == nil {
+			return &uploadBinaryZipClient{
+				Storage_UploadProviderBinaryZipClient: upload,
+				conn:                                  conn}, nil
+		} else {
+			_ = conn.Close()
+			return nil, err
+		}
+	}
+}
+
+func (s storageGrpcClient) UploadShasum(ctx context.Context, opts ...grpc.CallOption) (services.Storage_UploadShasumClient, error) {
+	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
+		return nil, err
+	} else {
+		client := services.NewStorageClient(conn)
+		if upload, err := client.UploadShasum(ctx, opts...); err == nil {
+			return &uploadShasumClient{
+				Storage_UploadShasumClient: upload,
+				conn:                       conn}, nil
+		} else {
+			_ = conn.Close()
+			return nil, err
+		}
+	}
+}
+
+func (s storageGrpcClient) UploadShasumSignature(ctx context.Context, opts ...grpc.CallOption) (services.Storage_UploadShasumSignatureClient, error) {
+	if conn, err := grpc_service.CreateGRPCConnection(s.endpoint); err != nil {
+		return nil, err
+	} else {
+		client := services.NewStorageClient(conn)
+		if upload, err := client.UploadShasumSignature(ctx, opts...); err == nil {
+			return &uploadShasumSignatureClient{
+				Storage_UploadShasumSignatureClient: upload,
+				conn:                                conn}, nil
 		} else {
 			_ = conn.Close()
 			return nil, err
@@ -168,4 +217,34 @@ func (d downloadShasumSignatureClient) SendMsg(m any) error {
 
 func (d downloadShasumSignatureClient) RecvMsg(m any) error {
 	return d.client.RecvMsg(m)
+}
+
+type uploadBinaryZipClient struct {
+	conn *grpc.ClientConn
+	services.Storage_UploadProviderBinaryZipClient
+}
+
+func (u *uploadBinaryZipClient) CloseAndRecv() (*provider.Response, error) {
+	defer func() { _ = u.conn.Close() }()
+	return u.Storage_UploadProviderBinaryZipClient.CloseAndRecv()
+}
+
+type uploadShasumClient struct {
+	conn *grpc.ClientConn
+	services.Storage_UploadShasumClient
+}
+
+func (u *uploadShasumClient) CloseAndRecv() (*provider.Response, error) {
+	defer func() { _ = u.conn.Close() }()
+	return u.Storage_UploadShasumClient.CloseAndRecv()
+}
+
+type uploadShasumSignatureClient struct {
+	conn *grpc.ClientConn
+	services.Storage_UploadShasumSignatureClient
+}
+
+func (u *uploadShasumSignatureClient) CloseAndRecv() (*provider.Response, error) {
+	defer func() { _ = u.conn.Close() }()
+	return u.Storage_UploadShasumSignatureClient.CloseAndRecv()
 }
