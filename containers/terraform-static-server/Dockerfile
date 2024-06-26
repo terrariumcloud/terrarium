@@ -8,7 +8,5 @@ RUN apt-get update && apt-get install -y curl && \
     curl -O https://releases.hashicorp.com/terraform/1.4.7/terraform_1.4.7_linux_amd64.zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 3000
-
 # Start the NGINX server
 CMD ["nginx", "-g", "daemon off;"]
