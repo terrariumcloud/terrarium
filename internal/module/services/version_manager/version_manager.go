@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	DefaultVersionsTableName      = "terrarium-module-versions"
+	DefaultVersionsTableName      = "terrarium-module-versions-ciedev-4757"
 	DefaultVersionManagerEndpoint = "version_manager:3001"
 )
 

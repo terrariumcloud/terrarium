@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	DefaultProviderVersionsTableName      = "terrarium-providers"
+	DefaultProviderVersionsTableName      = "terrarium-providers-ciedev-4757"
 	DefaultProviderVersionManagerEndpoint = "provider_version_manager:3001"
 )
 

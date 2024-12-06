@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	DefaultBucketName                          = "terrarium-providers"
+	DefaultBucketName                          = "terrarium-providers-ciedev-4757"
 	DefaultStorageServiceDefaultEndpoint       = "provider_storage:3001"
 	DefaultChunkSize                     int64 = 64 * 1024 // 64 KB
 )

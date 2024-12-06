@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	DefaultReleaseTableName       = "terrarium-releases"
+	DefaultReleaseTableName       = "terrarium-releases-ciedev-4757"
 	DefaultReleaseServiceEndpoint = "release:3001"
 )
 

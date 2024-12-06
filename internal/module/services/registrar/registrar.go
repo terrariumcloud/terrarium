@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	DefaultRegistrarTableName       = "terrarium-modules"
+	DefaultRegistrarTableName       = "terrarium-modules-ciedev-4757"
 	DefaultRegistrarServiceEndpoint = "registrar:3001"
 )
 

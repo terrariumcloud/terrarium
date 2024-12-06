@@ -2,10 +2,11 @@ package tag_manager
 
 import (
 	"context"
-	"github.com/terrariumcloud/terrarium/internal/module/services"
-	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 	"log"
 	"time"
+
+	"github.com/terrariumcloud/terrarium/internal/module/services"
+	"github.com/terrariumcloud/terrarium/internal/module/services/registrar"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -22,7 +23,7 @@ import (
 )
 
 const (
-	DefaultTagTableName       = "terrarium-module-tags"
+	DefaultTagTableName       = "terrarium-module-tags-ciedev-4757"
 	DefaultTagManagerEndpoint = "tag_manager:3001"
 )
 

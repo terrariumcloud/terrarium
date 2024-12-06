@@ -2,15 +2,17 @@ package dependency_manager
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"log"
+
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"log"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -21,8 +23,8 @@ import (
 )
 
 const (
-	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies"
-	DefaultContainerDependenciesTableName = "terrarium-container-dependencies"
+	DefaultModuleDependenciesTableName    = "terrarium-module-dependencies-ciedev-4757"
+	DefaultContainerDependenciesTableName = "terrarium-container-dependencies-ciedev-4757"
 	DefaultDependencyManagerEndpoint      = "dependency_manager:3001"
 )
 

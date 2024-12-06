@@ -3,11 +3,12 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
+
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"io"
-	"log"
 
 	"github.com/terrariumcloud/terrarium/internal/storage"
 	terrarium "github.com/terrariumcloud/terrarium/pkg/terrarium/module"
@@ -21,7 +22,7 @@ import (
 )
 
 const (
-	DefaultBucketName                          = "terrarium-modules"
+	DefaultBucketName                          = "terrarium-modules-ciedev-4757"
 	DefaultStorageServiceDefaultEndpoint       = "storage:3001"
 	DefaultChunkSize                     int64 = 64 * 1024 // 64 KB
 )
