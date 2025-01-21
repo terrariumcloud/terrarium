@@ -79,6 +79,11 @@ func newServiceResource(name string) *resource.Resource {
 		versionInfo = serviceVersion
 	}
 
+	if serviceName, found := os.LookupEnv("OTEL_SERVICE_NAME"); found {
+		log.Println("Warning: service name overriden by environment variable")
+		name = serviceName
+	}
+
 	resources := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(name),
