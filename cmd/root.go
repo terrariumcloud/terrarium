@@ -62,7 +62,7 @@ func getEndPointOptions() []otlptracegrpc.Option {
 		}
 	}
 	return []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint("satellite-lightstep.infra.svc.cluster.local:8184"),
+		otlptracegrpc.WithEndpoint("jaeger:4317"),
 		otlptracegrpc.WithInsecure(),
 	}
 }
