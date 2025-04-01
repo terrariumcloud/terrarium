@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"github.com/terrariumcloud/terrarium/internal/storage"
 	"log"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/terrariumcloud/terrarium/internal/storage"
 
 	"go.opentelemetry.io/otel/propagation"
 
@@ -54,22 +54,23 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&awsSessionConfig.UseLocalStack, "use-localstack", false, "Connect to a localstack instance rather than AWS.")
 }
 
-func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
-	if otelEndpoint, found := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); found {
-		fmt.Printf("Created exporter")
-		client := otlptracegrpc.NewClient(
-			otlptracegrpc.WithEndpoint(otelEndpoint),
-			otlptracegrpc.WithInsecure(),
-		)
-
-		exp, err := otlptrace.New(ctx, client)
-		if err != nil {
-			return nil, err
+func getEndPointOptions() []otlptracegrpc.Option {
+	for _, envVar := range []string{"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_ENDPOINT"} {
+		if _, found := os.LookupEnv(envVar); found {
+			// No need for options let the SDK pull out the values from the Environment variables
+			return []otlptracegrpc.Option{}
 		}
-		return exp, nil
-	} else {
-		return nil, nil
 	}
+	return []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint("satellite-lightstep.infra.svc.cluster.local:8184"),
+		otlptracegrpc.WithInsecure(),
+	}
+}
+
+func newTraceExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+	options := getEndPointOptions()
+	client := otlptracegrpc.NewClient(options...)
+	return otlptrace.New(ctx, client)
 }
 
 func newServiceResource(name string) *resource.Resource {
