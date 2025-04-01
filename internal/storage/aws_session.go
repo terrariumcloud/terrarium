@@ -32,7 +32,7 @@ func NewAwsSession(sessionConfig AWSSessionConfig) (*aws.Config, error) {
 		if sessionConfig.UseLocalStack {
 			return aws.Endpoint{
 				PartitionID:   "aws",
-				URL:           "http://localhost:4566",
+				URL:           "http://localstack:4566",
 				SigningRegion: awsRegion,
 			}, nil
 		}

@@ -110,15 +110,15 @@ func initOpenTelemetry(name string) func() {
 			trace.WithResource(newServiceResource(name)),
 		)
 		otel.SetTracerProvider(tracerProvider)
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 		return func() {
 			if err := tracerProvider.Shutdown(context.Background()); err != nil {
 				log.Fatal(err)
 			}
 		}
-	} else {
-		otel.SetTracerProvider(noop.NewNoopTracerProvider())
 	}
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	otel.SetTracerProvider(noop.NewNoopTracerProvider())
 	return func() {
 		// No-op
 	}
