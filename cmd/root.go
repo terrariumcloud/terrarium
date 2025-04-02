@@ -62,7 +62,7 @@ func getEndPointOptions() []otlptracegrpc.Option {
 		}
 	}
 	return []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint("jaeger:4317"),
+		otlptracegrpc.WithEndpoint("http://jaeger:4317"),
 		otlptracegrpc.WithInsecure(),
 	}
 }
