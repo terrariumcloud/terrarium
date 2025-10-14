@@ -27,27 +27,34 @@ import (
 const (
 	DefaultRegistrarTableName       = "terrarium-modules"
 	DefaultRegistrarServiceEndpoint = "registrar:3001"
+	DefaultApiKeyTableName          = "terrarium-organization-api-keys"
 )
 
 var (
 	RegistrarTableName       = DefaultRegistrarTableName
 	RegistrarServiceEndpoint = DefaultRegistrarServiceEndpoint
+	ApiKeyTableName          = DefaultApiKeyTableName
 
 	ModuleRegistered = &terrarium.Response{Message: "Module registered successfully."}
 
 	ModuleTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for modules.")
+	ApiKeyTableInitializationError = status.Error(codes.Unknown, "Failed to initialize table for organization API keys.")
 	ModuleGetError                 = status.Error(codes.Unknown, "Failed to check if module already exists.")
 	ModuleUpdateError              = status.Error(codes.Unknown, "Failed to update module.")
 	ModuleRegisterError            = status.Error(codes.Unknown, "Failed to register module.")
 	ExpressionBuildError           = status.Error(codes.Unknown, "Failed to build update expression.")
 	MarshalModuleError             = status.Error(codes.Unknown, "Failed to marshal module.")
+	ApiKeyValidationError          = status.Error(codes.Unauthenticated, "Invalid API key for organization.")
+	ApiKeyGetError                 = status.Error(codes.Unknown, "Failed to retrieve organization API key.")
 )
 
 type RegistrarService struct {
 	services.UnimplementedRegistrarServer
-	Db     storage.DynamoDBTableCreator
-	Table  string
-	Schema *dynamodb.CreateTableInput
+	Db           storage.DynamoDBTableCreator
+	Table        string
+	Schema       *dynamodb.CreateTableInput
+	ApiKeyTable  string
+	ApiKeySchema *dynamodb.CreateTableInput
 }
 
 type Module struct {
@@ -59,10 +66,21 @@ type Module struct {
 	ModifiedOn  string `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
 }
 
+type OrganizationApiKey struct {
+	OrganizationName string `json:"organization_name" bson:"organization_name" dynamodbav:"organization_name"`
+	ApiKey           string `json:"api_key" bson:"api_key" dynamodbav:"api_key"`
+	CreatedOn        string `json:"created_on" bson:"created_on" dynamodbav:"created_on"`
+	ModifiedOn       string `json:"modified_on" bson:"modified_on" dynamodbav:"modified_on"`
+}
+
 // Registers RegistrarService with grpc server
 func (s *RegistrarService) RegisterWithServer(grpcServer grpc.ServiceRegistrar) error {
 	if err := storage.InitializeDynamoDb(s.Table, s.Schema, s.Db); err != nil {
 		return ModuleTableInitializationError
+	}
+
+	if err := storage.InitializeDynamoDb(s.ApiKeyTable, s.ApiKeySchema, s.Db); err != nil {
+		return ApiKeyTableInitializationError
 	}
 
 	services.RegisterRegistrarServer(grpcServer, s)
@@ -78,6 +96,13 @@ func (s *RegistrarService) Register(ctx context.Context, request *terrarium.Regi
 	span.SetAttributes(
 		attribute.String("module.name", request.GetName()),
 	)
+
+	// Validate API key for the organization
+	if err := s.validateApiKey(ctx, request.GetName(), request.GetApiKey()); err != nil {
+		span.RecordError(err)
+		log.Printf("API key validation failed for module %s: %v", request.GetName(), err)
+		return nil, err
+	}
 
 	name, err := attributevalue.Marshal(request.GetName())
 	if err != nil {
@@ -180,6 +205,57 @@ func unmarshalModule(item map[string]types.AttributeValue) (*services.ModuleMeta
 	return &result, nil
 }
 
+// validateApiKey validates the API key for the organization extracted from the module name
+func (s *RegistrarService) validateApiKey(ctx context.Context, moduleName, apiKey string) error {
+	// Extract organization name from module name
+	moduleNameParts := strings.Split(moduleName, "/")
+	if len(moduleNameParts) == 0 {
+		return ApiKeyValidationError
+	}
+	organizationName := moduleNameParts[0]
+
+	// Check if organization has API keys in the database
+	orgName, err := attributevalue.Marshal(organizationName)
+	if err != nil {
+		log.Printf("Failed to marshal organization name: %v", err)
+		return ApiKeyGetError
+	}
+
+	res, err := s.Db.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(ApiKeyTableName),
+		Key: map[string]types.AttributeValue{
+			"organization_name": orgName,
+		},
+	})
+
+	if err != nil {
+		log.Printf("Failed to get organization API key: %v", err)
+		return ApiKeyGetError
+	}
+
+	// If organization not found in API keys table, no validation required
+	if res.Item == nil {
+		log.Printf("No API key configured for organization: %s", organizationName)
+		return nil
+	}
+
+	// Unmarshal the stored API key
+	var storedApiKey OrganizationApiKey
+	if err := attributevalue.UnmarshalMap(res.Item, &storedApiKey); err != nil {
+		log.Printf("Failed to unmarshal organization API key: %v", err)
+		return ApiKeyGetError
+	}
+
+	// Validate the provided API key against the stored one
+	if storedApiKey.ApiKey != apiKey {
+		log.Printf("Invalid API key for organization: %s", organizationName)
+		return ApiKeyValidationError
+	}
+
+	log.Printf("API key validated successfully for organization: %s", organizationName)
+	return nil
+}
+
 // GetModule Retrieve module metadata
 func (s *RegistrarService) GetModule(ctx context.Context, request *services.GetModuleRequest) (*services.GetModuleResponse, error) {
 	span := trace.SpanFromContext(ctx)
@@ -261,6 +337,27 @@ func GetModulesSchema(table string) *dynamodb.CreateTableInput {
 		KeySchema: []types.KeySchemaElement{
 			{
 				AttributeName: aws.String("name"),
+				KeyType:       types.KeyTypeHash,
+			},
+		},
+		TableName:   aws.String(table),
+		BillingMode: types.BillingModePayPerRequest,
+	}
+}
+
+// GetOrganizationApiKeysSchema returns CreateTableInput
+// that can be used to create organization API keys table if it does not exist
+func GetOrganizationApiKeysSchema(table string) *dynamodb.CreateTableInput {
+	return &dynamodb.CreateTableInput{
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String("organization_name"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+		},
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String("organization_name"),
 				KeyType:       types.KeyTypeHash,
 			},
 		},
