@@ -3,10 +3,11 @@ package registrar
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/terrariumcloud/terrarium/internal/module/services"
 	"github.com/terrariumcloud/terrarium/internal/storage/mocks"
-	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
@@ -25,12 +26,16 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when new version is created", func(t *testing.T) {
 		db := &mocks.DynamoDB{
-			GetItemOuts: []*dynamodb.GetItemOutput{{}},
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{}, // First call for API key validation (no API key configured)
+				{}, // Second call for module check
+			},
 		}
 
 		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "test-api-key",
 			Name:        "test",
 			Description: "test desc",
 			Source:      "http://test.com",
@@ -43,8 +48,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if db.GetItemInvocations != 1 {
-			t.Errorf("Expected 1 call to GetItem, got %d", db.GetItemInvocations)
+		if db.GetItemInvocations != 2 {
+			t.Errorf("Expected 2 calls to GetItem (API key validation + module check), got %d", db.GetItemInvocations)
 		}
 
 		if db.PutItemInvocations != 1 {
@@ -65,7 +70,8 @@ func Test_RegisterModule(t *testing.T) {
 		emptyString := ""
 		db := &mocks.DynamoDB{
 			GetItemOuts: []*dynamodb.GetItemOutput{
-				{
+				{}, // First call for API key validation (no API key configured)
+				{ // Second call for module check - module exists
 					Item: map[string]types.AttributeValue{
 						"name":        services.MustMarshallString(name, t),
 						"description": services.MustMarshallString(emptyString, t),
@@ -82,6 +88,7 @@ func Test_RegisterModule(t *testing.T) {
 		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "test-api-key",
 			Name:        "test",
 			Description: "test desc",
 			Source:      "http://test.com",
@@ -94,8 +101,8 @@ func Test_RegisterModule(t *testing.T) {
 			t.Errorf("Expected no error, got %v", err)
 		}
 
-		if db.GetItemInvocations != 1 {
-			t.Errorf("Expected 1 call to GetItem, got %d", db.GetItemInvocations)
+		if db.GetItemInvocations != 2 {
+			t.Errorf("Expected 2 calls to GetItem (API key validation + module check), got %d", db.GetItemInvocations)
 		}
 
 		if db.PutItemInvocations != 0 {
@@ -123,6 +130,7 @@ func Test_RegisterModule(t *testing.T) {
 		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "test-api-key",
 			Name:        "test",
 			Description: "test desc",
 			Source:      "http://test.com",
@@ -150,13 +158,17 @@ func Test_RegisterModule(t *testing.T) {
 
 	t.Run("when PutItem fails", func(t *testing.T) {
 		db := &mocks.DynamoDB{
-			GetItemOuts:  []*dynamodb.GetItemOutput{{}},
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{}, // First call for API key validation (no API key configured)
+				{}, // Second call for module check
+			},
 			PutItemError: errors.New("some error"),
 		}
 
 		svc := &RegistrarService{Db: db}
 
 		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "test-api-key",
 			Name:        "test",
 			Description: "test desc",
 			Source:      "http://test.com",
@@ -179,6 +191,161 @@ func Test_RegisterModule(t *testing.T) {
 
 		if err != ModuleRegisterError {
 			t.Errorf("Expected %v, got %v.", ModuleRegisterError, err)
+		}
+	})
+
+	t.Run("when API key validation succeeds", func(t *testing.T) {
+		apiKey := "valid-api-key"
+		orgName := "cie"
+		db := &mocks.DynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{ // First call for API key validation - organization has API key configured
+					Item: map[string]types.AttributeValue{
+						"organization_name": services.MustMarshallString(orgName, t),
+						"api_key":           services.MustMarshallString(apiKey, t),
+						"created_on":        services.MustMarshallString("2023-01-01", t),
+						"modified_on":       services.MustMarshallString("2023-01-01", t),
+					},
+				},
+				{}, // Second call for module check (new module)
+			},
+		}
+
+		svc := &RegistrarService{Db: db}
+
+		req := terrarium.RegisterModuleRequest{
+			ApiKey:      apiKey,
+			Name:        "cie/mymodule/aws",
+			Description: "test desc",
+			Source:      "http://test.com",
+			Maturity:    terrarium.Maturity_ALPHA,
+		}
+
+		res, err := svc.Register(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if db.GetItemInvocations != 2 {
+			t.Errorf("Expected 2 calls to GetItem (API key validation + module check), got %d", db.GetItemInvocations)
+		}
+
+		if db.PutItemInvocations != 1 {
+			t.Errorf("Expected 1 call to PutItem, got %d", db.PutItemInvocations)
+		}
+
+		if res != ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", ModuleRegistered, res)
+		}
+	})
+
+	t.Run("when no API key configured for organization", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{}, // First call for API key validation (no API key configured)
+				{}, // Second call for module check (new module)
+			},
+		}
+
+		svc := &RegistrarService{Db: db}
+
+		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "any-api-key",
+			Name:        "cie/mymodule/aws",
+			Description: "test desc",
+			Source:      "http://test.com",
+			Maturity:    terrarium.Maturity_ALPHA,
+		}
+
+		res, err := svc.Register(context.TODO(), &req)
+
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if db.GetItemInvocations != 2 {
+			t.Errorf("Expected 2 calls to GetItem (API key validation + module check), got %d", db.GetItemInvocations)
+		}
+
+		if res != ModuleRegistered {
+			t.Errorf("Expected %v, got %v.", ModuleRegistered, res)
+		}
+	})
+
+	t.Run("when API key validation fails", func(t *testing.T) {
+		correctApiKey := "correct-api-key"
+		wrongApiKey := "wrong-api-key"
+		orgName := "cie"
+		db := &mocks.DynamoDB{
+			GetItemOuts: []*dynamodb.GetItemOutput{
+				{ // First call for API key validation - organization has API key configured
+					Item: map[string]types.AttributeValue{
+						"organization_name": services.MustMarshallString(orgName, t),
+						"api_key":           services.MustMarshallString(correctApiKey, t),
+						"created_on":        services.MustMarshallString("2023-01-01", t),
+						"modified_on":       services.MustMarshallString("2023-01-01", t),
+					},
+				},
+			},
+		}
+
+		svc := &RegistrarService{Db: db}
+
+		req := terrarium.RegisterModuleRequest{
+			ApiKey:      wrongApiKey,
+			Name:        "cie/mymodule/aws",
+			Description: "test desc",
+			Source:      "http://test.com",
+			Maturity:    terrarium.Maturity_ALPHA,
+		}
+
+		res, err := svc.Register(context.TODO(), &req)
+
+		if err != ApiKeyValidationError {
+			t.Errorf("Expected %v, got %v", ApiKeyValidationError, err)
+		}
+
+		if db.GetItemInvocations != 1 {
+			t.Errorf("Expected 1 call to GetItem (only API key validation), got %d", db.GetItemInvocations)
+		}
+
+		if db.PutItemInvocations != 0 {
+			t.Errorf("Expected 0 calls to PutItem, got %d", db.PutItemInvocations)
+		}
+
+		if res != nil {
+			t.Errorf("Expected no response, got %v.", res)
+		}
+	})
+
+	t.Run("when API key retrieval fails", func(t *testing.T) {
+		db := &mocks.DynamoDB{
+			GetItemErrors: []error{errors.New("database error")},
+		}
+
+		svc := &RegistrarService{Db: db}
+
+		req := terrarium.RegisterModuleRequest{
+			ApiKey:      "test-api-key",
+			Name:        "cie/mymodule/aws",
+			Description: "test desc",
+			Source:      "http://test.com",
+			Maturity:    terrarium.Maturity_ALPHA,
+		}
+
+		res, err := svc.Register(context.TODO(), &req)
+
+		if err != ApiKeyGetError {
+			t.Errorf("Expected %v, got %v", ApiKeyGetError, err)
+		}
+
+		if db.GetItemInvocations != 1 {
+			t.Errorf("Expected 1 call to GetItem (API key validation), got %d", db.GetItemInvocations)
+		}
+
+		if res != nil {
+			t.Errorf("Expected no response, got %v.", res)
 		}
 	})
 }
@@ -204,8 +371,8 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 			t.Errorf("Expected no error, got %v.", err)
 		}
 
-		if db.DescribeTableInvocations != 1 {
-			t.Errorf("Expected 1 call to DescribeTable, got %v.", db.DescribeTableInvocations)
+		if db.DescribeTableInvocations != 2 {
+			t.Errorf("Expected 2 calls to DescribeTable (modules + API keys), got %v.", db.DescribeTableInvocations)
 		}
 
 		if db.CreateTableInvocations != 0 {
@@ -213,7 +380,7 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 		}
 	})
 
-	t.Run("when Table initialization fails", func(t *testing.T) {
+	t.Run("when Module table initialization fails", func(t *testing.T) {
 
 		db := &mocks.DynamoDB{
 			DescribeTableErrors: []error{errors.New("some error")},
@@ -238,6 +405,34 @@ func Test_RegisterRegistrarWithServer(t *testing.T) {
 
 		if db.CreateTableInvocations != 1 {
 			t.Errorf("Expected 1 calls to CreateTable, got %v.", db.CreateTableInvocations)
+		}
+	})
+
+	t.Run("when API key table initialization fails", func(t *testing.T) {
+
+		db := &mocks.DynamoDB{
+			DescribeTableErrors: []error{nil, errors.New("some error")}, // First table succeeds, second fails
+			CreateTableError:    errors.New("some error"),
+		}
+
+		rs := &RegistrarService{
+			Db: db,
+		}
+
+		s := grpc.NewServer(*new([]grpc.ServerOption)...)
+
+		err := rs.RegisterWithServer(s)
+
+		if err != ApiKeyTableInitializationError {
+			t.Errorf("Expected %v, got %v.", ApiKeyTableInitializationError, err)
+		}
+
+		if db.DescribeTableInvocations != 2 {
+			t.Errorf("Expected 2 calls to DescribeTable, got %v.", db.DescribeTableInvocations)
+		}
+
+		if db.CreateTableInvocations != 1 {
+			t.Errorf("Expected 1 call to CreateTable (for API key table), got %v.", db.CreateTableInvocations)
 		}
 	})
 }
