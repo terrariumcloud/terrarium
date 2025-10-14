@@ -209,7 +209,7 @@ func unmarshalModule(item map[string]types.AttributeValue) (*services.ModuleMeta
 func (s *RegistrarService) validateApiKey(ctx context.Context, moduleName, apiKey string) error {
 	// Extract organization name from module name
 	moduleNameParts := strings.Split(moduleName, "/")
-	if len(moduleNameParts) == 0 {
+	if moduleNameParts[0] == "" {
 		return ApiKeyValidationError
 	}
 	organizationName := moduleNameParts[0]
