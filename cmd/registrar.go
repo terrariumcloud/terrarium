@@ -22,9 +22,11 @@ func init() {
 func runRegistrarService(cmd *cobra.Command, args []string) {
 
 	registrarServiceServer := &registrar.RegistrarService{
-		Db:     storage.NewDynamoDbClient(awsSessionConfig),
-		Table:  registrar.RegistrarTableName,
-		Schema: registrar.GetModulesSchema(registrar.RegistrarTableName),
+		Db:           storage.NewDynamoDbClient(awsSessionConfig),
+		Table:        registrar.RegistrarTableName,
+		Schema:       registrar.GetModulesSchema(registrar.RegistrarTableName),
+		ApiKeyTable:  registrar.ApiKeyTableName,
+		ApiKeySchema: registrar.GetOrganizationApiKeysSchema(registrar.ApiKeyTableName),
 	}
 
 	startGRPCService("registrar", registrarServiceServer)
