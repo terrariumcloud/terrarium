@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	DefaultBucketName                          = "terrarium-modules"
+	DefaultBucketName                          = "terrarium-mcs-modules"
 	DefaultStorageServiceDefaultEndpoint       = "storage:3001"
 	DefaultChunkSize                     int64 = 64 * 1024 // 64 KB
 )
