@@ -59,13 +59,18 @@ function ModuleMetadataInfo({module}: { module: ModuleMetadata }) {
                                     p: 0.5,
                                     m: 0,
                                 }}>
-                                    {module.versions.map((version, index) => {
+                                    {module.versions && module.versions.map((version, index) => {
                                         return (
                                             <ListItem key={index}>
                                                 <Chip label={version} />
                                             </ListItem>
                                         )
                                     })}
+                                    {!module.versions &&
+                                            <ListItem>
+                                                <Chip label="No Releases Made" />
+                                            </ListItem>                                        
+                                    }
                                 </List>
                             </TableCell>
                         </TableRow>
